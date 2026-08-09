@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V24 - المحاسبة المتقدمة
+   نظام راشد V25 - التصميم المتقدم
    ============================================ */
 
 // 1. إعدادات Firebase
@@ -20,11 +20,11 @@ let appData = {
 
 // دوال التخزين المحلي
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV24'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV25'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV24', JSON.stringify(appData));
+        localStorage.setItem('RashedV25', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
@@ -104,7 +104,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV24', JSON.stringify(appData));
+                localStorage.setItem('RashedV25', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -328,18 +328,15 @@ function addPurchaseReturn() {
 // ============================================
 // 7. الخزنة والتحصيل
 // ============================================
-
-// التحصيل (المنطق الجديد مع حساب الدين)
 function collectDebt() {
     const data = getData();
     const client = document.getElementById('collectClient').value.trim();
     const amount = parseFloat(document.getElementById('collectAmount').value);
-    
     if(!client || !amount || amount <= 0) return showToast('أدخل اسم العميل والمبلغ');
     
-    // البحث عن العميل
-    const clientData = data.clients.find(c => c.name === client);
-    if(!clientData) return showToast('العميل غير موجود');
+    // التحقق من وجود العميل (مهم جداً)
+    const clientExists = data.clients.find(c => c.name === client);
+    if(!clientExists) return showToast('العميل غير موجود في قاعدة البيانات');
 
     data.treasury += amount;
     data.collections.push({ id: Date.now().toString(), client, amount });
@@ -351,9 +348,6 @@ function collectDebt() {
     updateUI();
     showToast(`تم تحصيل ${amount} ج.م من ${client}`);
 }
-
-// حساب مديونية العميل (يتم استدعاؤها عند كتابة اسم العميل في خانة التحصيل)
-// يمكن ربطها بـ event listener على حقل الإدخال في HTML مستقبلاً
 
 function addExpense() {
     const data = getData();
@@ -396,7 +390,7 @@ function withdrawTreasury() {
 }
 
 // ============================================
-// 8. التقارير
+// 8. التقارير (التصميم الداكن المتقدم)
 // ============================================
 function showReport(type) {
     const data = getData();
@@ -408,32 +402,67 @@ function showReport(type) {
     
     let html = '';
     if(type === 'income') {
-        html = `<b>📊 قائمة الدخل</b><br><br>
-        إجمالي المبيعات: <b>${totalSales} ج.م</b><br>
-        إجمالي المشتريات: <b>${totalPurchases} ج.م</b><br>
-        إجمالي المصروفات: <b style="color:var(--danger);">${totalExpenses} ج.م</b><br>
-        إجمالي التحصيل: <b style="color:var(--secondary);">${totalCollections} ج.م</b><br>
-        <hr><b style="color:${profit >= 0 ? '#00B894' : '#E17055'};">صافي الربح: ${profit} ج.م</b>`;
-    } else if(type === 'balance') {
-        const assets = data.treasury;
-        html = `<b>⚖️ الميزانية العمومية</b><br><br>
-        الأصول (الخزنة): <b>${assets} ج.م</b><br>
-        <hr>حقوق الملكية: ${assets} ج.م`;
+        html = `
+            <div style="background:#252538; border-radius:12px; padding:15px; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; border-bottom:1px solid #444; padding:8px 0;">
+                    <span style="color:#aaa;">📈 قائمة الدخل</span>
+                    <span style="color:#fff;">المبلغ</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                    <span>الإيرادات (المبيعات)</span>
+                    <span style="color:#00B894;">${totalSales} ج.م</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                    <span>التكاليف (المشتريات)</span>
+                    <span style="color:#E17055;">${totalPurchases} ج.م</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                    <span>المصروفات</span>
+                    <span style="color:#E17055;">${totalExpenses} ج.م</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                    <span>التحصيل</span>
+                    <span style="color:#00B894;">${totalCollections} ج.م</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
+                    <span style="font-weight:bold;">صافي الربح</span>
+                    <span style="color:${profit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${profit} ج.م</span>
+                </div>
+            </div>
+        `;
     } else if(type === 'daily') {
-        // تقرير اليوم
         const today = new Date().toLocaleDateString();
         const todaySales = data.sales.filter(s => new Date(s.id).toLocaleDateString() === today).reduce((s, i) => s + i.total, 0);
         const todayPurchases = data.purchases.filter(p => new Date(p.id).toLocaleDateString() === today).reduce((s, i) => s + i.total, 0);
         const todayExpenses = data.expenses.filter(e => new Date(e.id).toLocaleDateString() === today).reduce((s, i) => s + i.amount, 0);
-        const todayCollections = data.collections.filter(c => new Date(c.id).toLocaleDateString() === today).reduce((s, i) => s + i.amount, 0);
         const todayProfit = todaySales - todayPurchases - todayExpenses;
 
-        html = `<b>📅 تقرير الخزنة اليومي (${today})</b><br><br>
-        مبيعات اليوم: <b>${todaySales} ج.م</b><br>
-        مشتريات اليوم: <b>${todayPurchases} ج.م</b><br>
-        مصروفات اليوم: <b style="color:var(--danger);">${todayExpenses} ج.م</b><br>
-        تحصيل اليوم: <b style="color:var(--secondary);">${todayCollections} ج.م</b><br>
-        <hr><b style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'};">صافي ربح اليوم: ${todayProfit} ج.م</b>`;
+        html = `
+            <div style="background:#252538; border-radius:12px; padding:15px; margin-bottom:10px;">
+                <div style="text-align:center; border-bottom:1px solid #444; padding-bottom:10px; margin-bottom:10px;">
+                    <span style="color:#fff; font-size:16px; font-weight:bold;">📅 تقرير الخزنة اليومي</span><br>
+                    <span style="color:#aaa; font-size:12px;">${today}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                    <span>مبيعات اليوم</span>
+                    <span style="color:#00B894;">${todaySales} ج.م</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                    <span>مشتريات اليوم</span>
+                    <span style="color:#E17055;">${todayPurchases} ج.م</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                    <span>مصروفات اليوم</span>
+                    <span style="color:#E17055;">${todayExpenses} ج.م</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
+                    <span style="font-weight:bold;">صافي ربح اليوم</span>
+                    <span style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${todayProfit} ج.م</span>
+                </div>
+            </div>
+        `;
+    } else {
+        html = `<div style="color:#aaa; text-align:center; padding:20px;">جاري تطوير هذا التقرير</div>`;
     }
     document.getElementById('reportContent').innerHTML = html;
 }
@@ -458,4 +487,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     document.getElementById('userDisplay').textContent = appData.currentUser;
     updateUI();
 }
-console.log('✅ نظام راشد V24 - الخزنة المنقسمة وتقرير اليوم');
+console.log('✅ نظام راشد V25 - الخزنة المنظمة والتقارير الشيك');

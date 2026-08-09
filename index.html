@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V24 - المحاسبة المتقدمة</title>
+    <title>نظام راشد V25 - التصميم المتقدم</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -15,7 +15,7 @@
     <!-- شاشة الدخول -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V24</h2>
+            <h2>نظام راشد V25</h2>
             <div id="loginForm">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
                 <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -35,7 +35,7 @@
     <!-- التطبيق الرئيسي -->
     <div id="appContainer" style="display:none;">
         <div class="top-bar">
-            <div class="brand">راشد V24</div>
+            <div class="brand">راشد V25</div>
             <div class="user-info">👤 <span id="userDisplay">admin</span></div>
         </div>
 
@@ -126,76 +126,83 @@
         </div>
     </div>
 
-    <!-- ===== مودال الخزنة (الشاشة المنقسمة) ===== -->
+    <!-- ===== مودال الخزنة (التصميم الجديد الكبير) ===== -->
     <div class="modal-overlay" id="modal-treasury">
         <div class="modal-box">
             <div class="modal-header"><h2>💰 الخزنة</h2><button class="modal-close" onclick="closeModal('treasury')">&times;</button></div>
             
             <!-- رصيد الخزنة الكلي -->
-            <div style="text-align:center;font-size:20px;font-weight:bold;padding:15px;background:var(--primary);color:white;border-radius:8px;margin-bottom:15px;">
+            <div class="treasury-balance">
                 رصيد الخزنة الكلي: <span id="treasuryDisplay">0</span> ج.م
             </div>
 
-            <!-- الشاشة المنقسمة -->
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                
-                <!-- الجانب الأيمن: العميل والتحصيل -->
-                <div style="background:#f8f9fa; padding:15px; border-radius:8px; border:1px solid #eee;">
-                    <h3 style="margin-top:0; font-size:16px; color:var(--secondary);">👤 العميل والتحصيل</h3>
-                    <div class="form-group" style="margin-bottom:5px;">
-                        <label style="font-size:12px;">اختر العميل</label>
-                        <input type="text" id="collectClient" placeholder="اسم العميل" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
-                    </div>
-                    <div style="background:#fff; padding:8px; border-radius:6px; border:1px solid #eee; margin-bottom:8px;">
-                        <span style="font-size:12px; color:#777;">المديونية الحالية لهذا العميل:</span>
-                        <span id="clientDebtDisplay" style="display:block; font-size:18px; font-weight:bold; color:var(--danger);">0 ج.م</span>
-                    </div>
-                    <div style="display:flex; gap:6px;">
-                        <input type="number" id="collectAmount" placeholder="مبلغ التحصيل" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px;">
-                        <button onclick="collectDebt()" style="background:var(--secondary); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;">تحصيل</button>
-                    </div>
+            <!-- قسم 1: التحصيل (منفصل وبشكل واضح) -->
+            <div class="treasury-section">
+                <h3 class="section-title-green">💰 تحصيل دين من عميل</h3>
+                <div class="form-group">
+                    <label>اسم العميل</label>
+                    <input type="text" id="collectClient" placeholder="اكتب اسم العميل">
                 </div>
-
-                <!-- الجانب الأيسر: الخزنة الرئيسية -->
-                <div style="background:#f8f9fa; padding:15px; border-radius:8px; border:1px solid #eee;">
-                    <h3 style="margin-top:0; font-size:16px; color:var(--primary);">🏦 الخزنة الرئيسية</h3>
-                    <div class="form-group" style="margin-bottom:5px;">
-                        <label style="font-size:12px;">المبلغ</label>
-                        <input type="number" id="treasuryAmount" placeholder="المبلغ" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+                    <div style="flex:1;">
+                        <label>المبلغ</label>
+                        <input type="number" id="collectAmount" placeholder="المبلغ">
                     </div>
-                    <div style="display:flex; gap:6px;">
-                        <button onclick="addToTreasury()" style="flex:1; background:var(--secondary); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">إيداع</button>
-                        <button onclick="withdrawTreasury()" style="flex:1; background:var(--danger); color:white; border:none; padding:8px; border-radius:6px; cursor:pointer;">سحب</button>
-                    </div>
-                </div>
-
-            </div>
-            <!-- نهاية الشاشة المنقسمة -->
-
-            <!-- المصروفات -->
-            <div style="margin-top:15px; background:#f8f9fa; padding:15px; border-radius:8px; border:1px solid #eee;">
-                <h3 style="margin-top:0; font-size:16px; color:var(--danger);">💸 المصروفات</h3>
-                <div style="display:flex; gap:8px;">
-                    <input type="text" id="expenseDesc" placeholder="بيان المصروف" style="flex:2; padding:8px; border:1px solid #ddd; border-radius:6px;">
-                    <input type="number" id="expenseAmount" placeholder="المبلغ" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px;">
-                    <button onclick="addExpense()" style="background:var(--danger); color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer;">تسجيل</button>
+                    <button onclick="collectDebt()" class="btn-green" style="height:42px;">تحصيل</button>
                 </div>
             </div>
 
-            <!-- سجل الحركات -->
-            <div id="treasuryLog" class="list-view" style="margin-top:15px;"></div>
+            <!-- قسم 2: الخزنة الرئيسية (إيداع وسحب) -->
+            <div class="treasury-section">
+                <h3 class="section-title-blue">🏦 الخزنة الرئيسية</h3>
+                <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+                    <div style="flex:1;">
+                        <label>المبلغ</label>
+                        <input type="number" id="treasuryAmount" placeholder="المبلغ">
+                    </div>
+                    <button onclick="addToTreasury()" class="btn-green" style="height:42px;">إيداع</button>
+                    <button onclick="withdrawTreasury()" class="btn-red" style="height:42px;">سحب</button>
+                </div>
+            </div>
+
+            <!-- قسم 3: المصروفات -->
+            <div class="treasury-section">
+                <h3 class="section-title-red">💸 تسجيل مصروف</h3>
+                <div class="form-group" style="display:flex; gap:10px;">
+                    <div style="flex:2;">
+                        <label>بيان المصروف</label>
+                        <input type="text" id="expenseDesc" placeholder="مثال: كهرباء">
+                    </div>
+                    <div style="flex:1;">
+                        <label>المبلغ</label>
+                        <input type="number" id="expenseAmount" placeholder="المبلغ">
+                    </div>
+                </div>
+                <button onclick="addExpense()" class="btn-red" style="width:100%;">تسجيل المصروف</button>
+            </div>
+
+            <!-- السجل المالي -->
+            <div class="treasury-section" style="border:none; background:#f9f9f9;">
+                <h3 style="margin-top:0; font-size:16px;">📜 سجل الحركات المالية</h3>
+                <div id="treasuryLog" class="list-view"></div>
+            </div>
         </div>
     </div>
 
-    <!-- ===== مودال التقارير (تقرير الخزنة اليومي) ===== -->
+    <!-- ===== مودال التقارير (التصميم الشيك) ===== -->
     <div class="modal-overlay" id="modal-reports">
         <div class="modal-box">
             <div class="modal-header"><h2>📊 التقارير المالية</h2><button class="modal-close" onclick="closeModal('reports')">&times;</button></div>
-            <div class="report-actions">
-                <button onclick="showReport('income')" class="btn-main" style="background:#00B894;">قائمة الدخل</button>
-                <button onclick="showReport('balance')" class="btn-main" style="background:#2E4057;">الميزانية</button>
-                <button onclick="showReport('daily')" class="btn-main" style="background:var(--accent);color:#333;">تقرير الخزنة اليومي</button>
+            
+            <!-- الأزرار بألوان مميزة -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                <button onclick="showReport('income')" style="padding:12px; background:#00B894; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">📈 قائمة الدخل</button>
+                <button onclick="showReport('balance')" style="padding:12px; background:#6C5CE7; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">⚖️ الميزانية</button>
+                <button onclick="showReport('daily')" style="padding:12px; background:#E17055; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">📅 تقرير اليوم</button>
+                <button onclick="showReport('trial')" style="padding:12px; background:#FDCB6E; color:#333; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">📋 ميزان المراجعة</button>
             </div>
+
+            <!-- نافذة التقرير -->
             <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
         </div>
     </div>
