@@ -10,7 +10,7 @@ body { background: var(--bg); margin: 0; padding: 10px 10px 80px 10px; }
 .brand { font-size: 22px; font-weight: bold; color: var(--primary); }
 .user-info { font-size: 14px; font-weight: bold; }
 
-/* لوحة المربعات (رجعت الألوان) */
+/* لوحة المربعات */
 .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .dash-card {
     background: var(--card); border-radius: var(--radius); padding: 25px; text-align: center;
@@ -40,15 +40,10 @@ body { background: var(--bg); margin: 0; padding: 10px 10px 80px 10px; }
 .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #eee; border-radius: 8px; font-size: 14px; outline: none; }
 .form-group input:focus { border-color: var(--primary); }
 .btn-main { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-bottom: 8px; }
-.btn-small-green { padding: 10px 20px; background: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; }
-.btn-small-red { padding: 10px 20px; background: var(--danger); color: white; border: none; border-radius: 8px; cursor: pointer; }
 
 /* القوائم الداخلية */
 .list-view { margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; }
 .list-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; }
-
-/* الخزنة */
-.treasury-balance { font-size: 20px; font-weight: bold; text-align: center; padding: 15px; background: #f9f9f9; border-radius: 8px; margin-bottom: 15px; border: 1px solid #eee; }
 
 /* نظام الدخول */
 .auth-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); padding: 20px; }
@@ -59,11 +54,16 @@ body { background: var(--bg); margin: 0; padding: 10px 10px 80px 10px; }
 .btn-auth.btn-back { background: #eee; color: #333; }
 
 /* التقارير */
-.report-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.report-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
 .report-box { background: #f9f9f9; padding: 15px; border-radius: 8px; font-size: 14px; min-height: 80px; border: 1px dashed #ddd; }
 
 /* التوست */
 .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; opacity: 0; transition: 0.3s; z-index: 99999; text-align: center; width: 90%; pointer-events: none; }
 .toast.show { opacity: 1; }
 
-@media (max-width: 480px) { .dashboard-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) {
+    .dashboard-grid { grid-template-columns: 1fr 1fr; }
+    #modal-treasury .modal-box > div > div[style*="grid-template-columns: 1fr 1fr;"] {
+        grid-template-columns: 1fr !important; /* تحويل الخزنة لعمود واحد في الموبايل */
+    }
+}

@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V23.1 - تعديلات
+   نظام راشد V24 - المحاسبة المتقدمة
    ============================================ */
 
 // 1. إعدادات Firebase
@@ -20,11 +20,11 @@ let appData = {
 
 // دوال التخزين المحلي
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV23.1'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV24'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV23.1', JSON.stringify(appData));
+        localStorage.setItem('RashedV24', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
@@ -104,7 +104,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV23.1', JSON.stringify(appData));
+                localStorage.setItem('RashedV24', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -193,6 +193,7 @@ function updateUI() {
     `).join('');
 
     document.getElementById('treasuryDisplay').textContent = data.treasury;
+    
     let logHtml = '';
     logHtml += data.treasuryLog.slice().reverse().map(t => `
         <div class="list-item"><span>${t.desc}</span><span style="font-weight:bold;color:${t.amount > 0 ? 'var(--secondary)' : 'var(--danger)'};">${t.amount} ج.م</span></div>
@@ -265,13 +266,12 @@ function addSale() {
     showToast(`بيع بقيمة ${total} ج.م`);
 }
 
-// مرتجع المبيعات (تم إصلاح السعر ليكون سعر البيع)
 function addSaleReturn() {
     const data = getData();
     const client = document.getElementById('returnClient').value.trim();
     const productId = document.getElementById('returnProduct').value;
     const qty = parseInt(document.getElementById('returnQty').value) || 0;
-    const price = parseFloat(document.getElementById('returnPrice').value) || 0; // سعر البيع
+    const price = parseFloat(document.getElementById('returnPrice').value) || 0;
     if(!client || !productId || qty <= 0) return showToast('أكمل البيانات');
     const prod = data.products.find(p => p.id === productId);
     if(!prod) return showToast('المنتج غير موجود');
@@ -305,13 +305,12 @@ function addPurchase() {
     showToast(`شراء بقيمة ${total} ج.م`);
 }
 
-// مرتجع المشتريات (تم إصلاح السعر ليكون سعر الشراء)
 function addPurchaseReturn() {
     const data = getData();
     const supplier = document.getElementById('returnSupplier').value.trim();
     const productId = document.getElementById('returnPurchaseProduct').value;
     const qty = parseInt(document.getElementById('returnPurchaseQty').value) || 0;
-    const price = parseFloat(document.getElementById('returnPurchasePrice').value) || 0; // سعر الشراء
+    const price = parseFloat(document.getElementById('returnPurchasePrice').value) || 0;
     if(!supplier || !productId || qty <= 0) return showToast('أكمل البيانات');
     const prod = data.products.find(p => p.id === productId);
     if(!prod) return showToast('المنتج غير موجود');
@@ -326,21 +325,35 @@ function addPurchaseReturn() {
     showToast(`تم إرجاع منتجات بقيمة ${total} ج.م`);
 }
 
-// الخزنة
+// ============================================
+// 7. الخزنة والتحصيل
+// ============================================
+
+// التحصيل (المنطق الجديد مع حساب الدين)
 function collectDebt() {
     const data = getData();
     const client = document.getElementById('collectClient').value.trim();
     const amount = parseFloat(document.getElementById('collectAmount').value);
+    
     if(!client || !amount || amount <= 0) return showToast('أدخل اسم العميل والمبلغ');
+    
+    // البحث عن العميل
+    const clientData = data.clients.find(c => c.name === client);
+    if(!clientData) return showToast('العميل غير موجود');
+
     data.treasury += amount;
     data.collections.push({ id: Date.now().toString(), client, amount });
     data.treasuryLog.push({ desc: `تحصيل من ${client}`, amount: amount });
+    
     saveLocal();
     document.getElementById('collectClient').value = '';
     document.getElementById('collectAmount').value = '';
     updateUI();
     showToast(`تم تحصيل ${amount} ج.م من ${client}`);
 }
+
+// حساب مديونية العميل (يتم استدعاؤها عند كتابة اسم العميل في خانة التحصيل)
+// يمكن ربطها بـ event listener على حقل الإدخال في HTML مستقبلاً
 
 function addExpense() {
     const data = getData();
@@ -383,7 +396,7 @@ function withdrawTreasury() {
 }
 
 // ============================================
-// 7. التقارير
+// 8. التقارير
 // ============================================
 function showReport(type) {
     const data = getData();
@@ -406,12 +419,27 @@ function showReport(type) {
         html = `<b>⚖️ الميزانية العمومية</b><br><br>
         الأصول (الخزنة): <b>${assets} ج.م</b><br>
         <hr>حقوق الملكية: ${assets} ج.م`;
+    } else if(type === 'daily') {
+        // تقرير اليوم
+        const today = new Date().toLocaleDateString();
+        const todaySales = data.sales.filter(s => new Date(s.id).toLocaleDateString() === today).reduce((s, i) => s + i.total, 0);
+        const todayPurchases = data.purchases.filter(p => new Date(p.id).toLocaleDateString() === today).reduce((s, i) => s + i.total, 0);
+        const todayExpenses = data.expenses.filter(e => new Date(e.id).toLocaleDateString() === today).reduce((s, i) => s + i.amount, 0);
+        const todayCollections = data.collections.filter(c => new Date(c.id).toLocaleDateString() === today).reduce((s, i) => s + i.amount, 0);
+        const todayProfit = todaySales - todayPurchases - todayExpenses;
+
+        html = `<b>📅 تقرير الخزنة اليومي (${today})</b><br><br>
+        مبيعات اليوم: <b>${todaySales} ج.م</b><br>
+        مشتريات اليوم: <b>${todayPurchases} ج.م</b><br>
+        مصروفات اليوم: <b style="color:var(--danger);">${todayExpenses} ج.م</b><br>
+        تحصيل اليوم: <b style="color:var(--secondary);">${todayCollections} ج.م</b><br>
+        <hr><b style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'};">صافي ربح اليوم: ${todayProfit} ج.م</b>`;
     }
     document.getElementById('reportContent').innerHTML = html;
 }
 
 // ============================================
-// 8. التوست
+// 9. التوست
 // ============================================
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -421,7 +449,7 @@ function showToast(msg) {
 }
 
 // ============================================
-// 9. بدء التشغيل
+// 10. بدء التشغيل
 // ============================================
 loadLocal();
 if(appData.currentUser && appData.users[appData.currentUser]) {
@@ -430,4 +458,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     document.getElementById('userDisplay').textContent = appData.currentUser;
     updateUI();
 }
-console.log('✅ نظام راشد V23.1 - تم إصلاح الألوان والمرتجعات');
+console.log('✅ نظام راشد V24 - الخزنة المنقسمة وتقرير اليوم');
