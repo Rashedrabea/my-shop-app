@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V28 - الطباعة الشاملة</title>
+    <title>نظام راشد V28.2</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
-    <!-- شاشة الدخول -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V28</h2>
+            <h2>نظام راشد V28.2</h2>
             <div id="loginForm">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
                 <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -34,11 +32,11 @@
         </div>
     </div>
 
-    <!-- التطبيق الرئيسي -->
     <div id="appContainer" style="display:none;">
         <div class="app-wrapper">
+            <!-- الشريط الجانبي للكمبيوتر -->
             <div class="sidebar" id="sidebar">
-                <div class="sidebar-brand">📊 راشد V28</div>
+                <div class="sidebar-brand">📊 راشد</div>
                 <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
                 <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
                 <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i> المشتريات</button>
@@ -51,10 +49,11 @@
 
             <div class="main-content">
                 <div class="top-bar">
-                    <div class="brand">نظام راشد <span class="version">V28</span></div>
+                    <div class="brand">نظام راشد <span class="version">V28.2</span></div>
                     <div class="user-info">👤 <span id="userDisplay">admin</span></div>
                 </div>
 
+                <!-- الصفحة الرئيسية (المربعات والرسوم البيانية) -->
                 <div id="page-dashboard" class="page active">
                     <div class="dashboard-grid">
                         <div class="dash-card card-sales" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
@@ -64,13 +63,15 @@
                         <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
                         <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
                     </div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:20px;">
-                        <div style="background:white; padding:15px; border-radius:16px; border:1px solid #eee; height:200px;">
-                            <h4 style="margin:0 0 10px 0; font-size:14px;">📈 حركة المبيعات</h4>
+                    
+                    <!-- الرسوم البيانية (تحت بعض في الموبايل) -->
+                    <div class="charts-container">
+                        <div class="chart-wrapper">
+                            <h4>📈 حركة المبيعات</h4>
                             <canvas id="salesChart"></canvas>
                         </div>
-                        <div style="background:white; padding:15px; border-radius:16px; border:1px solid #eee; height:200px;">
-                            <h4 style="margin:0 0 10px 0; font-size:14px;">💰 رصيد الخزنة</h4>
+                        <div class="chart-wrapper">
+                            <h4>💰 رصيد الخزنة</h4>
                             <canvas id="treasuryChart"></canvas>
                         </div>
                     </div>
@@ -96,6 +97,7 @@
                             <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnProduct"><option>اختر المنتج</option></select></div>
                             <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnQty" value="1"></div>
                             <div class="form-group"><label>سعر البيع عند الإرجاع</label><input type="number" id="returnPrice"></div>
+                            <div class="form-group"><label>نوع الدفع (مرتجع)</label><select id="returnSaleType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
                             <button class="btn-main" onclick="addSaleReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
                         </div>
                         <div id="saleList" class="list-view" style="margin-top:15px;"></div>
@@ -122,6 +124,7 @@
                             <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnPurchaseProduct"><option>اختر المنتج</option></select></div>
                             <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnPurchaseQty" value="1"></div>
                             <div class="form-group"><label>سعر الشراء عند الإرجاع</label><input type="number" id="returnPurchasePrice"></div>
+                            <div class="form-group"><label>نوع الدفع (مرتجع)</label><select id="returnPurchaseType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
                             <button class="btn-main" onclick="addPurchaseReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
                         </div>
                         <div id="purchaseList" class="list-view" style="margin-top:15px;"></div>
@@ -167,7 +170,6 @@
                             </div>
                         </div>
 
-                        <!-- جديد: سداد المورد -->
                         <div class="treasury-section">
                             <h3 class="section-title-blue">💸 سداد مورد</h3>
                             <div class="form-group"><label>اسم المورد</label><input type="text" id="paySupplier" placeholder="اكتب اسم المورد"></div>

@@ -60,6 +60,23 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
 .card-treasury { background: #00B894; color: white; border: none; }
 .card-reports { background: #2E4057; color: white; border: none; }
 
+/* الرسوم البيانية (تم إصلاح ظهورها تحت بعضها) */
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+.chart-wrapper {
+    background: white;
+    padding: 15px;
+    border-radius: var(--radius);
+    border: 1px solid #eee;
+    height: 220px;
+}
+.chart-wrapper h4 { margin: 0 0 10px 0; font-size: 14px; color: #333; }
+.chart-wrapper canvas { height: 160px !important; width: 100% !important; }
+
 .modal-box { background: white; border-radius: var(--radius); padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border: 1px solid #eee; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
 .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #777; }
@@ -112,7 +129,7 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
     .bottom-nav { display: flex; }
     .main-content { padding: 15px 15px 80px 15px; height: auto; overflow-y: auto; }
     .dashboard-grid { grid-template-columns: 1fr 1fr; }
-    .charts-grid-mobile { grid-template-columns: 1fr !important; }
+    .charts-container { grid-template-columns: 1fr !important; } /* الرسوم تحت بعض في الموبايل */
 }
 
 @media print {

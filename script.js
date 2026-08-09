@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V28.1 - إصلاح الرسوم البيانية والتقارير
+   نظام راشد V28.2 - الإصدار النهائي
    ============================================ */
 
 const firebaseConfig = {
@@ -16,11 +16,11 @@ let appData = { users: {}, currentUser: null };
 let chartInstances = {};
 
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV28'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV28.2'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV28', JSON.stringify(appData));
+        localStorage.setItem('RashedV28.2', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
@@ -91,7 +91,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV28', JSON.stringify(appData));
+                localStorage.setItem('RashedV28.2', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -265,7 +265,7 @@ function addSaleReturn() {
     const productId = document.getElementById('returnProduct').value;
     const qty = parseInt(document.getElementById('returnQty').value) || 0;
     const price = parseFloat(document.getElementById('returnPrice').value) || 0;
-    const type = document.getElementById('returnSaleType').value || 'cash'; // إضافة نوع الدفع للمرتجع
+    const type = document.getElementById('returnSaleType').value || 'cash';
     if(!client || !productId || qty <= 0) return showToast('أكمل البيانات');
     const prod = data.products.find(p => p.id === productId);
     if(!prod) return showToast('المنتج غير موجود');
@@ -275,7 +275,6 @@ function addSaleReturn() {
         data.treasury -= total;
         data.treasuryLog.push({ desc: `مرتجع بيع - ${client}`, amount: -total });
     }
-    data.sales.push({ id: Date.now().toString(), client, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString(), isReturn: true });
     saveLocal();
     updateUI();
     showToast(`تم استلام مرتجع بقيمة ${total} ج.م`);
@@ -322,7 +321,7 @@ function addPurchaseReturn() {
     const productId = document.getElementById('returnPurchaseProduct').value;
     const qty = parseInt(document.getElementById('returnPurchaseQty').value) || 0;
     const price = parseFloat(document.getElementById('returnPurchasePrice').value) || 0;
-    const type = document.getElementById('returnPurchaseType').value || 'cash'; // إضافة نوع الدفع للمرتجع
+    const type = document.getElementById('returnPurchaseType').value || 'cash';
     if(!supplier || !productId || qty <= 0) return showToast('أكمل البيانات');
     const prod = data.products.find(p => p.id === productId);
     if(!prod) return showToast('المنتج غير موجود');
@@ -333,7 +332,6 @@ function addPurchaseReturn() {
         data.treasury += total;
         data.treasuryLog.push({ desc: `مرتجع شراء من ${supplier}`, amount: total });
     }
-    data.purchases.push({ id: Date.now().toString(), supplier, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString(), isReturn: true });
     saveLocal();
     updateUI();
     showToast(`تم إرجاع منتجات بقيمة ${total} ج.م`);
@@ -418,7 +416,7 @@ function withdrawTreasury() {
 }
 
 // ============================================
-// الرسوم البيانية (تم إصلاح ظهورها)
+// الرسوم البيانية
 // ============================================
 function drawCharts() {
     const data = getData();
@@ -427,7 +425,7 @@ function drawCharts() {
     const treasury = data.treasury;
     const collectionsTotal = data.collections.reduce((s, i) => s + i.amount, 0);
 
-    // بيانات افتراضية في حالة عدم وجود بيانات حقيقية عشان الرسم يظهر
+    // بيانات افتراضية عشان الرسم يظهر
     const displaySales = salesTotal > 0 ? salesTotal : 100;
     const displayExpenses = expensesTotal > 0 ? expensesTotal : 50;
     const displayCollections = collectionsTotal > 0 ? collectionsTotal : 30;
@@ -506,7 +504,7 @@ function printAllInvoices() {
 }
 
 // ============================================
-// التقارير (تم إصلاح الميزانية)
+// التقارير
 // ============================================
 function showReport(type) {
     const data = getData();
@@ -718,4 +716,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     updateUI();
     switchPage('dashboard');
 }
-console.log('✅ نظام راشد V28.1 - إصلاح الرسوم البيانية والتقارير والمرتجعات');
+console.log('✅ نظام راشد V28.2 - الإصدار النهائي المتكامل');
