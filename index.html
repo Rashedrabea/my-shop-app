@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title> برنامج راشد V20 - الإصدار النهائي</title>
+    <!-- ربط ملف التصميم -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <!-- ===== شاشة الدخول ===== -->
+    <div id="authContainer">
+        <div class="auth-box">
+            <h2>برنامج راشد V20</h2>
+            <input type="text" id="loginUser" value="admin" placeholder="اسم المستخدم">
+            <input type="password" id="loginPass" value="123456" placeholder="كلمة المرور">
+            <button onclick="handleLogin()">دخول</button>
+        </div>
+    </div>
+
+    <!-- ===== التطبيق ===== -->
+    <div id="appContainer" style="display:none;">
+        
+        <!-- الشريط العلوي -->
+        <div class="top-bar">
+            <div class="brand">برنامج راشد  V20</div>
+            <div>
+                <span id="userDisplay" style="font-size:14px;color:var(--primary);font-weight:bold;margin-left:10px;">مرحباً</span>
+            </div>
+        </div>
+
+        <!-- صفحة الرئيسية (المربعات) -->
+        <div id="page-home" class="page active">
+            <div class="dashboard-grid">
+                <div class="dash-card card-blue" onclick="openModal('sales')">
+                    <i class="fas fa-shopping-cart"></i><span>مبيعات</span>
+                </div>
+                <div class="dash-card card-red" onclick="openModal('purchases')">
+                    <i class="fas fa-truck-loading"></i><span>مشتريات</span>
+                </div>
+                <div class="dash-card card-gold" onclick="openModal('products')">
+                    <i class="fas fa-warehouse"></i><span>المخزون</span>
+                </div>
+                <div class="dash-card card-green" onclick="openModal('clients')">
+                    <i class="fas fa-address-book"></i><span>جهات الاتصال</span>
+                </div>
+                <div class="dash-card" onclick="openModal('treasury')" style="background:var(--secondary);color:white;">
+                    <i class="fas fa-coins"></i><span>الخزنة</span>
+                </div>
+                <div class="dash-card" onclick="openModal('reports')" style="background:var(--primary);color:white;">
+                    <i class="fas fa-chart-pie"></i><span>التقارير</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== النوافذ المنبثقة (Modals) ===== -->
+
+        <!-- المبيعات -->
+        <div class="modal-overlay" id="modal-sales">
+            <div class="modal-box">
+                <div class="modal-header"><h2><i class="fas fa-shopping-cart"></i> مبيعات</h2><button class="modal-close" onclick="closeModal('sales')">&times;</button></div>
+                <div class="form-group">
+                    <label>العميل</label>
+                    <input type="text" id="saleClient" placeholder="اكتب اسم العميل..." class="smart-input" oninput="searchClients(this.value, 'sale')">
+                    <div class="search-results" id="saleResults"></div>
+                </div>
+                <div class="form-group"><label>المنتج</label><select id="saleProduct"><option>اختر المنتج</option></select></div>
+                <div class="form-group"><label>الكمية</label><input type="number" id="saleQty" value="1"></div>
+                <div class="form-group"><label>سعر البيع</label><input type="number" id="salePrice"></div>
+                <div class="form-group"><label>نوع الدفع</label><select id="saleType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
+                <button class="btn-primary" onclick="addSale()">تسجيل البيع</button>
+            </div>
+        </div>
+
+        <!-- المشتريات -->
+        <div class="modal-overlay" id="modal-purchases">
+            <div class="modal-box">
+                <div class="modal-header"><h2><i class="fas fa-truck"></i> مشتريات</h2><button class="modal-close" onclick="closeModal('purchases')">&times;</button></div>
+                <div class="form-group">
+                    <label>المورد</label>
+                    <input type="text" id="purchaseSupplier" placeholder="اكتب اسم المورد..." class="smart-input" oninput="searchClients(this.value, 'purchase')">
+                    <div class="search-results" id="purchaseResults"></div>
+                </div>
+                <div class="form-group"><label>المنتج</label><select id="purchaseProduct"><option>اختر المنتج</option></select></div>
+                <div class="form-group"><label>الكمية</label><input type="number" id="purchaseQty" value="1"></div>
+                <div class="form-group"><label>سعر الشراء</label><input type="number" id="purchasePrice"></div>
+                <button class="btn-primary" onclick="addPurchase()">تسجيل الشراء</button>
+            </div>
+        </div>
+
+        <!-- المخزون -->
+        <div class="modal-overlay" id="modal-products">
+            <div class="modal-box">
+                <div class="modal-header"><h2><i class="fas fa-warehouse"></i> المخزون</h2><button class="modal-close" onclick="closeModal('products')">&times;</button></div>
+                <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
+                <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
+                <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
+                <div class="form-group"><label>سعر البيع</label><input type="number" id="prodSell"></div>
+                <button class="btn-primary" onclick="addProduct()">إضافة منتج</button>
+                <div id="productList" style="margin-top:15px;max-height:200px;overflow-y:auto;font-size:13px;"></div>
+            </div>
+        </div>
+
+        <!-- جهات الاتصال -->
+        <div class="modal-overlay" id="modal-clients">
+            <div class="modal-box">
+                <div class="modal-header"><h2><i class="fas fa-address-book"></i> جهات الاتصال</h2><button class="modal-close" onclick="closeModal('clients')">&times;</button></div>
+                <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
+                <div class="form-group"><label>النوع</label><select id="contactType"><option value="عميل">عميل</option><option value="مورد">مورد</option><option value="كلاهما">كلاهما</option></select></div>
+                <button class="btn-primary" onclick="addContact()">إضافة</button>
+                <div id="clientList" style="margin-top:15px;max-height:200px;overflow-y:auto;font-size:13px;"></div>
+            </div>
+        </div>
+
+        <!-- الخزنة -->
+        <div class="modal-overlay" id="modal-treasury">
+            <div class="modal-box">
+                <div class="modal-header"><h2><i class="fas fa-coins"></i> الخزنة</h2><button class="modal-close" onclick="closeModal('treasury')">&times;</button></div>
+                <div style="font-size:24px;font-weight:bold;text-align:center;padding:20px;background:#f0f0f0;border-radius:10px;margin-bottom:15px;">
+                    الرصيد الحالي: <span id="treasuryDisplay">0</span> ج.م
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <input type="number" id="treasuryAmount" placeholder="المبلغ" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:8px;">
+                    <button onclick="addToTreasury()" style="padding:10px 20px;background:var(--secondary);color:white;border:none;border-radius:8px;cursor:pointer;">إيداع</button>
+                    <button onclick="withdrawTreasury()" style="padding:10px 20px;background:var(--danger);color:white;border:none;border-radius:8px;cursor:pointer;">سحب</button>
+                </div>
+                <div id="treasuryLog" style="margin-top:15px;max-height:150px;overflow-y:auto;font-size:13px;border-top:1px solid #eee;padding-top:10px;"></div>
+            </div>
+        </div>
+
+        <!-- التقارير -->
+        <div class="modal-overlay" id="modal-reports">
+            <div class="modal-box">
+                <div class="modal-header"><h2><i class="fas fa-chart-pie"></i> التقارير المالية</h2><button class="modal-close" onclick="closeModal('reports')">&times;</button></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+                    <button onclick="showReport('income')" class="btn-primary" style="background:var(--secondary);">قائمة الدخل</button>
+                    <button onclick="showReport('balance')" class="btn-primary" style="background:var(--primary);">ميزانية عمومية</button>
+                    <button onclick="showReport('trial')" class="btn-primary" style="background:var(--accent);color:#333;">ميزان مراجعة</button>
+                    <button onclick="showReport('client')" class="btn-primary" style="background:var(--danger);">كشف حساب عميل</button>
+                </div>
+                <div id="reportContent" style="background:#f9f9f9;padding:15px;border-radius:10px;min-height:100px;font-size:14px;border:1px dashed #ddd;">
+                    اختر تقريراً للعرض
+                </div>
+            </div>
+        </div>
+        
+        <!-- السحابة -->
+        <div class="modal-overlay" id="modal-cloud">
+            <div class="modal-box"><div class="modal-header"><h2><i class="fas fa-cloud-upload-alt"></i> السحابة</h2><button class="modal-close" onclick="closeModal('cloud')">&times;</button></div>
+                <button class="btn-primary" onclick="connectCloud()">ربط السحابة</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ربط ملف الجافاسكريبت -->
+    <script src="script.js"></script>
+</body>
+</html>
