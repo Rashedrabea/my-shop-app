@@ -3,26 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V29 - Ultimate ERP</title>
+    <title>نظام راشد V30 - Stable</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
-    <!-- مكتبة الباركود الجديدة (بديلة لـ html5-qrcode) -->
-    <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
-    <!-- شاشة الدخول (تسجيل الدخول وإنشاء حساب) -->
+    <!-- شاشة الدخول (نظام آمن) -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V29</h2>
+            <h2>نظام راشد V30</h2>
             <div id="loginForm">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
                 <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -42,9 +38,9 @@
     <!-- التطبيق الرئيسي -->
     <div id="appContainer" style="display:none;">
         <div class="app-wrapper">
-            <!-- الشريط الجانبي للكمبيوتر والموبايل -->
+            <!-- الشريط الجانبي -->
             <div class="sidebar" id="sidebar">
-                <div class="sidebar-brand">📊 راشد V29</div>
+                <div class="sidebar-brand">📊 راشد V30</div>
                 <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
                 <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
                 <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i> المشتريات</button>
@@ -57,7 +53,7 @@
 
             <div class="main-content">
                 <div class="top-bar">
-                    <div class="brand">نظام راشد <span class="version">V29</span></div>
+                    <div class="brand">نظام راشد <span class="version">V30</span></div>
                     <div class="user-info">👤 <span id="userDisplay">admin</span></div>
                 </div>
 
@@ -96,14 +92,9 @@
                     <div class="modal-box">
                         <div class="modal-header"><h2>🛒 المبيعات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                         
-                        <!-- زر الباركود الجديد -->
-                        <button onclick="startBarcodeScanner()" style="width:100%; padding:12px; background:#333; color:white; border:none; border-radius:8px; margin-bottom:15px; cursor:pointer;">
-                            📷 مسح باركود المنتج (الكاميرا)
-                        </button>
-
-                        <!-- حقل إدخال الباركود يدوياً -->
+                        <!-- البحث بالباركود (الإدخال اليدوي) -->
                         <div style="display:flex; gap:8px; margin-bottom:15px;">
-                            <input type="text" id="manualBarcode" placeholder="أدخل الباركود يدوياً..." style="flex:1; padding:10px; border:2px solid #eee; border-radius:8px;">
+                            <input type="text" id="manualBarcode" placeholder="🔍 اكتب الباركود أو اسم المنتج..." style="flex:1; padding:10px; border:2px solid #eee; border-radius:8px;">
                             <button onclick="searchByBarcode()" style="padding:10px 20px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer;">بحث</button>
                         </div>
 
@@ -159,7 +150,7 @@
                     </div>
                 </div>
 
-                <!-- صفحة المخزون (مع زر طباعة الباركود) -->
+                <!-- صفحة المخزون -->
                 <div id="page-products" class="page">
                     <div class="modal-box">
                         <div class="modal-header"><h2>📦 المخزون</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
@@ -262,19 +253,6 @@
             <button onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></button>
             <button onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></button>
             <button onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></button>
-        </div>
-    </div>
-
-    <!-- نافذة الباركود -->
-    <div id="barcodeModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;justify-content:center;align-items:center;">
-        <div style="background:white;padding:20px;border-radius:16px;width:90%;max-width:400px;text-align:center;">
-            <h3 style="margin-top:0;">📸 مسح الباركود</h3>
-            <div id="interactive" class="viewport" style="width:100%; height:250px; background:#000; position:relative; border-radius:8px; overflow:hidden;">
-                <video class="videoCamera" style="width:100%; height:100%; object-fit:cover;"></video>
-                <canvas class="drawingBuffer" style="display:none;"></canvas>
-            </div>
-            <p style="font-size:12px;color:#777;margin:10px 0;">ضع الباركود أمام الكاميرا</p>
-            <button onclick="stopBarcodeScanner()" style="padding:10px 0;width:100%;background:var(--danger);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">إغلاق</button>
         </div>
     </div>
 

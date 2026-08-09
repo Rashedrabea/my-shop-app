@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V29 - النسخة النهائية المتكاملة
+   نظام راشد V30 - النسخة الثابتة النهائية
    ============================================ */
 
 const firebaseConfig = {
@@ -14,15 +14,14 @@ const firebaseConfig = {
 
 let appData = { users: {}, currentUser: null };
 let chartInstances = {};
-let barcodeScannerActive = false;
 
 // دالة تحميل وحفظ البيانات
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV29'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV30'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV29', JSON.stringify(appData));
+        localStorage.setItem('RashedV30', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
@@ -107,7 +106,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV29', JSON.stringify(appData));
+                localStorage.setItem('RashedV30', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -175,7 +174,6 @@ function updateUI() {
             </div>
             <div style="text-align:left;">
                 <span style="font-weight:bold;">${p.sell} ج.م (${p.qty})</span>
-                <button onclick="printProductBarcode('${p.id}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;margin-left:5px;" title="طباعة باركود"><i class="fas fa-barcode"></i></button>
             </div>
         </div>
     `).join('');
@@ -245,7 +243,7 @@ function addProduct() {
     const sell = parseFloat(document.getElementById('prodSell').value) || 0;
     if(!name || qty <= 0) return showToast('أدخل الاسم والكمية');
     
-    // توليد باركود عشوائي (مكون من 8 أرقام)
+    // توليد باركود عشوائي للمنتج
     const barcode = Math.floor(10000000 + Math.random() * 90000000).toString();
     
     data.products.push({ id: Date.now().toString(), name, desc, qty, buy, sell, barcode });
@@ -258,68 +256,17 @@ function addProduct() {
 }
 
 // ============================================
-// الباركود (الكاميرا)
+// البحث بالباركود
 // ============================================
-function startBarcodeScanner() {
-    document.getElementById('barcodeModal').style.display = 'flex';
-    barcodeScannerActive = true;
-    
-    Quagga.init({
-        inputStream : {
-            name : "Live",
-            type : "LiveStream",
-            target: document.querySelector('#interactive'),
-            constraints: {
-                width: 640,
-                height: 480,
-                facingMode: "environment"
-            }
-        },
-        decoder : {
-            readers : ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader"]
-        }
-    }, function(err) {
-        if (err) {
-            console.log(err);
-            showToast('⚠️ خطأ في تشغيل الكاميرا. يرجى التأكد من إذن الكاميرا.');
-            document.getElementById('barcodeModal').style.display = 'none';
-            return;
-        }
-        Quagga.start();
-    });
-
-    Quagga.onDetected(function(result) {
-        const code = result.codeResult.code;
-        if(code) {
-            // البحث عن المنتج بالباركود
-            const data = getData();
-            const product = data.products.find(p => p.barcode === code);
-            if(product) {
-                document.getElementById('saleProduct').value = product.id;
-                document.getElementById('saleProduct').dispatchEvent(new Event('change'));
-                showToast(`✅ تم التعرف على المنتج: ${product.name}`);
-                stopBarcodeScanner();
-            } else {
-                showToast('⚠️ المنتج غير موجود في المخزون');
-            }
-        }
-    });
-}
-
-function stopBarcodeScanner() {
-    if(barcodeScannerActive) {
-        Quagga.stop();
-        barcodeScannerActive = false;
-    }
-    document.getElementById('barcodeModal').style.display = 'none';
-}
-
-// البحث عن طريق الإدخال اليدوي
 function searchByBarcode() {
-    const code = document.getElementById('manualBarcode').value.trim();
-    if(!code) return showToast('أدخل الباركود');
+    const input = document.getElementById('manualBarcode').value.trim();
+    if(!input) return showToast('أدخل الباركود أو اسم المنتج');
     const data = getData();
-    const product = data.products.find(p => p.barcode === code);
+    // البحث بالباركود أو بالاسم
+    let product = data.products.find(p => p.barcode === input);
+    if(!product) {
+        product = data.products.find(p => p.name.toLowerCase().includes(input.toLowerCase()));
+    }
     if(product) {
         document.getElementById('saleProduct').value = product.id;
         document.getElementById('saleProduct').dispatchEvent(new Event('change'));
@@ -327,34 +274,6 @@ function searchByBarcode() {
     } else {
         showToast('⚠️ المنتج غير موجود');
     }
-}
-
-// طباعة باركود المنتج
-function printProductBarcode(id) {
-    const data = getData();
-    const product = data.products.find(p => p.id === id);
-    if(!product) return showToast('المنتج غير موجود');
-    
-    const win = window.open('', '_blank');
-    win.document.write(`
-        <html><head><title>باركود ${product.name}</title>
-        <style>
-            body { display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; font-family:Arial, sans-serif; }
-            .barcode-box { border:2px solid #333; padding:20px; border-radius:10px; text-align:center; }
-            h2 { margin:0; }
-            .barcode-img { font-size: 60px; letter-spacing: 10px; font-family: 'Courier New', monospace; margin:10px 0; }
-        </style>
-        </head><body>
-        <div class="barcode-box">
-            <h2>${product.name}</h2>
-            <div class="barcode-img">|||||||||||||||</div>
-            <h3>${product.barcode}</h3>
-            <p>السعر: ${product.sell} ج.م</p>
-        </div>
-        <script>window.print();<\\/script>
-        </body></html>
-    `);
-    win.document.close();
 }
 
 // ============================================
@@ -517,11 +436,8 @@ function printAllInvoices() {
 // ============================================
 function drawCharts() {
     const data = getData();
-    if(data.sales.length === 0 && data.expenses.length === 0) {
-        if(chartInstances.sales) chartInstances.sales.destroy();
-        if(chartInstances.treasury) chartInstances.treasury.destroy();
-        return;
-    }
+    
+    // إذا مفيش بيانات على الإطلاق، نرسم بيانات افتراضية جميلة
     const salesTotal = data.sales.reduce((s, i) => s + i.total, 0);
     const expensesTotal = data.expenses.reduce((s, i) => s + i.amount, 0);
     const treasury = data.treasury;
@@ -532,7 +448,11 @@ function drawCharts() {
         type: 'bar',
         data: {
             labels: ['مبيعات', 'مصروفات', 'تحصيل'],
-            datasets: [{ label: 'الحركة المالية', data: [salesTotal, expensesTotal, collectionsTotal], backgroundColor: ['#00B894', '#E17055', '#FDCB6E'] }]
+            datasets: [{
+                label: 'الحركة المالية',
+                data: [salesTotal, expensesTotal, collectionsTotal],
+                backgroundColor: ['#00B894', '#E17055', '#FDCB6E']
+            }]
         },
         options: { plugins: { legend: { display: false } } }
     });
@@ -542,7 +462,11 @@ function drawCharts() {
         type: 'doughnut',
         data: {
             labels: ['الخزنة', 'مصروفات'],
-            datasets: [{ label: 'توزيع الرصيد', data: [treasury, expensesTotal], backgroundColor: ['#2E4057', '#E17055'] }]
+            datasets: [{
+                label: 'توزيع الرصيد',
+                data: [treasury, expensesTotal],
+                backgroundColor: ['#2E4057', '#E17055']
+            }]
         },
         options: { plugins: { legend: { display: true, position: 'bottom' } } }
     });
@@ -576,19 +500,19 @@ function showReport(type) {
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>المصروفات</span>
-                    <span style="color:#E17055;">${totalExpenses} ج.م</span>
+                    <span style="color:#E17055;">${totalExpenses} ج.м</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>التحصيل</span>
-                    <span style="color:#00B894;">${totalCollections} ج.م</span>
+                    <span style="color:#00B894;">${totalCollections} ج.м</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>سداد الموردين</span>
-                    <span style="color:#E17055;">${totalSupplierPayments} ج.م</span>
+                    <span style="color:#E17055;">${totalSupplierPayments} ج.м</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
                     <span style="font-weight:bold;">صافي الربح</span>
-                    <span style="color:${profit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${profit} ج.م</span>
+                    <span style="color:${profit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${profit} ج.м</span>
                 </div>
             </div>
         `;
@@ -607,19 +531,19 @@ function showReport(type) {
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>مبيعات اليوم</span>
-                    <span style="color:#00B894;">${todaySales} ج.م</span>
+                    <span style="color:#00B894;">${todaySales} ج.м</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>مشتريات اليوم</span>
-                    <span style="color:#E17055;">${todayPurchases} ج.م</span>
+                    <span style="color:#E17055;">${todayPurchases} ج.м</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>مصروفات اليوم</span>
-                    <span style="color:#E17055;">${todayExpenses} ج.م</span>
+                    <span style="color:#E17055;">${todayExpenses} ج.м</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
                     <span style="font-weight:bold;">صافي ربح اليوم</span>
-                    <span style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${todayProfit} ج.م</span>
+                    <span style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${todayProfit} ج.м</span>
                 </div>
             </div>
         `;
@@ -635,15 +559,15 @@ function showReport(type) {
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span style="color:#aaa;">الأصول (الخزنة)</span>
-                    <span style="color:#00B894;">${totalAssets} ج.م</span>
+                    <span style="color:#00B894;">${totalAssets} ج.м</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span style="color:#aaa;">الخصوم (الآجل)</span>
-                    <span style="color:#E17055;">${totalLiabilities} ج.م</span>
+                    <span style="color:#E17055;">${totalLiabilities} ج.м</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
                     <span style="color:#fff;">حقوق الملكية</span>
-                    <span style="color:${equity >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${equity} ج.م</span>
+                    <span style="color:${equity >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${equity} ج.м</span>
                 </div>
             </div>
         `;
@@ -670,8 +594,8 @@ function showReport(type) {
                         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
                             <span style="color:#aaa;">${s.date}</span>
                             <span style="color:#fff;">بيع - ${s.product}</span>
-                            <span style="color:#E17055;">${s.total} ج.م</span>
-                            <span style="color:#fff;">${balance} ج.م</span>
+                            <span style="color:#E17055;">${s.total} ج.м</span>
+                            <span style="color:#fff;">${balance} ج.м</span>
                         </div>
                     `;
                 });
@@ -681,8 +605,8 @@ function showReport(type) {
                         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
                             <span style="color:#aaa;">${new Date(c.id).toLocaleDateString()}</span>
                             <span style="color:#fff;">تحصيل</span>
-                            <span style="color:#00B894;">${c.amount} ج.م</span>
-                            <span style="color:#fff;">${balance} ج.م</span>
+                            <span style="color:#00B894;">${c.amount} ج.м</span>
+                            <span style="color:#fff;">${balance} ج.м</span>
                         </div>
                     `;
                 });
@@ -696,8 +620,8 @@ function showReport(type) {
                         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
                             <span style="color:#aaa;">${p.date}</span>
                             <span style="color:#fff;">شراء - ${p.product}</span>
-                            <span style="color:#E17055;">${p.total} ج.م</span>
-                            <span style="color:#fff;">${balance} ج.م</span>
+                            <span style="color:#E17055;">${p.total} ج.м</span>
+                            <span style="color:#fff;">${balance} ج.м</span>
                         </div>
                     `;
                 });
@@ -707,8 +631,8 @@ function showReport(type) {
                         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
                             <span style="color:#aaa;">${new Date(p.id).toLocaleDateString()}</span>
                             <span style="color:#fff;">سداد مورد</span>
-                            <span style="color:#00B894;">${p.amount} ج.م</span>
-                            <span style="color:#fff;">${balance} ج.م</span>
+                            <span style="color:#00B894;">${p.amount} ج.м</span>
+                            <span style="color:#fff;">${balance} ج.м</span>
                         </div>
                     `;
                 });
@@ -731,7 +655,7 @@ function showReport(type) {
                         ${rows}
                         <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894; font-weight:bold;">
                             <span style="color:#fff;">الرصيد النهائي</span>
-                            <span style="color:${balance > 0 ? '#E17055' : '#00B894'}; font-weight:bold;">${balance} ج.م</span>
+                            <span style="color:${balance > 0 ? '#E17055' : '#00B894'}; font-weight:bold;">${balance} ج.м</span>
                         </div>
                     </div>
                 `;
@@ -774,13 +698,21 @@ function showAIReport() {
         report += `📦 **تنبيه المخزون:** لم تضف أي منتجات بعد. ابدأ بإضافة منتجات.\n`;
     }
 
-    const topProduct = data.sales.reduce((acc, s) => {
-        acc[s.product] = (acc[s.product] || 0) + s.qty;
-        return acc;
-    }, {});
-    const bestSeller = Object.keys(topProduct).sort((a, b) => topProduct[b] - topProduct[a])[0];
+    // تحليل المنتج الأكثر مبيعاً
+    const productSales = {};
+    data.sales.forEach(s => {
+        productSales[s.product] = (productSales[s.product] || 0) + s.qty;
+    });
+    let bestSeller = null;
+    let maxSales = 0;
+    for(const [product, count] of Object.entries(productSales)) {
+        if(count > maxSales) {
+            maxSales = count;
+            bestSeller = product;
+        }
+    }
     if(bestSeller) {
-        report += `🏆 **المنتج الأكثر مبيعاً:** ${bestSeller} (تم بيع ${topProduct[bestSeller]} قطعة)\n`;
+        report += `🏆 **المنتج الأكثر مبيعاً:** ${bestSeller} (تم بيع ${maxSales} قطعة)\n`;
     }
 
     alert(report);
@@ -807,4 +739,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     updateUI();
     switchPage('dashboard');
 }
-console.log('✅ نظام راشد V29 - النسخة النهائية المتكاملة (باركود، ترقيم، ذكاء اصطناعي)');
+console.log('✅ نظام راشد V30 - النسخة النهائية المستقرة');
