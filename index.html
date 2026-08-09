@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V35 - النهائية</title>
+    <title>نظام راشد V31</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -18,10 +18,10 @@
     <!-- شاشة الدخول -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V35</h2>
+            <h2>نظام راشد V31</h2>
             <div id="loginForm">
-                <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
-                <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
+                <input type="text" id="loginUser" placeholder="اسم المستخدم">
+                <input type="password" id="loginPass" placeholder="كلمة المرور">
                 <button class="btn-auth" onclick="handleLogin()">دخول</button>
                 <button class="btn-auth btn-green" onclick="toggleAuthMode()">إنشاء حساب جديد</button>
             </div>
@@ -38,9 +38,9 @@
     <!-- التطبيق الرئيسي -->
     <div id="appContainer" style="display:none;">
         <div class="app-wrapper">
+            <!-- الشريط الجانبي -->
             <div class="sidebar" id="sidebar">
-                <!-- حدث الضغط المتكرر هنا -->
-                <div class="sidebar-brand" onclick="handleLogoClick()">📊 راشد V35</div>
+                <div class="sidebar-brand">📊 راشد V31</div>
                 <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
                 <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
                 <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i> المشتريات</button>
@@ -48,14 +48,13 @@
                 <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> جهات الاتصال</button>
                 <button class="nav-btn" onclick="switchPage('treasury')"><i class="fas fa-coins"></i> الخزنة</button>
                 <button class="nav-btn" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i> التقارير</button>
-                <button class="nav-btn" onclick="switchPage('settings')"><i class="fas fa-cog"></i> الإعدادات</button>
                 <button class="nav-btn logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
             </div>
 
             <div class="main-content">
                 <div class="top-bar">
-                    <div class="brand">نظام راشد <span class="version">V35</span></div>
-                    <div class="user-info">👤 <span id="userDisplay">admin</span></div>
+                    <div class="brand" id="brandLogo">نظام راشد <span class="version">V31</span></div>
+                    <div class="user-info">👤 <span id="userDisplay"></span></div>
                 </div>
 
                 <!-- الصفحة الرئيسية -->
@@ -80,7 +79,6 @@
                         </div>
                     </div>
 
-                    <!-- الذكاء الاصطناعي -->
                     <div style="margin-top:15px;">
                         <button onclick="showAIReport()" style="width:100%; padding:15px; background:linear-gradient(135deg, #2E4057, #00B894); color:white; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer;">
                             🤖 تحليل الذكاء الاصطناعي للبيانات المالية
@@ -92,10 +90,12 @@
                 <div id="page-sales" class="page">
                     <div class="modal-box">
                         <div class="modal-header"><h2>🛒 المبيعات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        
                         <div style="display:flex; gap:8px; margin-bottom:15px;">
-                            <input type="text" id="manualBarcode" placeholder="🔍 اكتب الباركود..." style="flex:1; padding:10px; border:2px solid #eee; border-radius:8px;">
+                            <input type="text" id="manualBarcode" placeholder="🔍 اكتب الباركود أو اسم المنتج..." style="flex:1; padding:10px; border:2px solid #eee; border-radius:8px;">
                             <button onclick="searchByBarcode()" style="padding:10px 20px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer;">بحث</button>
                         </div>
+
                         <div style="display:flex; gap:10px; margin-bottom:15px;">
                             <button onclick="switchSalesMode('add')" id="saleModeAdd" class="btn-toggle active">تسجيل بيع</button>
                             <button onclick="switchSalesMode('return')" id="saleModeReturn" class="btn-toggle">مرتجع بيع</button>
@@ -220,7 +220,7 @@
                     </div>
                 </div>
 
-                <!-- صفحة التقارير (رجعت كلها) -->
+                <!-- صفحة التقارير -->
                 <div id="page-reports" class="page">
                     <div class="modal-box">
                         <div class="modal-header"><h2>📊 التقارير المالية</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
@@ -241,91 +241,67 @@
                         <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
                     </div>
                 </div>
-
-                <!-- صفحة الإعدادات (بيانات الشركة والترخيص) -->
-                <div id="page-settings" class="page">
-                    <div class="modal-box">
-                        <div class="modal-header"><h2>⚙️ الإعدادات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                        
-                        <div class="settings-section">
-                            <h3 class="section-title-green">💰 الترخيص والتفعيل</h3>
-                            <div id="licenseStatus" style="font-size:14px; font-weight:bold; padding:10px; background:#f0f0f0; border-radius:8px; margin-bottom:10px; text-align:center;">
-                                الحالة: <span id="licenseStatusText">نسخة تجريبية</span>
-                            </div>
-                            <div id="trialCounter" style="text-align:center; color:var(--danger); font-weight:bold; margin-bottom:10px; display:none;">
-                                متبقي: <span id="daysLeft">5</span> يوم
-                            </div>
-                            <div style="display:flex; gap:8px; margin-bottom:10px;">
-                                <input type="text" id="licenseKeyInput" placeholder="أدخل كود التفعيل" style="flex:1; padding:10px; border:2px solid #eee; border-radius:8px;">
-                                <button onclick="activateLicense()" class="btn-green" style="padding:10px 20px;">تفعيل</button>
-                            </div>
-                            <div style="background:#f9f9f9; padding:15px; border-radius:8px; font-size:14px; margin-bottom:10px;">
-                                <p style="margin:0 0 10px 0; text-align:center;"><strong>للشراء والتفعيل:</strong></p>
-                                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px 0;">
-                                    <span>📱 فودافون كاش</span>
-                                    <a href="https://www.vodafone.com.eg/vfcash" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">01011993799</a>
-                                </div>
-                                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
-                                    <span>🏦 إنستاباي</span>
-                                    <a href="https://ipn.eg/S/rashedrabia/instapay/5GGJzk" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">rashedrabia@instapay</a>
-                                </div>
-                                <p style="margin:10px 0 0 0; font-size:12px; color:#777; text-align:center;">بعد الدفع، سيتم إرسال كود التفعيل إليك.</p>
-                            </div>
-                        </div>
-
-                        <div class="settings-section">
-                            <h3 class="section-title-blue">🏢 بيانات الشركة</h3>
-                            <div class="form-group"><label>اسم الشركة</label><input type="text" id="compName" placeholder="اسم الشركة"></div>
-                            <div class="form-group"><label>الفرع</label><select id="compBranch"><option value="رئيسي">رئيسي</option><option value="فرعي">فرعي</option></select></div>
-                            <div class="form-group"><label>العنوان</label><input type="text" id="compAddress" placeholder="العنوان"></div>
-                            <div class="form-group"><label>رقم الهاتف</label><input type="text" id="compPhone" placeholder="رقم الهاتف"></div>
-                            <div class="form-group"><label>السجل التجاري</label><input type="text" id="compCR" placeholder="رقم السجل التجاري"></div>
-                            <div class="form-group"><label>البطاقة الضريبية</label><input type="text" id="compTax" placeholder="رقم البطاقة الضريبية"></div>
-                            <button onclick="saveCompanyData()" class="btn-main">حفظ بيانات الشركة</button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
-        <!-- الشريط السفلي -->
+        <!-- الشريط السفلي للموبايل -->
         <div class="bottom-nav">
             <button onclick="switchPage('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
             <button onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
             <button onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></button>
             <button onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></button>
             <button onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></button>
+            <button onclick="logout()" style="color:#E17055;"><i class="fas fa-sign-out-alt"></i><span>خروج</span></button>
         </div>
     </div>
 
-    <!-- لوحة التحكم السرية -->
-    <div class="modal-overlay" id="adminPanel">
-        <div class="modal-box">
-            <div class="modal-header"><h2>🔐 لوحة تحكم الأدمن</h2><button class="modal-close" onclick="closeAdminPanel()">&times;</button></div>
-            <div class="form-group">
-                <label>كلمة مرور الأدمن</label>
-                <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور">
-                <button onclick="unlockAdminPanel()" class="btn-main" style="margin-top:8px;">فتح اللوحة</button>
+    <!-- لوحة تحكم الأدمن (مخفية) -->
+    <div id="adminPanel" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:99999; justify-content:center; align-items:center;">
+        <div class="auth-box" style="max-width:450px; background:white; border-radius:16px; padding:25px; max-height:90vh; overflow-y:auto;">
+            <h3 style="margin-top:0; color:var(--primary);">🔐 لوحة تحكم الأدمن</h3>
+            
+            <!-- قفل PIN -->
+            <div id="adminPinSection">
+                <p style="color:#555; font-size:13px;">أدخل الرقم السري المكون من 4 أرقام</p>
+                <div style="display:flex; gap:8px; justify-content:center; margin:15px 0;">
+                    <input type="password" id="adminPinInput" maxlength="4" style="width:120px; padding:10px; text-align:center; font-size:20px; border:2px solid #ddd; border-radius:8px;">
+                    <button onclick="unlockAdminPanel()" class="btn-main" style="width:auto; padding:10px 25px;">فتح</button>
+                </div>
+                <p style="font-size:12px; color:#999;">الرقم السري الافتراضي: <strong>1234</strong></p>
             </div>
+
+            <!-- محتوى اللوحة (مخفي حتى يتم فتح القفل) -->
             <div id="adminContent" style="display:none;">
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">
-                    <div style="background:#f0f0f0; padding:15px; border-radius:8px; text-align:center;">
-                        <div style="font-size:24px; font-weight:bold; color:var(--primary);" id="totalUsers">0</div>
-                        <div style="font-size:12px; color:#777;">إجمالي المستخدمين</div>
-                    </div>
-                    <div style="background:#f0f0f0; padding:15px; border-radius:8px; text-align:center;">
-                        <div style="font-size:24px; font-weight:bold; color:var(--secondary);" id="totalLogins">0</div>
-                        <div style="font-size:12px; color:#777;">إجمالي الدخول</div>
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px;">
+                    <span style="font-weight:bold; color:var(--primary);">⚙️ الإعدادات المتقدمة</span>
+                    <button onclick="closeAdminPanel()" style="background:none; border:none; font-size:24px; cursor:pointer; color:#999;">&times;</button>
                 </div>
-                <div style="margin-top:15px;">
-                    <h4 style="margin-bottom:5px;">🛠️ إعدادات الأدمن</h4>
-                    <div class="form-group">
-                        <label>تغيير كلمة مرور الأدمن</label>
-                        <input type="password" id="newAdminPass" placeholder="كلمة مرور جديدة">
-                        <button onclick="changeAdminPassword()" class="btn-main" style="background:var(--secondary);">تغيير</button>
-                    </div>
+
+                <div class="form-group">
+                    <label>اسم الشركة</label>
+                    <input type="text" id="adminShopName" placeholder="اسم الشركة">
                 </div>
+                <div class="form-group">
+                    <label>الفرع</label>
+                    <input type="text" id="adminBranch" placeholder="الفرع">
+                </div>
+                <hr style="margin:15px 0; border-color:#eee;">
+
+                <div class="form-group">
+                    <label>تغيير كلمة مرور الأدمن</label>
+                    <input type="password" id="adminNewPassword" placeholder="كلمة المرور الجديدة">
+                </div>
+                <button onclick="changeAdminPassword()" class="btn-main" style="background:var(--secondary);">تحديث كلمة المرور</button>
+
+                <hr style="margin:15px 0; border-color:#eee;">
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button onclick="exportData()" class="btn-green" style="flex:1;">📤 تصدير البيانات</button>
+                    <button onclick="document.getElementById('importFile').click()" class="btn-main" style="flex:1; background:#6C5CE7;">📥 استيراد البيانات</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+                </div>
+
+                <button onclick="clearAllData()" class="btn-red" style="width:100%; margin-top:10px;">🗑️ مسح كل البيانات</button>
             </div>
         </div>
     </div>
