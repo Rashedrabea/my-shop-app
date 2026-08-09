@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V25 - التصميم المتقدم
+   نظام راشد V26 - النسخة المتكاملة
    ============================================ */
 
 // 1. إعدادات Firebase
@@ -13,23 +13,20 @@ const firebaseConfig = {
     appId: "1:669004983540:web:d80e9181527782d41e82a1"
 };
 
-let appData = {
-    users: {},
-    currentUser: null
-};
+let appData = { users: {}, currentUser: null };
+let html5Qrcode = null;
 
 // دوال التخزين المحلي
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV25'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV26'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV25', JSON.stringify(appData));
+        localStorage.setItem('RashedV26', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
 
-// الحصول على بيانات المستخدم الحالي
 function getData() {
     if(!appData.currentUser || !appData.users[appData.currentUser]) {
         return { sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [] };
@@ -63,10 +60,7 @@ function handleRegister() {
     if(pass !== confirm) return showToast('⚠️ كلمة المرور غير متطابقة');
     if(appData.users[user]) return showToast('⚠️ الاسم موجود بالفعل');
     
-    appData.users[user] = {
-        password: pass,
-        data: { sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [] }
-    };
+    appData.users[user] = { password: pass, data: { sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [] } };
     appData.currentUser = user;
     saveLocal();
     enterApp();
@@ -79,6 +73,7 @@ function enterApp() {
     document.getElementById('userDisplay').textContent = appData.currentUser;
     loadFromCloud();
     updateUI();
+    switchPage('dashboard');
 }
 
 // ============================================
@@ -104,7 +99,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV25', JSON.stringify(appData));
+                localStorage.setItem('RashedV26', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -113,70 +108,47 @@ function loadFromCloud() {
 }
 
 // ============================================
-// 4. التنقل والـ Modals
+// 4. التنقل
 // ============================================
-function openModal(id) { document.getElementById('modal-' + id).classList.add('active'); }
-function closeModal(id) { document.getElementById('modal-' + id).classList.remove('active'); }
+function switchPage(page) {
+    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+    const target = document.getElementById('page-' + page);
+    if(target) target.classList.add('active');
+    
+    // تحديث حالة الشريط السفلي
+    document.querySelectorAll('.bottom-nav button').forEach(btn => btn.style.color = '#777');
+    const activeBtn = document.querySelector(`.bottom-nav button[onclick*="switchPage('${page}')"]`);
+    if(activeBtn) activeBtn.style.color = 'var(--primary)';
 
-document.querySelectorAll('.modal-overlay').forEach(el => {
-    el.addEventListener('click', function(e) {
-        if(e.target === this) this.classList.remove('active');
-    });
-});
-
-function switchSalesMode(mode) {
-    if(mode === 'add') {
-        document.getElementById('saleModeAdd').style.background = 'var(--primary)';
-        document.getElementById('saleModeAdd').style.color = 'white';
-        document.getElementById('saleModeReturn').style.background = '#eee';
-        document.getElementById('saleModeReturn').style.color = '#333';
-        document.getElementById('saleAddFields').style.display = 'block';
-        document.getElementById('saleReturnFields').style.display = 'none';
-    } else {
-        document.getElementById('saleModeReturn').style.background = 'var(--primary)';
-        document.getElementById('saleModeReturn').style.color = 'white';
-        document.getElementById('saleModeAdd').style.background = '#eee';
-        document.getElementById('saleModeAdd').style.color = '#333';
-        document.getElementById('saleAddFields').style.display = 'none';
-        document.getElementById('saleReturnFields').style.display = 'block';
-        updateSelects('returnProduct');
-    }
-}
-
-function switchPurchaseMode(mode) {
-    if(mode === 'add') {
-        document.getElementById('purchaseModeAdd').style.background = 'var(--primary)';
-        document.getElementById('purchaseModeAdd').style.color = 'white';
-        document.getElementById('purchaseModeReturn').style.background = '#eee';
-        document.getElementById('purchaseModeReturn').style.color = '#333';
-        document.getElementById('purchaseAddFields').style.display = 'block';
-        document.getElementById('purchaseReturnFields').style.display = 'none';
-    } else {
-        document.getElementById('purchaseModeReturn').style.background = 'var(--primary)';
-        document.getElementById('purchaseModeReturn').style.color = 'white';
-        document.getElementById('purchaseModeAdd').style.background = '#eee';
-        document.getElementById('purchaseModeAdd').style.color = '#333';
-        document.getElementById('purchaseAddFields').style.display = 'none';
-        document.getElementById('purchaseReturnFields').style.display = 'block';
-        updateSelects('returnPurchaseProduct');
-    }
+    // تحديث حالة الشريط الجانبي
+    document.querySelectorAll('.sidebar .nav-btn').forEach(btn => btn.style.background = 'rgba(255,255,255,0.1)');
+    const activeSideBtn = document.querySelector(`.sidebar .nav-btn[onclick*="switchPage('${page}')"]`);
+    if(activeSideBtn) activeSideBtn.style.background = 'rgba(255,255,255,0.3)';
+    
+    if(page === 'reports') updateReportSelects();
 }
 
 // ============================================
 // 5. عرض البيانات
 // ============================================
-function updateSelects(targetId = null) {
+function updateSelects() {
     if(!appData.currentUser) return;
     const data = getData();
-    const selectors = ['saleProduct', 'purchaseProduct'];
-    if(targetId) selectors.push(targetId);
-    selectors.forEach(id => {
-        const sel = document.getElementById(id);
+    document.querySelectorAll('#saleProduct, #purchaseProduct, #returnProduct, #returnPurchaseProduct').forEach(sel => {
         if(sel) {
             sel.innerHTML = '<option value="">اختر المنتج</option>';
             data.products.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name} (${p.qty})</option>`);
         }
     });
+}
+
+function updateReportSelects() {
+    const data = getData();
+    const select = document.getElementById('statementClientSelect');
+    if(select) {
+        select.innerHTML = '<option value="">-- اختر العميل --</option>';
+        data.clients.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+    }
 }
 
 function updateUI() {
@@ -193,7 +165,6 @@ function updateUI() {
     `).join('');
 
     document.getElementById('treasuryDisplay').textContent = data.treasury;
-    
     let logHtml = '';
     logHtml += data.treasuryLog.slice().reverse().map(t => `
         <div class="list-item"><span>${t.desc}</span><span style="font-weight:bold;color:${t.amount > 0 ? 'var(--secondary)' : 'var(--danger)'};">${t.amount} ج.م</span></div>
@@ -205,6 +176,14 @@ function updateUI() {
         <div class="list-item" style="color:var(--secondary);"><span>💰 تحصيل من ${c.client}</span><span style="font-weight:bold;">+${c.amount} ج.م</span></div>
     `).join('');
     document.getElementById('treasuryLog').innerHTML = logHtml || '<div style="text-align:center;color:#777;padding:10px;">لا توجد حركات مالية</div>';
+
+    // عرض المبيعات والمشتريات
+    document.getElementById('saleList').innerHTML = data.sales.slice().reverse().map(s => `
+        <div class="list-item"><span>${s.client} - ${s.product}</span><span>${s.total} ج.م</span></div>
+    `).join('');
+    document.getElementById('purchaseList').innerHTML = data.purchases.slice().reverse().map(p => `
+        <div class="list-item"><span>${p.supplier} - ${p.product}</span><span>${p.total} ج.م</span></div>
+    `).join('');
 }
 
 // ============================================
@@ -223,7 +202,6 @@ function addContact() {
     document.getElementById('contactPhone').value = '';
     document.getElementById('contactAddress').value = '';
     updateUI();
-    closeModal('clients');
     showToast('تم إضافة جهة الاتصال');
 }
 
@@ -239,7 +217,6 @@ function addProduct() {
     document.getElementById('prodName').value = '';
     document.getElementById('prodQty').value = '';
     updateUI();
-    closeModal('products');
     showToast('تم إضافة المنتج');
 }
 
@@ -262,7 +239,6 @@ function addSale() {
     }
     saveLocal();
     updateUI();
-    closeModal('sales');
     showToast(`بيع بقيمة ${total} ج.م`);
 }
 
@@ -281,7 +257,6 @@ function addSaleReturn() {
     data.treasuryLog.push({ desc: `مرتجع بيع - ${client}`, amount: -total });
     saveLocal();
     updateUI();
-    closeModal('sales');
     showToast(`تم استلام مرتجع بقيمة ${total} ج.م`);
 }
 
@@ -301,7 +276,6 @@ function addPurchase() {
     data.treasuryLog.push({ desc: `شراء من ${supplier}`, amount: -total });
     saveLocal();
     updateUI();
-    closeModal('purchases');
     showToast(`شراء بقيمة ${total} ج.م`);
 }
 
@@ -321,27 +295,22 @@ function addPurchaseReturn() {
     data.treasuryLog.push({ desc: `مرتجع شراء من ${supplier}`, amount: total });
     saveLocal();
     updateUI();
-    closeModal('purchases');
     showToast(`تم إرجاع منتجات بقيمة ${total} ج.م`);
 }
 
 // ============================================
-// 7. الخزنة والتحصيل
+// 7. الخزنة
 // ============================================
 function collectDebt() {
     const data = getData();
     const client = document.getElementById('collectClient').value.trim();
     const amount = parseFloat(document.getElementById('collectAmount').value);
     if(!client || !amount || amount <= 0) return showToast('أدخل اسم العميل والمبلغ');
-    
-    // التحقق من وجود العميل (مهم جداً)
     const clientExists = data.clients.find(c => c.name === client);
-    if(!clientExists) return showToast('العميل غير موجود في قاعدة البيانات');
-
+    if(!clientExists) return showToast('العميل غير موجود');
     data.treasury += amount;
     data.collections.push({ id: Date.now().toString(), client, amount });
     data.treasuryLog.push({ desc: `تحصيل من ${client}`, amount: amount });
-    
     saveLocal();
     document.getElementById('collectClient').value = '';
     document.getElementById('collectAmount').value = '';
@@ -354,7 +323,7 @@ function addExpense() {
     const desc = document.getElementById('expenseDesc').value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount').value);
     if(!desc || !amount || amount <= 0) return showToast('أدخل البيان والمبلغ');
-    if(data.treasury < amount) return showToast('الرصيد غير كافي لدفع المصروف');
+    if(data.treasury < amount) return showToast('الرصيد غير كافي');
     data.treasury -= amount;
     data.expenses.push({ id: Date.now().toString(), desc, amount });
     saveLocal();
@@ -390,7 +359,42 @@ function withdrawTreasury() {
 }
 
 // ============================================
-// 8. التقارير (التصميم الداكن المتقدم)
+// 8. الباركود (Scanner)
+// ============================================
+function openBarcodeScanner() {
+    document.getElementById('barcodeModal').style.display = 'flex';
+    html5Qrcode = new Html5Qrcode("reader");
+    html5Qrcode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+            const data = getData();
+            const product = data.products.find(p => p.name === decodedText || p.id === decodedText);
+            if (product) {
+                showToast(`✅ تم التعرف على المنتج: ${product.name}`);
+                document.getElementById('saleProduct').value = product.id;
+                stopBarcodeScanner();
+            } else {
+                showToast('⚠️ المنتج غير موجود');
+            }
+        },
+        (err) => {}
+    ).catch(err => { showToast('⚠️ خطأ في الكاميرا'); });
+}
+
+function stopBarcodeScanner() {
+    if (html5Qrcode) {
+        html5Qrcode.stop().then(() => {
+            html5Qrcode.clear();
+            document.getElementById('barcodeModal').style.display = 'none';
+        }).catch(() => { document.getElementById('barcodeModal').style.display = 'none'; });
+    } else {
+        document.getElementById('barcodeModal').style.display = 'none';
+    }
+}
+
+// ============================================
+// 9. التقارير
 // ============================================
 function showReport(type) {
     const data = getData();
@@ -401,6 +405,7 @@ function showReport(type) {
     const profit = totalSales - totalPurchases - totalExpenses;
     
     let html = '';
+    
     if(type === 'income') {
         html = `
             <div style="background:#252538; border-radius:12px; padding:15px; margin-bottom:10px;">
@@ -461,6 +466,69 @@ function showReport(type) {
                 </div>
             </div>
         `;
+    } else if(type === 'statement') {
+        const clientName = document.getElementById('statementClientSelect').value;
+        if(!clientName) {
+            document.getElementById('statementClientField').style.display = 'block';
+            html = `<div style="color:#aaa; text-align:center; padding:20px;">الرجاء اختيار العميل من القائمة</div>`;
+        } else {
+            document.getElementById('statementClientField').style.display = 'block';
+            // جمع العمليات الخاصة بالعميل
+            const clientSales = data.sales.filter(s => s.client === clientName);
+            const clientCollections = data.collections.filter(c => c.client === clientName);
+            
+            let balance = 0;
+            let rows = '';
+            
+            // عرض المبيعات
+            clientSales.forEach(s => {
+                balance += s.total;
+                rows += `
+                    <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
+                        <span style="color:#aaa;">${new Date(s.id).toLocaleDateString()}</span>
+                        <span style="color:#fff;">بيع - ${s.product}</span>
+                        <span style="color:#E17055;">${s.total} ج.م</span>
+                        <span style="color:#fff;">${balance} ج.م</span>
+                    </div>
+                `;
+            });
+
+            // عرض التحصيلات
+            clientCollections.forEach(c => {
+                balance -= c.amount;
+                rows += `
+                    <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
+                        <span style="color:#aaa;">${new Date(c.id).toLocaleDateString()}</span>
+                        <span style="color:#fff;">تحصيل</span>
+                        <span style="color:#00B894;">${c.amount} ج.م</span>
+                        <span style="color:#fff;">${balance} ج.م</span>
+                    </div>
+                `;
+            });
+
+            if(!rows) {
+                html = `<div style="color:#aaa; text-align:center; padding:20px;">لا توجد معاملات لهذا العميل</div>`;
+            } else {
+                html = `
+                    <div style="background:#252538; border-radius:12px; padding:15px;">
+                        <div style="text-align:center; border-bottom:1px solid #444; padding-bottom:10px; margin-bottom:10px;">
+                            <span style="color:#fff; font-size:16px; font-weight:bold;">📋 كشف حساب ${clientName}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:2px solid #00B894; font-weight:bold;">
+                            <span style="color:#fff;">التاريخ</span>
+                            <span style="color:#fff;">البيان</span>
+                            <span style="color:#fff;">المبلغ</span>
+                            <span style="color:#fff;">الرصيد</span>
+                        </div>
+                        ${rows}
+                        <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894; font-weight:bold;">
+                            <span style="color:#fff;">الرصيد النهائي</span>
+                            <span style="color:${balance > 0 ? '#E17055' : '#00B894'}; font-weight:bold;">${balance} ج.م</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
     } else {
         html = `<div style="color:#aaa; text-align:center; padding:20px;">جاري تطوير هذا التقرير</div>`;
     }
@@ -468,7 +536,7 @@ function showReport(type) {
 }
 
 // ============================================
-// 9. التوست
+// 10. التوست والطباعة
 // ============================================
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -478,7 +546,7 @@ function showToast(msg) {
 }
 
 // ============================================
-// 10. بدء التشغيل
+// 11. بدء التشغيل
 // ============================================
 loadLocal();
 if(appData.currentUser && appData.users[appData.currentUser]) {
@@ -486,5 +554,6 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     document.getElementById('appContainer').style.display = 'block';
     document.getElementById('userDisplay').textContent = appData.currentUser;
     updateUI();
+    switchPage('dashboard');
 }
-console.log('✅ نظام راشد V25 - الخزنة المنظمة والتقارير الشيك');
+console.log('✅ نظام راشد V26 - النسخة المتكاملة للموبايل والكمبيوتر');

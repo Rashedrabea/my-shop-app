@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V25 - التصميم المتقدم</title>
+    <title>نظام راشد V26 - ERP Pro</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -15,7 +15,7 @@
     <!-- شاشة الدخول -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V25</h2>
+            <h2>نظام راشد V26</h2>
             <div id="loginForm">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
                 <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -24,7 +24,7 @@
             </div>
             <div id="registerForm" style="display:none;">
                 <input type="text" id="regUser" placeholder="اسم المستخدم الجديد">
-                <input type="password" id="regPass" placeholder="كلمة المرور">
+                <input type="password" id="regPass" placeholder="कلمة المرور">
                 <input type="password" id="regPassConfirm" placeholder="تأكيد كلمة المرور">
                 <button class="btn-auth btn-green" onclick="handleRegister()">إنشاء الحساب</button>
                 <button class="btn-auth btn-back" onclick="toggleAuthMode()">عودة للدخول</button>
@@ -34,176 +34,200 @@
 
     <!-- التطبيق الرئيسي -->
     <div id="appContainer" style="display:none;">
-        <div class="top-bar">
-            <div class="brand">راشد V25</div>
-            <div class="user-info">👤 <span id="userDisplay">admin</span></div>
-        </div>
-
-        <div class="dashboard-grid">
-            <div class="dash-card card-sales" onclick="openModal('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
-            <div class="dash-card card-purchases" onclick="openModal('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></div>
-            <div class="dash-card card-products" onclick="openModal('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
-            <div class="dash-card card-clients" onclick="openModal('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
-            <div class="dash-card card-treasury" onclick="openModal('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
-            <div class="dash-card card-reports" onclick="openModal('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
-        </div>
-    </div>
-
-    <!-- ===== مودال المبيعات ===== -->
-    <div class="modal-overlay" id="modal-sales">
-        <div class="modal-box">
-            <div class="modal-header"><h2>🛒 مبيعات</h2><button class="modal-close" onclick="closeModal('sales')">&times;</button></div>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button onclick="switchSalesMode('add')" id="saleModeAdd" style="flex:1; background:var(--primary); color:white; border:none; border-radius:8px; padding:8px; cursor:pointer;">تسجيل بيع</button>
-                <button onclick="switchSalesMode('return')" id="saleModeReturn" style="flex:1; background:#eee; color:#333; border:none; border-radius:8px; padding:8px; cursor:pointer;">مرتجع بيع</button>
-            </div>
-            <div id="saleAddFields">
-                <div class="form-group"><label>العميل</label><input type="text" id="saleClient" placeholder="اسم العميل"></div>
-                <div class="form-group"><label>المنتـج</label><select id="saleProduct"><option>اختر المنتج</option></select></div>
-                <div class="form-group"><label>الكمية</label><input type="number" id="saleQty" value="1"></div>
-                <div class="form-group"><label>سعر البيع</label><input type="number" id="salePrice"></div>
-                <div class="form-group"><label>نوع الدفع</label><select id="saleType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
-                <button class="btn-main" onclick="addSale()">تسجيل البيع</button>
-            </div>
-            <div id="saleReturnFields" style="display:none;">
-                <div class="form-group"><label>العميل (مرتجع)</label><input type="text" id="returnClient" placeholder="اسم العميل"></div>
-                <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnProduct"><option>اختر المنتج</option></select></div>
-                <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnQty" value="1"></div>
-                <div class="form-group"><label>سعر البيع عند الإرجاع</label><input type="number" id="returnPrice"></div>
-                <button class="btn-main" onclick="addSaleReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== مودال المشتريات ===== -->
-    <div class="modal-overlay" id="modal-purchases">
-        <div class="modal-box">
-            <div class="modal-header"><h2>🚚 مشتريات</h2><button class="modal-close" onclick="closeModal('purchases')">&times;</button></div>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button onclick="switchPurchaseMode('add')" id="purchaseModeAdd" style="flex:1; background:var(--primary); color:white; border:none; border-radius:8px; padding:8px; cursor:pointer;">تسجيل شراء</button>
-                <button onclick="switchPurchaseMode('return')" id="purchaseModeReturn" style="flex:1; background:#eee; color:#333; border:none; border-radius:8px; padding:8px; cursor:pointer;">مرتجع شراء</button>
-            </div>
-            <div id="purchaseAddFields">
-                <div class="form-group"><label>المورد</label><input type="text" id="purchaseSupplier" placeholder="اسم المورد"></div>
-                <div class="form-group"><label>المنتـج</label><select id="purchaseProduct"><option>اختر المنتج</option></select></div>
-                <div class="form-group"><label>الكمية</label><input type="number" id="purchaseQty" value="1"></div>
-                <div class="form-group"><label>سعر الشراء</label><input type="number" id="purchasePrice"></div>
-                <button class="btn-main" onclick="addPurchase()">تسجيل الشراء</button>
-            </div>
-            <div id="purchaseReturnFields" style="display:none;">
-                <div class="form-group"><label>المورد (مرتجع)</label><input type="text" id="returnSupplier" placeholder="اسم المورد"></div>
-                <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnPurchaseProduct"><option>اختر المنتج</option></select></div>
-                <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnPurchaseQty" value="1"></div>
-                <div class="form-group"><label>سعر الشراء عند الإرجاع</label><input type="number" id="returnPurchasePrice"></div>
-                <button class="btn-main" onclick="addPurchaseReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== مودال المخزون ===== -->
-    <div class="modal-overlay" id="modal-products">
-        <div class="modal-box">
-            <div class="modal-header"><h2>📦 المخزون</h2><button class="modal-close" onclick="closeModal('products')">&times;</button></div>
-            <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
-            <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
-            <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
-            <div class="form-group"><label>سعر البيع</label><input type="number" id="prodSell"></div>
-            <button class="btn-main" onclick="addProduct()">إضافة منتج</button>
-            <div id="productList" class="list-view"></div>
-        </div>
-    </div>
-
-    <!-- ===== مودال جهات الاتصال ===== -->
-    <div class="modal-overlay" id="modal-clients">
-        <div class="modal-box">
-            <div class="modal-header"><h2>👤 جهات الاتصال</h2><button class="modal-close" onclick="closeModal('clients')">&times;</button></div>
-            <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
-            <div class="form-group"><label>رقم الهاتف</label><input type="text" id="contactPhone" placeholder="مثال: 01012345678"></div>
-            <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress" placeholder="العنوان بالتفصيل"></div>
-            <div class="form-group"><label>النوع</label><select id="contactType"><option value="عميل">عميل</option><option value="مورد">مورد</option><option value="كلاهما">كلاهما</option></select></div>
-            <button class="btn-main" onclick="addContact()">إضافة</button>
-            <div id="clientList" class="list-view"></div>
-        </div>
-    </div>
-
-    <!-- ===== مودال الخزنة (التصميم الجديد الكبير) ===== -->
-    <div class="modal-overlay" id="modal-treasury">
-        <div class="modal-box">
-            <div class="modal-header"><h2>💰 الخزنة</h2><button class="modal-close" onclick="closeModal('treasury')">&times;</button></div>
-            
-            <!-- رصيد الخزنة الكلي -->
-            <div class="treasury-balance">
-                رصيد الخزنة الكلي: <span id="treasuryDisplay">0</span> ج.م
+        
+        <!-- الشريط الجانبي (للنسخة المكتبية) والشريط العلوي -->
+        <div class="app-layout">
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-brand">راشد V26</div>
+                <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
+                <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
+                <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i> المشتريات</button>
+                <button class="nav-btn" onclick="switchPage('products')"><i class="fas fa-warehouse"></i> المخزون</button>
+                <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> جهات الاتصال</button>
+                <button class="nav-btn" onclick="switchPage('treasury')"><i class="fas fa-coins"></i> الخزنة</button>
+                <button class="nav-btn" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i> التقارير</button>
+                <button class="nav-btn" onclick="logout()" style="color:var(--danger); margin-top:auto;"><i class="fas fa-sign-out-alt"></i> خروج</button>
             </div>
 
-            <!-- قسم 1: التحصيل (منفصل وبشكل واضح) -->
-            <div class="treasury-section">
-                <h3 class="section-title-green">💰 تحصيل دين من عميل</h3>
-                <div class="form-group">
-                    <label>اسم العميل</label>
-                    <input type="text" id="collectClient" placeholder="اكتب اسم العميل">
+            <div class="main-content">
+                <div class="top-bar">
+                    <div class="brand">راشد V26</div>
+                    <div class="user-info">👤 <span id="userDisplay">admin</span></div>
                 </div>
-                <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
-                    <div style="flex:1;">
-                        <label>المبلغ</label>
-                        <input type="number" id="collectAmount" placeholder="المبلغ">
-                    </div>
-                    <button onclick="collectDebt()" class="btn-green" style="height:42px;">تحصيل</button>
-                </div>
-            </div>
 
-            <!-- قسم 2: الخزنة الرئيسية (إيداع وسحب) -->
-            <div class="treasury-section">
-                <h3 class="section-title-blue">🏦 الخزنة الرئيسية</h3>
-                <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
-                    <div style="flex:1;">
-                        <label>المبلغ</label>
-                        <input type="number" id="treasuryAmount" placeholder="المبلغ">
-                    </div>
-                    <button onclick="addToTreasury()" class="btn-green" style="height:42px;">إيداع</button>
-                    <button onclick="withdrawTreasury()" class="btn-red" style="height:42px;">سحب</button>
-                </div>
-            </div>
-
-            <!-- قسم 3: المصروفات -->
-            <div class="treasury-section">
-                <h3 class="section-title-red">💸 تسجيل مصروف</h3>
-                <div class="form-group" style="display:flex; gap:10px;">
-                    <div style="flex:2;">
-                        <label>بيان المصروف</label>
-                        <input type="text" id="expenseDesc" placeholder="مثال: كهرباء">
-                    </div>
-                    <div style="flex:1;">
-                        <label>المبلغ</label>
-                        <input type="number" id="expenseAmount" placeholder="المبلغ">
+                <!-- الصفحات -->
+                <div id="page-dashboard" class="page active">
+                    <div class="dashboard-grid">
+                        <div class="dash-card card-sales" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
+                        <div class="dash-card card-purchases" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></div>
+                        <div class="dash-card card-products" onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
+                        <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
+                        <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
+                        <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
                     </div>
                 </div>
-                <button onclick="addExpense()" class="btn-red" style="width:100%;">تسجيل المصروف</button>
-            </div>
 
-            <!-- السجل المالي -->
-            <div class="treasury-section" style="border:none; background:#f9f9f9;">
-                <h3 style="margin-top:0; font-size:16px;">📜 سجل الحركات المالية</h3>
-                <div id="treasuryLog" class="list-view"></div>
+                <div id="page-sales" class="page">
+                    <!-- محتوى المبيعات -->
+                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
+                        <div class="modal-header"><h2>🛒 المبيعات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <!-- ... (حقول المبيعات كما هي) ... -->
+                        <div style="display:flex; gap:10px; margin-bottom:15px;">
+                            <button onclick="switchSalesMode('add')" id="saleModeAdd" class="btn-main" style="flex:1;">تسجيل بيع</button>
+                            <button onclick="switchSalesMode('return')" id="saleModeReturn" class="btn-main" style="flex:1; background:#eee; color:#333;">مرتجع بيع</button>
+                        </div>
+                        <!-- زر الباركود -->
+                        <button onclick="openBarcodeScanner()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:8px; margin-bottom:10px; cursor:pointer;">
+                            📷 مسح باركود المنتج
+                        </button>
+                        <!-- باقي الحقول -->
+                        <div id="saleAddFields">
+                            <div class="form-group"><label>العميل</label><input type="text" id="saleClient" placeholder="اسم العميل"></div>
+                            <div class="form-group"><label>المنتـج</label><select id="saleProduct"><option>اختر المنتج</option></select></div>
+                            <div class="form-group"><label>الكمية</label><input type="number" id="saleQty" value="1"></div>
+                            <div class="form-group"><label>سعر البيع</label><input type="number" id="salePrice"></div>
+                            <div class="form-group"><label>نوع الدفع</label><select id="saleType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
+                            <button class="btn-main" onclick="addSale()">تسجيل البيع</button>
+                        </div>
+                        <div id="saleReturnFields" style="display:none;">
+                            <!-- حقول المرتجع -->
+                            <div class="form-group"><label>العميل (مرتجع)</label><input type="text" id="returnClient" placeholder="اسم العميل"></div>
+                            <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnProduct"><option>اختر المنتج</option></select></div>
+                            <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnQty" value="1"></div>
+                            <div class="form-group"><label>سعر البيع عند الإرجاع</label><input type="number" id="returnPrice"></div>
+                            <button class="btn-main" onclick="addSaleReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
+                        </div>
+                        <div id="saleList" class="list-view" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+
+                <div id="page-purchases" class="page">
+                    <!-- محتوى المشتريات -->
+                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
+                        <div class="modal-header"><h2>🚚 المشتريات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div style="display:flex; gap:10px; margin-bottom:15px;">
+                            <button onclick="switchPurchaseMode('add')" id="purchaseModeAdd" class="btn-main" style="flex:1;">تسجيل شراء</button>
+                            <button onclick="switchPurchaseMode('return')" id="purchaseModeReturn" class="btn-main" style="flex:1; background:#eee; color:#333;">مرتجع شراء</button>
+                        </div>
+                        <div id="purchaseAddFields">
+                            <div class="form-group"><label>المورد</label><input type="text" id="purchaseSupplier" placeholder="اسم المورد"></div>
+                            <div class="form-group"><label>المنتـج</label><select id="purchaseProduct"><option>اختر المنتج</option></select></div>
+                            <div class="form-group"><label>الكمية</label><input type="number" id="purchaseQty" value="1"></div>
+                            <div class="form-group"><label>سعر الشراء</label><input type="number" id="purchasePrice"></div>
+                            <button class="btn-main" onclick="addPurchase()">تسجيل الشراء</button>
+                        </div>
+                        <div id="purchaseReturnFields" style="display:none;">
+                            <div class="form-group"><label>المورد (مرتجع)</label><input type="text" id="returnSupplier" placeholder="اسم المورد"></div>
+                            <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnPurchaseProduct"><option>اختر المنتج</option></select></div>
+                            <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnPurchaseQty" value="1"></div>
+                            <div class="form-group"><label>سعر الشراء عند الإرجاع</label><input type="number" id="returnPurchasePrice"></div>
+                            <button class="btn-main" onclick="addPurchaseReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
+                        </div>
+                        <div id="purchaseList" class="list-view" style="margin-top:15px;"></div>
+                    </div>
+                </div>
+
+                <div id="page-products" class="page">
+                    <!-- محتوى المخزون -->
+                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
+                        <div class="modal-header"><h2>📦 المخزون</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
+                        <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
+                        <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
+                        <div class="form-group"><label>سعر البيع</label><input type="number" id="prodSell"></div>
+                        <button class="btn-main" onclick="addProduct()">إضافة منتج</button>
+                        <div id="productList" class="list-view"></div>
+                    </div>
+                </div>
+
+                <div id="page-clients" class="page">
+                    <!-- محتوى جهات الاتصال -->
+                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
+                        <div class="modal-header"><h2>👤 جهات الاتصال</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
+                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="contactPhone" placeholder="مثال: 01012345678"></div>
+                        <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress" placeholder="العنوان بالتفصيل"></div>
+                        <div class="form-group"><label>النوع</label><select id="contactType"><option value="عميل">عميل</option><option value="مورد">مورد</option><option value="كلاهما">كلاهما</option></select></div>
+                        <button class="btn-main" onclick="addContact()">إضافة</button>
+                        <div id="clientList" class="list-view"></div>
+                    </div>
+                </div>
+
+                <div id="page-treasury" class="page">
+                    <!-- محتوى الخزنة -->
+                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
+                        <div class="modal-header"><h2>💰 الخزنة</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div class="treasury-balance">رصيد الخزنة الكلي: <span id="treasuryDisplay">0</span> ج.م</div>
+                        
+                        <div class="treasury-section">
+                            <h3 class="section-title-green">💰 تحصيل دين من عميل</h3>
+                            <div class="form-group"><label>اسم العميل</label><input type="text" id="collectClient" placeholder="اكتب اسم العميل"></div>
+                            <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+                                <div style="flex:1;"><label>المبلغ</label><input type="number" id="collectAmount" placeholder="المبلغ"></div>
+                                <button onclick="collectDebt()" class="btn-green" style="height:42px;">تحصيل</button>
+                            </div>
+                        </div>
+
+                        <div class="treasury-section">
+                            <h3 class="section-title-blue">🏦 الخزنة الرئيسية</h3>
+                            <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
+                                <div style="flex:1;"><label>المبلغ</label><input type="number" id="treasuryAmount" placeholder="المبلغ"></div>
+                                <button onclick="addToTreasury()" class="btn-green" style="height:42px;">إيداع</button>
+                                <button onclick="withdrawTreasury()" class="btn-red" style="height:42px;">سحب</button>
+                            </div>
+                        </div>
+
+                        <div class="treasury-section">
+                            <h3 class="section-title-red">💸 تسجيل مصروف</h3>
+                            <div class="form-group" style="display:flex; gap:10px;">
+                                <div style="flex:2;"><label>بيان المصروف</label><input type="text" id="expenseDesc" placeholder="مثال: كهرباء"></div>
+                                <div style="flex:1;"><label>المبلغ</label><input type="number" id="expenseAmount" placeholder="المبلغ"></div>
+                            </div>
+                            <button onclick="addExpense()" class="btn-red" style="width:100%;">تسجيل المصروف</button>
+                        </div>
+                        
+                        <div id="treasuryLog" class="list-view"></div>
+                    </div>
+                </div>
+
+                <div id="page-reports" class="page">
+                    <!-- محتوى التقارير -->
+                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
+                        <div class="modal-header"><h2>📊 التقارير المالية</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                            <button onclick="showReport('income')" class="btn-main" style="background:#00B894;">📈 قائمة الدخل</button>
+                            <button onclick="showReport('balance')" class="btn-main" style="background:#6C5CE7;">⚖️ الميزانية</button>
+                            <button onclick="showReport('daily')" class="btn-main" style="background:#E17055;">📅 تقرير اليوم</button>
+                            <button onclick="showReport('statement')" class="btn-main" style="background:#FDCB6E; color:#333;">📋 كشف حساب</button>
+                        </div>
+                        <div class="form-group" id="statementClientField" style="display:none;">
+                            <label>اختر العميل لعرض كشف الحساب</label>
+                            <select id="statementClientSelect" onchange="showReport('statement')">
+                                <option value="">-- اختر العميل --</option>
+                            </select>
+                        </div>
+                        <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
+                    </div>
+                </div>
             </div>
+        </div>
+
+        <!-- الشريط السفلي للموبايل -->
+        <div class="bottom-nav">
+            <button onclick="switchPage('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
+            <button onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
+            <button onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></button>
+            <button onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></button>
+            <button onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></button>
         </div>
     </div>
 
-    <!-- ===== مودال التقارير (التصميم الشيك) ===== -->
-    <div class="modal-overlay" id="modal-reports">
-        <div class="modal-box">
-            <div class="modal-header"><h2>📊 التقارير المالية</h2><button class="modal-close" onclick="closeModal('reports')">&times;</button></div>
-            
-            <!-- الأزرار بألوان مميزة -->
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
-                <button onclick="showReport('income')" style="padding:12px; background:#00B894; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">📈 قائمة الدخل</button>
-                <button onclick="showReport('balance')" style="padding:12px; background:#6C5CE7; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">⚖️ الميزانية</button>
-                <button onclick="showReport('daily')" style="padding:12px; background:#E17055; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">📅 تقرير اليوم</button>
-                <button onclick="showReport('trial')" style="padding:12px; background:#FDCB6E; color:#333; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">📋 ميزان المراجعة</button>
-            </div>
-
-            <!-- نافذة التقرير -->
-            <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
+    <!-- نافذة الباركود -->
+    <div id="barcodeModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;justify-content:center;align-items:center;">
+        <div style="background:white;padding:20px;border-radius:16px;width:90%;max-width:400px;text-align:center;">
+            <h3 style="margin-top:0;">📸 مسح الباركود</h3>
+            <div id="reader" style="width:100%;"></div>
+            <button onclick="stopBarcodeScanner()" style="margin-top:15px;padding:10px 0;width:100%;background:var(--danger);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">إغلاق</button>
         </div>
     </div>
 
