@@ -60,7 +60,6 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
 .card-treasury { background: #00B894; color: white; border: none; }
 .card-reports { background: #2E4057; color: white; border: none; }
 
-/* الرسوم البيانية (تم إصلاح ظهورها تحت بعضها) */
 .charts-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -129,7 +128,7 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
     .bottom-nav { display: flex; }
     .main-content { padding: 15px 15px 80px 15px; height: auto; overflow-y: auto; }
     .dashboard-grid { grid-template-columns: 1fr 1fr; }
-    .charts-container { grid-template-columns: 1fr !important; } /* الرسوم تحت بعض في الموبايل */
+    .charts-container { grid-template-columns: 1fr !important; }
 }
 
 @media print {

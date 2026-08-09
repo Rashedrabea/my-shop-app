@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V28.2 - الإصدار النهائي
+   نظام راشد V28.3 - إصلاح الرسم البياني والطباعة
    ============================================ */
 
 const firebaseConfig = {
@@ -16,11 +16,11 @@ let appData = { users: {}, currentUser: null };
 let chartInstances = {};
 
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV28.2'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV28.3'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV28.2', JSON.stringify(appData));
+        localStorage.setItem('RashedV28.3', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
@@ -91,7 +91,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV28.2', JSON.stringify(appData));
+                localStorage.setItem('RashedV28.3', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -416,26 +416,38 @@ function withdrawTreasury() {
 }
 
 // ============================================
-// الرسوم البيانية
+// الرسوم البيانية (تم إصلاح الـ undefined)
 // ============================================
 function drawCharts() {
     const data = getData();
+    // إذا مفيش بيانات، نرجع فاضي
+    if(data.sales.length === 0 && data.expenses.length === 0) {
+        if(chartInstances.sales) chartInstances.sales.destroy();
+        if(chartInstances.treasury) chartInstances.treasury.destroy();
+        return;
+    }
+
     const salesTotal = data.sales.reduce((s, i) => s + i.total, 0);
     const expensesTotal = data.expenses.reduce((s, i) => s + i.amount, 0);
     const treasury = data.treasury;
     const collectionsTotal = data.collections.reduce((s, i) => s + i.amount, 0);
 
-    // بيانات افتراضية عشان الرسم يظهر
-    const displaySales = salesTotal > 0 ? salesTotal : 100;
-    const displayExpenses = expensesTotal > 0 ? expensesTotal : 50;
-    const displayCollections = collectionsTotal > 0 ? collectionsTotal : 30;
-
+    // إزالة الـ undefined بإعطاء اسم واضح
     if(chartInstances.sales) chartInstances.sales.destroy();
     chartInstances.sales = new Chart(document.getElementById('salesChart'), {
         type: 'bar',
         data: {
             labels: ['مبيعات', 'مصروفات', 'تحصيل'],
-            datasets: [{ data: [displaySales, displayExpenses, displayCollections], backgroundColor: ['#00B894', '#E17055', '#FDCB6E'] }]
+            datasets: [{
+                label: 'الحركة المالية',
+                data: [salesTotal, expensesTotal, collectionsTotal],
+                backgroundColor: ['#00B894', '#E17055', '#FDCB6E']
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false } // إخفاء الـ undefined من فوق الرسم
+            }
         }
     });
 
@@ -444,7 +456,16 @@ function drawCharts() {
         type: 'doughnut',
         data: {
             labels: ['الخزنة', 'مصروفات'],
-            datasets: [{ data: [treasury > 0 ? treasury : 500, expensesTotal > 0 ? expensesTotal : 100], backgroundColor: ['#2E4057', '#E17055'] }]
+            datasets: [{
+                label: 'توزيع الرصيد',
+                data: [treasury, expensesTotal],
+                backgroundColor: ['#2E4057', '#E17055']
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { display: true, position: 'bottom' }
+            }
         }
     });
 }
@@ -480,10 +501,26 @@ function printSaleInvoice(id) {
     const data = getData();
     const sale = data.sales.find(s => s.id === id);
     if(!sale) return showToast('الفاتورة غير موجودة');
+    
+    // إنشاء نافذة جديدة للطباعة
     const win = window.open('', '_blank');
+    win.document.write(`
+        <html><head><title>طباعة الفاتورة</title>
+        <style>
+            body { margin: 0; padding: 20px; background: white; }
+            .print-area { max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 8px; text-align: right; border-bottom: 1px solid #ddd; }
+            th { background: #2E4057; color: white; }
+            h2 { margin: 0; }
+        </style>
+        </head><body>
+    `);
     win.document.write(generateInvoiceHTML(sale, 'sale'));
+    win.document.write(`</body></html>`);
     win.document.close();
-    win.print();
+    win.focus();
+    win.print(); // يفتح نافذة الطباعة مباشرة
 }
 
 function printPurchaseInvoice(id) {
@@ -491,16 +528,29 @@ function printPurchaseInvoice(id) {
     const purchase = data.purchases.find(p => p.id === id);
     if(!purchase) return showToast('الفاتورة غير موجودة');
     const win = window.open('', '_blank');
+    win.document.write(`
+        <html><head><title>طباعة الفاتورة</title>
+        <style>
+            body { margin: 0; padding: 20px; background: white; }
+            .print-area { max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { padding: 8px; text-align: right; border-bottom: 1px solid #ddd; }
+            th { background: #2E4057; color: white; }
+            h2 { margin: 0; }
+        </style>
+        </head><body>
+    `);
     win.document.write(generateInvoiceHTML(purchase, 'purchase'));
+    win.document.write(`</body></html>`);
     win.document.close();
+    win.focus();
     win.print();
 }
 
 function printAllInvoices() {
     const data = getData();
-    if(data.sales.length === 0 && data.purchases.length === 0) return showToast('لا توجد فواتير');
+    if(data.sales.length === 0) return showToast('لا توجد فواتير للطباعة');
     data.sales.forEach(s => printSaleInvoice(s.id));
-    data.purchases.forEach(p => printPurchaseInvoice(p.id));
 }
 
 // ============================================
@@ -716,4 +766,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     updateUI();
     switchPage('dashboard');
 }
-console.log('✅ نظام راشد V28.2 - الإصدار النهائي المتكامل');
+console.log('✅ نظام راشد V28.3 - إصلاح الرسم البياني والطباعة');
