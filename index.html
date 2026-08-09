@@ -1,226 +1,122 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V26.2 - التصميم النهائي</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-</head>
-<body>
+:root {
+    --primary: #2E4057; --secondary: #00B894; --accent: #FDCB6E; --danger: #E17055;
+    --bg: #F4F6F9; --card: #FFFFFF; --border: #E0E0E0; --radius: 16px;
+    --sidebar-width: 250px;
+}
+* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
 
-    <!-- شاشة الدخول -->
-    <div class="auth-container" id="authContainer">
-        <div class="auth-box">
-            <h2>نظام راشد V26.2</h2>
-            <div id="loginForm">
-                <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
-                <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
-                <button class="btn-auth" onclick="handleLogin()">دخول</button>
-                <button class="btn-auth btn-green" onclick="toggleAuthMode()">إنشاء حساب جديد</button>
-            </div>
-            <div id="registerForm" style="display:none;">
-                <input type="text" id="regUser" placeholder="اسم المستخدم الجديد">
-                <input type="password" id="regPass" placeholder="كلمة المرور">
-                <input type="password" id="regPassConfirm" placeholder="تأكيد كلمة المرور">
-                <button class="btn-auth btn-green" onclick="handleRegister()">إنشاء الحساب</button>
-                <button class="btn-auth btn-back" onclick="toggleAuthMode()">عودة للدخول</button>
-            </div>
-        </div>
-    </div>
+.app-wrapper { display: flex; width: 100%; max-width: 1200px; margin: 0 auto; height: 100vh; overflow: hidden; }
+.main-content { flex: 1; padding: 20px 20px 80px 20px; overflow-y: auto; height: 100vh; }
 
-    <!-- التطبيق الرئيسي -->
-    <div id="appContainer" style="display:none;">
-        
-        <div class="app-wrapper">
-            <!-- الشريط الجانبي للكمبيوتر (مخفي في الموبايل أوتوماتيك) -->
-            <div class="sidebar" id="sidebar">
-                <div class="sidebar-brand">📊 راشد</div>
-                <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
-                <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
-                <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i> المشتريات</button>
-                <button class="nav-btn" onclick="switchPage('products')"><i class="fas fa-warehouse"></i> المخزون</button>
-                <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> جهات الاتصال</button>
-                <button class="nav-btn" onclick="switchPage('treasury')"><i class="fas fa-coins"></i> الخزنة</button>
-                <button class="nav-btn" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i> التقارير</button>
-                <button class="nav-btn logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
-            </div>
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--primary); color: white;
+    display: flex; flex-direction: column; padding: 20px;
+    height: 100vh; border-radius: 0 16px 16px 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+.sidebar-brand { font-size: 24px; font-weight: bold; text-align: center; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar .nav-btn {
+    background: rgba(255,255,255,0.05); border: none; color: white; padding: 12px 15px;
+    border-radius: 10px; font-size: 14px; cursor: pointer; text-align: right;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 5px; transition: 0.2s;
+}
+.sidebar .nav-btn:hover { background: rgba(255,255,255,0.15); }
+.sidebar .logout-btn { margin-top: auto; background: rgba(225,112,85,0.2); color: #E17055; }
 
-            <!-- المحتوى الرئيسي -->
-            <div class="main-content">
-                
-                <!-- الشريط العلوي -->
-                <div class="top-bar">
-                    <div class="brand">نظام راشد <span class="version">V26.2</span></div>
-                    <div class="user-info">👤 <span id="userDisplay">admin</span></div>
-                </div>
+.bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: white; border-top: 1px solid #eee;
+    display: none; justify-content: space-around; padding: 8px 0; z-index: 100;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+}
+.bottom-nav button {
+    background: none; border: none; display: flex; flex-direction: column; align-items: center;
+    font-size: 10px; color: #777; cursor: pointer; gap: 2px;
+}
+.bottom-nav button i { font-size: 20px; }
+.bottom-nav button:hover { color: var(--primary); }
 
-                <!-- الصفحات -->
-                <div id="page-dashboard" class="page active">
-                    <div class="dashboard-grid">
-                        <div class="dash-card card-sales" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
-                        <div class="dash-card card-purchases" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></div>
-                        <div class="dash-card card-products" onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
-                        <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
-                        <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
-                        <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
-                    </div>
-                </div>
+.page { display: none; height: 100%; }
+.page.active { display: block; }
 
-                <div id="page-sales" class="page">
-                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
-                        <div class="modal-header"><h2>🛒 المبيعات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                        <div style="display:flex; gap:10px; margin-bottom:15px;">
-                            <button onclick="switchSalesMode('add')" id="saleModeAdd" class="btn-main" style="flex:1;">تسجيل بيع</button>
-                            <button onclick="switchSalesMode('return')" id="saleModeReturn" class="btn-main" style="flex:1; background:#eee; color:#333;">مرتجع بيع</button>
-                        </div>
-                        <button onclick="openBarcodeScanner()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:8px; margin-bottom:10px; cursor:pointer;">📷 مسح باركود المنتج</button>
-                        <div id="saleAddFields">
-                            <div class="form-group"><label>العميل</label><input type="text" id="saleClient" placeholder="اسم العميل"></div>
-                            <div class="form-group"><label>المنتـج</label><select id="saleProduct"><option>اختر المنتج</option></select></div>
-                            <div class="form-group"><label>الكمية</label><input type="number" id="saleQty" value="1"></div>
-                            <div class="form-group"><label>سعر البيع</label><input type="number" id="salePrice"></div>
-                            <div class="form-group"><label>نوع الدفع</label><select id="saleType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
-                            <button class="btn-main" onclick="addSale()">تسجيل البيع</button>
-                        </div>
-                        <div id="saleReturnFields" style="display:none;">
-                            <div class="form-group"><label>العميل (مرتجع)</label><input type="text" id="returnClient" placeholder="اسم العميل"></div>
-                            <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnProduct"><option>اختر المنتج</option></select></div>
-                            <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnQty" value="1"></div>
-                            <div class="form-group"><label>سعر البيع عند الإرجاع</label><input type="number" id="returnPrice"></div>
-                            <button class="btn-main" onclick="addSaleReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
-                        </div>
-                        <div id="saleList" class="list-view" style="margin-top:15px;"></div>
-                    </div>
-                </div>
+.top-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 2px solid var(--primary); margin-bottom: 20px; }
+.brand { font-size: 22px; font-weight: bold; color: var(--primary); }
+.version { font-size: 14px; color: #777; font-weight: normal; }
+.user-info { font-size: 14px; font-weight: bold; }
 
-                <div id="page-purchases" class="page">
-                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
-                        <div class="modal-header"><h2>🚚 المشتريات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                        <div style="display:flex; gap:10px; margin-bottom:15px;">
-                            <button onclick="switchPurchaseMode('add')" id="purchaseModeAdd" class="btn-main" style="flex:1;">تسجيل شراء</button>
-                            <button onclick="switchPurchaseMode('return')" id="purchaseModeReturn" class="btn-main" style="flex:1; background:#eee; color:#333;">مرتجع شراء</button>
-                        </div>
-                        <div id="purchaseAddFields">
-                            <div class="form-group"><label>المورد</label><input type="text" id="purchaseSupplier" placeholder="اسم المورد"></div>
-                            <div class="form-group"><label>المنتـج</label><select id="purchaseProduct"><option>اختر المنتج</option></select></div>
-                            <div class="form-group"><label>الكمية</label><input type="number" id="purchaseQty" value="1"></div>
-                            <div class="form-group"><label>سعر الشراء</label><input type="number" id="purchasePrice"></div>
-                            <div class="form-group"><label>نوع الدفع</label><select id="purchaseType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
-                            <button class="btn-main" onclick="addPurchase()">تسجيل الشراء</button>
-                        </div>
-                        <div id="purchaseReturnFields" style="display:none;">
-                            <div class="form-group"><label>المورد (مرتجع)</label><input type="text" id="returnSupplier" placeholder="اسم المورد"></div>
-                            <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnPurchaseProduct"><option>اختر المنتج</option></select></div>
-                            <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnPurchaseQty" value="1"></div>
-                            <div class="form-group"><label>سعر الشراء عند الإرجاع</label><input type="number" id="returnPurchasePrice"></div>
-                            <button class="btn-main" onclick="addPurchaseReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
-                        </div>
-                        <div id="purchaseList" class="list-view" style="margin-top:15px;"></div>
-                    </div>
-                </div>
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
+.dash-card {
+    background: white; border-radius: var(--radius); padding: 25px; text-align: center;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: 0.2s; border: 1px solid #f0f0f0;
+}
+.dash-card:hover { transform: translateY(-5px); }
+.dash-card i { font-size: 30px; display: block; margin-bottom: 8px; }
+.dash-card span { font-size: 14px; font-weight: bold; }
+.card-sales i { color: #2E4057; }
+.card-purchases i { color: #E17055; }
+.card-products i { color: #FDCB6E; }
+.card-clients i { color: #00B894; }
+.card-treasury { background: #00B894; color: white; border: none; }
+.card-reports { background: #2E4057; color: white; border: none; }
 
-                <div id="page-products" class="page">
-                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
-                        <div class="modal-header"><h2>📦 المخزون</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                        <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
-                        <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
-                        <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
-                        <div class="form-group"><label>سعر البيع</label><input type="number" id="prodSell"></div>
-                        <button class="btn-main" onclick="addProduct()">إضافة منتج</button>
-                        <div id="productList" class="list-view"></div>
-                    </div>
-                </div>
+.modal-box { background: white; border-radius: var(--radius); padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border: 1px solid #eee; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #777; }
 
-                <div id="page-clients" class="page">
-                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
-                        <div class="modal-header"><h2>👤 جهات الاتصال</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                        <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
-                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="contactPhone" placeholder="مثال: 01012345678"></div>
-                        <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress" placeholder="العنوان بالتفصيل"></div>
-                        <div class="form-group"><label>النوع</label><select id="contactType"><option value="عميل">عميل</option><option value="مورد">مورد</option><option value="كلاهما">كلاهما</option></select></div>
-                        <button class="btn-main" onclick="addContact()">إضافة</button>
-                        <div id="clientList" class="list-view"></div>
-                    </div>
-                </div>
+.btn-toggle {
+    flex: 1; padding: 10px; border: none; border-radius: 8px; background: #eee; color: #333; cursor: pointer; font-weight: bold; transition: 0.2s;
+}
+.btn-toggle.active { background: var(--primary); color: white; }
 
-                <div id="page-treasury" class="page">
-                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
-                        <div class="modal-header"><h2>💰 الخزنة</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                        <div class="treasury-balance">رصيد الخزنة الكلي: <span id="treasuryDisplay">0</span> ج.م</div>
-                        <div class="treasury-section">
-                            <h3 class="section-title-green">💰 تحصيل دين من عميل</h3>
-                            <div class="form-group"><label>اسم العميل</label><input type="text" id="collectClient" placeholder="اكتب اسم العميل"></div>
-                            <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
-                                <div style="flex:1;"><label>المبلغ</label><input type="number" id="collectAmount" placeholder="المبلغ"></div>
-                                <button onclick="collectDebt()" class="btn-green" style="height:42px;">تحصيل</button>
-                            </div>
-                        </div>
-                        <div class="treasury-section">
-                            <h3 class="section-title-blue">🏦 الخزنة الرئيسية</h3>
-                            <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
-                                <div style="flex:1;"><label>المبلغ</label><input type="number" id="treasuryAmount" placeholder="المبلغ"></div>
-                                <button onclick="addToTreasury()" class="btn-green" style="height:42px;">إيداع</button>
-                                <button onclick="withdrawTreasury()" class="btn-red" style="height:42px;">سحب</button>
-                            </div>
-                        </div>
-                        <div class="treasury-section">
-                            <h3 class="section-title-red">💸 تسجيل مصروف</h3>
-                            <div class="form-group" style="display:flex; gap:10px;">
-                                <div style="flex:2;"><label>بيان المصروف</label><input type="text" id="expenseDesc" placeholder="مثال: كهرباء"></div>
-                                <div style="flex:1;"><label>المبلغ</label><input type="number" id="expenseAmount" placeholder="المبلغ"></div>
-                            </div>
-                            <button onclick="addExpense()" class="btn-red" style="width:100%;">تسجيل المصروف</button>
-                        </div>
-                        <div id="treasuryLog" class="list-view"></div>
-                    </div>
-                </div>
+.treasury-balance { font-size: 22px; font-weight: bold; text-align: center; padding: 15px; background: var(--primary); color: white; border-radius: var(--radius); margin-bottom: 15px; }
+.treasury-section { background: white; border: 1px solid #eee; border-radius: var(--radius); padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+.section-title-green { color: var(--secondary); margin-top: 0; font-size: 16px; border-bottom: 2px solid var(--secondary); padding-bottom: 8px; margin-bottom: 12px; }
+.section-title-blue { color: var(--primary); margin-top: 0; font-size: 16px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 12px; }
+.section-title-red { color: var(--danger); margin-top: 0; font-size: 16px; border-bottom: 2px solid var(--danger); padding-bottom: 8px; margin-bottom: 12px; }
 
-                <div id="page-reports" class="page">
-                    <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
-                        <div class="modal-header"><h2>📊 التقارير المالية</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
-                            <button onclick="showReport('income')" class="btn-main" style="background:#00B894;">📈 قائمة الدخل</button>
-                            <button onclick="showReport('balance')" class="btn-main" style="background:#6C5CE7;">⚖️ الميزانية</button>
-                            <button onclick="showReport('daily')" class="btn-main" style="background:#E17055;">📅 تقرير اليوم</button>
-                            <button onclick="showReport('trial')" class="btn-main" style="background:#FDCB6E; color:#333;">📋 ميزان المراجعة</button>
-                            <button onclick="showReport('statement')" class="btn-main" style="background:#2E4057; color:white;">📋 كشف حساب</button>
-                        </div>
-                        <div class="form-group" id="statementClientField" style="display:none;">
-                            <label>اختر العميل لعرض كشف الحساب</label>
-                            <select id="statementClientSelect" onchange="showReport('statement')">
-                                <option value="">-- اختر العميل --</option>
-                            </select>
-                        </div>
-                        <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
-                    </div>
-                </div>
-                
-            </div>
-        </div>
+.btn-main { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-bottom: 8px; }
+.btn-green { background: var(--secondary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.btn-red { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        <!-- الشريط السفلي للموبايل فقط -->
-        <div class="bottom-nav">
-            <button onclick="switchPage('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
-            <button onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
-            <button onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></button>
-            <button onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></button>
-            <button onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></button>
-        </div>
-    </div>
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 4px; color: #777; }
+.form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #eee; border-radius: 8px; font-size: 14px; outline: none; }
+.form-group input:focus { border-color: var(--primary); }
 
-    <div id="barcodeModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;justify-content:center;align-items:center;">
-        <div style="background:white;padding:20px;border-radius:16px;width:90%;max-width:400px;text-align:center;">
-            <h3 style="margin-top:0;">📸 مسح الباركود</h3>
-            <div id="reader" style="width:100%;"></div>
-            <button onclick="stopBarcodeScanner()" style="margin-top:15px;padding:10px 0;width:100%;background:var(--danger);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:bold;">إغلاق</button>
-        </div>
-    </div>
+.list-view { margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; }
+.list-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; }
 
-    <div id="toast" class="toast"></div>
-    <script src="script.js"></script>
-</body>
-</html>
+.report-box { background: #1e1e2e; color: #fff; padding: 20px; border-radius: var(--radius); font-size: 14px; min-height: 100px; margin-top: 10px; }
+.report-box b { color: #00B894; }
+.report-box hr { border: 0; border-top: 1px solid #444; margin: 15px 0; }
+
+.auth-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); padding: 20px; }
+.auth-box { background: white; padding: 30px; border-radius: var(--radius); width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.auth-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; }
+.btn-auth { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 8px; }
+.btn-auth.btn-green { background: var(--secondary); }
+.btn-auth.btn-back { background: #eee; color: #333; }
+
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; opacity: 0; transition: 0.3s; z-index: 99999; text-align: center; width: 90%; pointer-events: none; }
+.toast.show { opacity: 1; }
+
+@media (min-width: 769px) {
+    .bottom-nav { display: none; }
+    .sidebar { display: flex; }
+    .main-content { padding: 20px; margin-bottom: 0; height: 100vh; }
+}
+
+@media (max-width: 768px) {
+    .sidebar { display: none; }
+    .bottom-nav { display: flex; }
+    .main-content { padding: 15px 15px 80px 15px; height: auto; overflow-y: auto; }
+    .dashboard-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* تنسيق خاص للطباعة */
+@media print {
+    body * { visibility: hidden; }
+    .print-area, .print-area * { visibility: visible; }
+    .print-area { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; }
+}
