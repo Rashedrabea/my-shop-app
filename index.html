@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <!-- Firebase SDKs - الإصدار الصحيح -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -51,12 +51,13 @@
                 <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> جهات الاتصال</button>
                 <button class="nav-btn" onclick="switchPage('treasury')"><i class="fas fa-coins"></i> الخزنة</button>
                 <button class="nav-btn" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i> التقارير</button>
+                <button class="nav-btn" onclick="switchPage('settings')"><i class="fas fa-cog"></i> الإعدادات</button>
                 <button class="nav-btn logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
             </div>
 
             <div class="main-content">
                 <div class="top-bar">
-                    <div class="brand" id="brandLogo">نظام راشد <span class="version">V31</span></div>
+                    <div class="brand" id="brandLogo" style="cursor:pointer;">نظام راشد <span class="version">V31</span></div>
                     <div class="user-info">👤 <span id="userDisplay"></span></div>
                 </div>
 
@@ -69,6 +70,7 @@
                         <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
                         <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
                         <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
+                        <div class="dash-card card-settings" onclick="switchPage('settings')" style="background:#6C5CE7; color:white; border:none;"><i class="fas fa-cog"></i><span>الإعدادات</span></div>
                     </div>
                     
                     <div class="charts-container">
@@ -244,6 +246,121 @@
                         <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
                     </div>
                 </div>
+
+                <!-- ============================================ -->
+                <!-- صفحة الإعدادات (جديدة) -->
+                <!-- ============================================ -->
+                <div id="page-settings" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header">
+                            <h2>⚙️ الإعدادات</h2>
+                            <button class="modal-close" onclick="switchPage('dashboard')">&times;</button>
+                        </div>
+
+                        <!-- قسم المظهر -->
+                        <div class="settings-section">
+                            <h3 class="section-title-blue">🎨 المظهر</h3>
+                            
+                            <div class="form-group">
+                                <label>الخلفية</label>
+                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                    <button onclick="changeTheme('default')" class="btn-theme" style="background:#F4F6F9; color:#333; border:2px solid #ddd;">افتراضي</button>
+                                    <button onclick="changeTheme('dark')" class="btn-theme" style="background:#1a1a2e; color:white; border:2px solid #333;">داكن</button>
+                                    <button onclick="changeTheme('blue')" class="btn-theme" style="background:#0c2461; color:white; border:2px solid #0c2461;">أزرق</button>
+                                    <button onclick="changeTheme('green')" class="btn-theme" style="background:#0a3d2e; color:white; border:2px solid #0a3d2e;">أخضر</button>
+                                    <button onclick="changeTheme('purple')" class="btn-theme" style="background:#2c1a4d; color:white; border:2px solid #2c1a4d;">بنفسجي</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>حجم الخط</label>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <button onclick="changeFontSize('small')" class="btn-sm">صغير</button>
+                                    <button onclick="changeFontSize('medium')" class="btn-sm" style="background:var(--primary); color:white;">وسط</button>
+                                    <button onclick="changeFontSize('large')" class="btn-sm">كبير</button>
+                                    <button onclick="changeFontSize('xlarge')" class="btn-sm">كبير جداً</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- قسم التنبيهات -->
+                        <div class="settings-section">
+                            <h3 class="section-title-green">🔔 التنبيهات</h3>
+                            
+                            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="margin:0;">تفعيل التنبيهات الصوتية</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="soundAlerts" checked onchange="toggleSoundAlerts()">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="margin:0;">تفعيل التنبيهات المنبثقة</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="popupAlerts" checked onchange="togglePopupAlerts()">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label>اختيار صوت التنبيه</label>
+                                <select id="alertSound" onchange="changeAlertSound()">
+                                    <option value="beep">🔔 بيب</option>
+                                    <option value="bell">🔔 جرس</option>
+                                    <option value="notification">📱 إشعار</option>
+                                    <option value="chime">🎵 نغمة</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- قسم الطباعة والباركود -->
+                        <div class="settings-section">
+                            <h3 class="section-title-red">🖨️ الطباعة والباركود</h3>
+                            
+                            <div class="form-group">
+                                <label>إعدادات الطابعة</label>
+                                <div style="display:flex; gap:10px;">
+                                    <select id="printerSettings" style="flex:1;">
+                                        <option value="thermal">طابعة حرارية (80mm)</option>
+                                        <option value="thermal-58">طابعة حرارية (58mm)</option>
+                                        <option value="a4">طابعة A4</option>
+                                        <option value="label">طابعة لاصقات</option>
+                                    </select>
+                                    <button onclick="savePrinterSettings()" class="btn-main" style="width:auto; padding:10px 20px;">حفظ</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>مكتبة الباركود</label>
+                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                    <button onclick="setBarcodeLibrary('barcode')" class="btn-sm" style="background:var(--primary); color:white;">📊 باركود عادي</button>
+                                    <button onclick="setBarcodeLibrary('qr')" class="btn-sm">📱 QR Code</button>
+                                    <button onclick="setBarcodeLibrary('both')" class="btn-sm">كلاهما</button>
+                                </div>
+                                <span id="barcodeLibraryStatus" style="font-size:12px; color:#777;">المكتبة الحالية: باركود عادي</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label>حجم الباركود</label>
+                                <input type="range" id="barcodeSize" min="50" max="200" value="100" onchange="updateBarcodeSize()">
+                                <span id="barcodeSizeLabel">100%</span>
+                            </div>
+                        </div>
+
+                        <!-- قسم معلومات التطبيق -->
+                        <div class="settings-section">
+                            <h3 class="section-title-blue">ℹ️ معلومات التطبيق</h3>
+                            <div style="background:#f8f9fa; padding:15px; border-radius:8px;">
+                                <p><strong>الإصدار:</strong> V31</p>
+                                <p><strong>المطور:</strong> نظام راشد</p>
+                                <p><strong>حالة السحابة:</strong> <span id="cloudStatus">🟢 متصل</span></p>
+                                <p><strong>عدد المستخدمين:</strong> <span id="userCount">1</span></p>
+                            </div>
+                            <button onclick="resetAppSettings()" class="btn-red" style="width:100%; margin-top:10px;">🔄 إعادة ضبط الإعدادات</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -254,6 +371,7 @@
             <button onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></button>
             <button onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></button>
             <button onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></button>
+            <button onclick="switchPage('settings')"><i class="fas fa-cog"></i><span>إعدادات</span></button>
             <button onclick="logout()" style="color:#E17055;"><i class="fas fa-sign-out-alt"></i><span>خروج</span></button>
         </div>
     </div>
