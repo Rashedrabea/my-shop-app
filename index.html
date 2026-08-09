@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V26 - ERP Pro</title>
+    <title>نظام راشد V26.1 - الإصلاحات</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -15,7 +15,7 @@
     <!-- شاشة الدخول -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V26</h2>
+            <h2>نظام راشد V26.1</h2>
             <div id="loginForm">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
                 <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -24,7 +24,7 @@
             </div>
             <div id="registerForm" style="display:none;">
                 <input type="text" id="regUser" placeholder="اسم المستخدم الجديد">
-                <input type="password" id="regPass" placeholder="कلمة المرور">
+                <input type="password" id="regPass" placeholder="كلمة المرور">
                 <input type="password" id="regPassConfirm" placeholder="تأكيد كلمة المرور">
                 <button class="btn-auth btn-green" onclick="handleRegister()">إنشاء الحساب</button>
                 <button class="btn-auth btn-back" onclick="toggleAuthMode()">عودة للدخول</button>
@@ -34,11 +34,9 @@
 
     <!-- التطبيق الرئيسي -->
     <div id="appContainer" style="display:none;">
-        
-        <!-- الشريط الجانبي (للنسخة المكتبية) والشريط العلوي -->
         <div class="app-layout">
             <div class="sidebar" id="sidebar">
-                <div class="sidebar-brand">راشد V26</div>
+                <div class="sidebar-brand">راشد V26.1</div>
                 <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
                 <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
                 <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i> المشتريات</button>
@@ -51,36 +49,21 @@
 
             <div class="main-content">
                 <div class="top-bar">
-                    <div class="brand">راشد V26</div>
+                    <div class="brand">راشد V26.1</div>
                     <div class="user-info">👤 <span id="userDisplay">admin</span></div>
                 </div>
 
-                <!-- الصفحات -->
-                <div id="page-dashboard" class="page active">
-                    <div class="dashboard-grid">
-                        <div class="dash-card card-sales" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
-                        <div class="dash-card card-purchases" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></div>
-                        <div class="dash-card card-products" onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
-                        <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
-                        <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
-                        <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
-                    </div>
-                </div>
-
-                <div id="page-sales" class="page">
-                    <!-- محتوى المبيعات -->
+                <!-- صفحة المبيعات -->
+                <div id="page-sales" class="page active">
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>🛒 المبيعات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                        <!-- ... (حقول المبيعات كما هي) ... -->
                         <div style="display:flex; gap:10px; margin-bottom:15px;">
                             <button onclick="switchSalesMode('add')" id="saleModeAdd" class="btn-main" style="flex:1;">تسجيل بيع</button>
                             <button onclick="switchSalesMode('return')" id="saleModeReturn" class="btn-main" style="flex:1; background:#eee; color:#333;">مرتجع بيع</button>
                         </div>
-                        <!-- زر الباركود -->
                         <button onclick="openBarcodeScanner()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:8px; margin-bottom:10px; cursor:pointer;">
                             📷 مسح باركود المنتج
                         </button>
-                        <!-- باقي الحقول -->
                         <div id="saleAddFields">
                             <div class="form-group"><label>العميل</label><input type="text" id="saleClient" placeholder="اسم العميل"></div>
                             <div class="form-group"><label>المنتـج</label><select id="saleProduct"><option>اختر المنتج</option></select></div>
@@ -90,7 +73,6 @@
                             <button class="btn-main" onclick="addSale()">تسجيل البيع</button>
                         </div>
                         <div id="saleReturnFields" style="display:none;">
-                            <!-- حقول المرتجع -->
                             <div class="form-group"><label>العميل (مرتجع)</label><input type="text" id="returnClient" placeholder="اسم العميل"></div>
                             <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnProduct"><option>اختر المنتج</option></select></div>
                             <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnQty" value="1"></div>
@@ -101,8 +83,8 @@
                     </div>
                 </div>
 
+                <!-- صفحة المشتريات (تم إضافة نوع الدفع) -->
                 <div id="page-purchases" class="page">
-                    <!-- محتوى المشتريات -->
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>🚚 المشتريات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                         <div style="display:flex; gap:10px; margin-bottom:15px;">
@@ -114,6 +96,7 @@
                             <div class="form-group"><label>المنتـج</label><select id="purchaseProduct"><option>اختر المنتج</option></select></div>
                             <div class="form-group"><label>الكمية</label><input type="number" id="purchaseQty" value="1"></div>
                             <div class="form-group"><label>سعر الشراء</label><input type="number" id="purchasePrice"></div>
+                            <div class="form-group"><label>نوع الدفع</label><select id="purchaseType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
                             <button class="btn-main" onclick="addPurchase()">تسجيل الشراء</button>
                         </div>
                         <div id="purchaseReturnFields" style="display:none;">
@@ -127,8 +110,8 @@
                     </div>
                 </div>
 
+                <!-- باقي الصفحات كما هي (المخزون، جهات الاتصال، الخزنة، التقارير) -->
                 <div id="page-products" class="page">
-                    <!-- محتوى المخزون -->
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>📦 المخزون</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                         <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
@@ -141,7 +124,6 @@
                 </div>
 
                 <div id="page-clients" class="page">
-                    <!-- محتوى جهات الاتصال -->
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>👤 جهات الاتصال</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                         <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
@@ -154,11 +136,9 @@
                 </div>
 
                 <div id="page-treasury" class="page">
-                    <!-- محتوى الخزنة -->
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>💰 الخزنة</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                         <div class="treasury-balance">رصيد الخزنة الكلي: <span id="treasuryDisplay">0</span> ج.م</div>
-                        
                         <div class="treasury-section">
                             <h3 class="section-title-green">💰 تحصيل دين من عميل</h3>
                             <div class="form-group"><label>اسم العميل</label><input type="text" id="collectClient" placeholder="اكتب اسم العميل"></div>
@@ -167,7 +147,6 @@
                                 <button onclick="collectDebt()" class="btn-green" style="height:42px;">تحصيل</button>
                             </div>
                         </div>
-
                         <div class="treasury-section">
                             <h3 class="section-title-blue">🏦 الخزنة الرئيسية</h3>
                             <div class="form-group" style="display:flex; gap:10px; align-items:flex-end;">
@@ -176,7 +155,6 @@
                                 <button onclick="withdrawTreasury()" class="btn-red" style="height:42px;">سحب</button>
                             </div>
                         </div>
-
                         <div class="treasury-section">
                             <h3 class="section-title-red">💸 تسجيل مصروف</h3>
                             <div class="form-group" style="display:flex; gap:10px;">
@@ -185,20 +163,19 @@
                             </div>
                             <button onclick="addExpense()" class="btn-red" style="width:100%;">تسجيل المصروف</button>
                         </div>
-                        
                         <div id="treasuryLog" class="list-view"></div>
                     </div>
                 </div>
 
                 <div id="page-reports" class="page">
-                    <!-- محتوى التقارير -->
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>📊 التقارير المالية</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
                             <button onclick="showReport('income')" class="btn-main" style="background:#00B894;">📈 قائمة الدخل</button>
                             <button onclick="showReport('balance')" class="btn-main" style="background:#6C5CE7;">⚖️ الميزانية</button>
                             <button onclick="showReport('daily')" class="btn-main" style="background:#E17055;">📅 تقرير اليوم</button>
-                            <button onclick="showReport('statement')" class="btn-main" style="background:#FDCB6E; color:#333;">📋 كشف حساب</button>
+                            <button onclick="showReport('trial')" class="btn-main" style="background:#FDCB6E; color:#333;">📋 ميزان المراجعة</button>
+                            <button onclick="showReport('statement')" class="btn-main" style="background:#2E4057; color:white;">📋 كشف حساب</button>
                         </div>
                         <div class="form-group" id="statementClientField" style="display:none;">
                             <label>اختر العميل لعرض كشف الحساب</label>
@@ -212,7 +189,6 @@
             </div>
         </div>
 
-        <!-- الشريط السفلي للموبايل -->
         <div class="bottom-nav">
             <button onclick="switchPage('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
             <button onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
@@ -222,7 +198,6 @@
         </div>
     </div>
 
-    <!-- نافذة الباركود -->
     <div id="barcodeModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;justify-content:center;align-items:center;">
         <div style="background:white;padding:20px;border-radius:16px;width:90%;max-width:400px;text-align:center;">
             <h3 style="margin-top:0;">📸 مسح الباركود</h3>
