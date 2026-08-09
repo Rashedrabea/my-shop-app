@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V28.3 - إصلاح الرسم البياني والطباعة
+   نظام راشد V29 - النسخة النهائية المتكاملة
    ============================================ */
 
 const firebaseConfig = {
@@ -14,24 +14,29 @@ const firebaseConfig = {
 
 let appData = { users: {}, currentUser: null };
 let chartInstances = {};
+let barcodeScannerActive = false;
 
+// دالة تحميل وحفظ البيانات
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV28.3'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV29'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV28.3', JSON.stringify(appData));
+        localStorage.setItem('RashedV29', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
 
 function getData() {
     if(!appData.currentUser || !appData.users[appData.currentUser]) {
-        return { sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [], supplierPayments: [] };
+        return { sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [], supplierPayments: [], saleCounter: 0, purchaseCounter: 0 };
     }
     return appData.users[appData.currentUser].data;
 }
 
+// ============================================
+// نظام الدخول والخروج
+// ============================================
 function toggleAuthMode() {
     document.getElementById('loginForm').style.display = document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
     document.getElementById('registerForm').style.display = document.getElementById('registerForm').style.display === 'none' ? 'block' : 'none';
@@ -55,11 +60,19 @@ function handleRegister() {
     if(pass !== confirm) return showToast('⚠️ كلمة المرور غير متطابقة');
     if(appData.users[user]) return showToast('⚠️ الاسم موجود بالفعل');
     
-    appData.users[user] = { password: pass, data: { sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [], supplierPayments: [] } };
+    appData.users[user] = { password: pass, data: { sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [], supplierPayments: [], saleCounter: 0, purchaseCounter: 0 } };
     appData.currentUser = user;
     saveLocal();
     enterApp();
     showToast('✅ تم إنشاء الحساب بنجاح');
+}
+
+function logout() {
+    if(confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+        appData.currentUser = null;
+        saveLocal();
+        location.reload(); // إعادة تحميل الصفحة للعودة لشاشة الدخول
+    }
 }
 
 function enterApp() {
@@ -71,6 +84,9 @@ function enterApp() {
     switchPage('dashboard');
 }
 
+// ============================================
+// السحابة (Firebase) - المزامنة التلقائية
+// ============================================
 function syncCloud() {
     if(!appData.currentUser || !appData.users[appData.currentUser]) return;
     try {
@@ -91,7 +107,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV28.3', JSON.stringify(appData));
+                localStorage.setItem('RashedV29', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -99,6 +115,9 @@ function loadFromCloud() {
     } catch(e) {}
 }
 
+// ============================================
+// التنقل بين الصفحات
+// ============================================
 function switchPage(page) {
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
     const target = document.getElementById('page-' + page);
@@ -116,6 +135,9 @@ function switchPage(page) {
     if(page === 'reports') updateReportSelects();
 }
 
+// ============================================
+// تحديث القوائم
+// ============================================
 function updateSelects() {
     if(!appData.currentUser) return;
     const data = getData();
@@ -146,7 +168,16 @@ function updateUI() {
     `).join('');
 
     document.getElementById('productList').innerHTML = data.products.map(p => `
-        <div class="list-item"><span><strong>${p.name}</strong><br><small style="color:#777;">${p.desc || ''}</small></span><span style="font-weight:bold;">${p.sell} ج.م (${p.qty})</span></div>
+        <div class="list-item">
+            <div>
+                <strong>${p.name}</strong><br>
+                <small style="color:#777;">${p.desc || ''}</small>
+            </div>
+            <div style="text-align:left;">
+                <span style="font-weight:bold;">${p.sell} ج.م (${p.qty})</span>
+                <button onclick="printProductBarcode('${p.id}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;margin-left:5px;" title="طباعة باركود"><i class="fas fa-barcode"></i></button>
+            </div>
+        </div>
     `).join('');
 
     document.getElementById('treasuryDisplay').textContent = data.treasury;
@@ -187,7 +218,7 @@ function updateUI() {
 }
 
 // ============================================
-// إضافة البيانات
+// عمليات إضافة البيانات
 // ============================================
 function addContact() {
     const data = getData();
@@ -213,15 +244,122 @@ function addProduct() {
     const buy = parseFloat(document.getElementById('prodBuy').value) || 0;
     const sell = parseFloat(document.getElementById('prodSell').value) || 0;
     if(!name || qty <= 0) return showToast('أدخل الاسم والكمية');
-    data.products.push({ id: Date.now().toString(), name, desc, qty, buy, sell });
+    
+    // توليد باركود عشوائي (مكون من 8 أرقام)
+    const barcode = Math.floor(10000000 + Math.random() * 90000000).toString();
+    
+    data.products.push({ id: Date.now().toString(), name, desc, qty, buy, sell, barcode });
     saveLocal();
     document.getElementById('prodName').value = '';
     document.getElementById('prodDesc').value = '';
     document.getElementById('prodQty').value = '';
     updateUI();
-    showToast('تم إضافة المنتج');
+    showToast(`تم إضافة المنتج. الباركود: ${barcode}`);
 }
 
+// ============================================
+// الباركود (الكاميرا)
+// ============================================
+function startBarcodeScanner() {
+    document.getElementById('barcodeModal').style.display = 'flex';
+    barcodeScannerActive = true;
+    
+    Quagga.init({
+        inputStream : {
+            name : "Live",
+            type : "LiveStream",
+            target: document.querySelector('#interactive'),
+            constraints: {
+                width: 640,
+                height: 480,
+                facingMode: "environment"
+            }
+        },
+        decoder : {
+            readers : ["code_128_reader", "ean_reader", "ean_8_reader", "upc_reader", "upc_e_reader"]
+        }
+    }, function(err) {
+        if (err) {
+            console.log(err);
+            showToast('⚠️ خطأ في تشغيل الكاميرا. يرجى التأكد من إذن الكاميرا.');
+            document.getElementById('barcodeModal').style.display = 'none';
+            return;
+        }
+        Quagga.start();
+    });
+
+    Quagga.onDetected(function(result) {
+        const code = result.codeResult.code;
+        if(code) {
+            // البحث عن المنتج بالباركود
+            const data = getData();
+            const product = data.products.find(p => p.barcode === code);
+            if(product) {
+                document.getElementById('saleProduct').value = product.id;
+                document.getElementById('saleProduct').dispatchEvent(new Event('change'));
+                showToast(`✅ تم التعرف على المنتج: ${product.name}`);
+                stopBarcodeScanner();
+            } else {
+                showToast('⚠️ المنتج غير موجود في المخزون');
+            }
+        }
+    });
+}
+
+function stopBarcodeScanner() {
+    if(barcodeScannerActive) {
+        Quagga.stop();
+        barcodeScannerActive = false;
+    }
+    document.getElementById('barcodeModal').style.display = 'none';
+}
+
+// البحث عن طريق الإدخال اليدوي
+function searchByBarcode() {
+    const code = document.getElementById('manualBarcode').value.trim();
+    if(!code) return showToast('أدخل الباركود');
+    const data = getData();
+    const product = data.products.find(p => p.barcode === code);
+    if(product) {
+        document.getElementById('saleProduct').value = product.id;
+        document.getElementById('saleProduct').dispatchEvent(new Event('change'));
+        showToast(`✅ تم العثور على المنتج: ${product.name}`);
+    } else {
+        showToast('⚠️ المنتج غير موجود');
+    }
+}
+
+// طباعة باركود المنتج
+function printProductBarcode(id) {
+    const data = getData();
+    const product = data.products.find(p => p.id === id);
+    if(!product) return showToast('المنتج غير موجود');
+    
+    const win = window.open('', '_blank');
+    win.document.write(`
+        <html><head><title>باركود ${product.name}</title>
+        <style>
+            body { display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; font-family:Arial, sans-serif; }
+            .barcode-box { border:2px solid #333; padding:20px; border-radius:10px; text-align:center; }
+            h2 { margin:0; }
+            .barcode-img { font-size: 60px; letter-spacing: 10px; font-family: 'Courier New', monospace; margin:10px 0; }
+        </style>
+        </head><body>
+        <div class="barcode-box">
+            <h2>${product.name}</h2>
+            <div class="barcode-img">|||||||||||||||</div>
+            <h3>${product.barcode}</h3>
+            <p>السعر: ${product.sell} ج.م</p>
+        </div>
+        <script>window.print();<\\/script>
+        </body></html>
+    `);
+    win.document.close();
+}
+
+// ============================================
+// المبيعات (مع الترقيم التلقائي)
+// ============================================
 function addSale() {
     const data = getData();
     const client = document.getElementById('saleClient').value.trim();
@@ -234,52 +372,24 @@ function addSale() {
     if(!prod || prod.qty < qty) return showToast('الكمية غير متوفرة');
     prod.qty -= qty;
     const total = qty * price;
-    data.sales.push({ id: Date.now().toString(), client, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString() });
+    
+    // ترقيم الفاتورة
+    data.saleCounter = (data.saleCounter || 0) + 1;
+    const invNum = `INV-${String(data.saleCounter).padStart(4, '0')}`;
+    
+    data.sales.push({ id: invNum, client, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString() });
     if(type === 'cash') {
         data.treasury += total;
-        data.treasuryLog.push({ desc: `بيع كاش - ${client}`, amount: total });
+        data.treasuryLog.push({ desc: `بيع كاش - ${client} (${invNum})`, amount: total });
     }
     saveLocal();
     updateUI();
-    showToast(`بيع بقيمة ${total} ج.م`);
+    showToast(`بيع بقيمة ${total} ج.م - الفاتورة: ${invNum}`);
 }
 
-function switchSalesMode(mode) {
-    if(mode === 'add') {
-        document.getElementById('saleModeAdd').className = 'btn-toggle active';
-        document.getElementById('saleModeReturn').className = 'btn-toggle';
-        document.getElementById('saleAddFields').style.display = 'block';
-        document.getElementById('saleReturnFields').style.display = 'none';
-    } else {
-        document.getElementById('saleModeReturn').className = 'btn-toggle active';
-        document.getElementById('saleModeAdd').className = 'btn-toggle';
-        document.getElementById('saleAddFields').style.display = 'none';
-        document.getElementById('saleReturnFields').style.display = 'block';
-        updateSelects();
-    }
-}
-
-function addSaleReturn() {
-    const data = getData();
-    const client = document.getElementById('returnClient').value.trim();
-    const productId = document.getElementById('returnProduct').value;
-    const qty = parseInt(document.getElementById('returnQty').value) || 0;
-    const price = parseFloat(document.getElementById('returnPrice').value) || 0;
-    const type = document.getElementById('returnSaleType').value || 'cash';
-    if(!client || !productId || qty <= 0) return showToast('أكمل البيانات');
-    const prod = data.products.find(p => p.id === productId);
-    if(!prod) return showToast('المنتج غير موجود');
-    prod.qty += qty;
-    const total = qty * price;
-    if(type === 'cash') {
-        data.treasury -= total;
-        data.treasuryLog.push({ desc: `مرتجع بيع - ${client}`, amount: -total });
-    }
-    saveLocal();
-    updateUI();
-    showToast(`تم استلام مرتجع بقيمة ${total} ج.م`);
-}
-
+// ============================================
+// المشتريات (مع الترقيم التلقائي)
+// ============================================
 function addPurchase() {
     const data = getData();
     const supplier = document.getElementById('purchaseSupplier').value.trim();
@@ -292,49 +402,17 @@ function addPurchase() {
     if(!prod) return showToast('المنتج غير موجود');
     prod.qty += qty;
     const total = qty * price;
-    data.purchases.push({ id: Date.now().toString(), supplier, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString() });
+    
+    // ترقيم فاتورة الشراء
+    data.purchaseCounter = (data.purchaseCounter || 0) + 1;
+    const purNum = `PUR-${String(data.purchaseCounter).padStart(4, '0')}`;
+    
+    data.purchases.push({ id: purNum, supplier, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString() });
     data.treasury -= total;
-    data.treasuryLog.push({ desc: `شراء من ${supplier}`, amount: -total });
+    data.treasuryLog.push({ desc: `شراء من ${supplier} (${purNum})`, amount: -total });
     saveLocal();
     updateUI();
-    showToast(`شراء بقيمة ${total} ج.م`);
-}
-
-function switchPurchaseMode(mode) {
-    if(mode === 'add') {
-        document.getElementById('purchaseModeAdd').className = 'btn-toggle active';
-        document.getElementById('purchaseModeReturn').className = 'btn-toggle';
-        document.getElementById('purchaseAddFields').style.display = 'block';
-        document.getElementById('purchaseReturnFields').style.display = 'none';
-    } else {
-        document.getElementById('purchaseModeReturn').className = 'btn-toggle active';
-        document.getElementById('purchaseModeAdd').className = 'btn-toggle';
-        document.getElementById('purchaseAddFields').style.display = 'none';
-        document.getElementById('purchaseReturnFields').style.display = 'block';
-        updateSelects();
-    }
-}
-
-function addPurchaseReturn() {
-    const data = getData();
-    const supplier = document.getElementById('returnSupplier').value.trim();
-    const productId = document.getElementById('returnPurchaseProduct').value;
-    const qty = parseInt(document.getElementById('returnPurchaseQty').value) || 0;
-    const price = parseFloat(document.getElementById('returnPurchasePrice').value) || 0;
-    const type = document.getElementById('returnPurchaseType').value || 'cash';
-    if(!supplier || !productId || qty <= 0) return showToast('أكمل البيانات');
-    const prod = data.products.find(p => p.id === productId);
-    if(!prod) return showToast('المنتج غير موجود');
-    if(prod.qty < qty) return showToast('الكمية المرتجعة أكبر من المتاحة');
-    prod.qty -= qty;
-    const total = qty * price;
-    if(type === 'cash') {
-        data.treasury += total;
-        data.treasuryLog.push({ desc: `مرتجع شراء من ${supplier}`, amount: total });
-    }
-    saveLocal();
-    updateUI();
-    showToast(`تم إرجاع منتجات بقيمة ${total} ج.م`);
+    showToast(`شراء بقيمة ${total} ج.م - الفاتورة: ${purNum}`);
 }
 
 // ============================================
@@ -375,103 +453,8 @@ function paySupplier() {
     showToast(`تم سداد ${amount} ج.م للمورد ${supplier}`);
 }
 
-function addExpense() {
-    const data = getData();
-    const desc = document.getElementById('expenseDesc').value.trim();
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
-    if(!desc || !amount || amount <= 0) return showToast('أدخل البيان والمبلغ');
-    if(data.treasury < amount) return showToast('الرصيد غير كافي');
-    data.treasury -= amount;
-    data.expenses.push({ id: Date.now().toString(), desc, amount });
-    saveLocal();
-    document.getElementById('expenseDesc').value = '';
-    document.getElementById('expenseAmount').value = '';
-    updateUI();
-    showToast('تم تسجيل المصروف');
-}
-
-function addToTreasury() {
-    const data = getData();
-    const amt = parseFloat(document.getElementById('treasuryAmount').value);
-    if(!amt || amt <= 0) return showToast('أدخل مبلغ');
-    data.treasury += amt;
-    data.treasuryLog.push({ desc: 'إيداع يدوي', amount: amt });
-    saveLocal();
-    updateUI();
-    document.getElementById('treasuryAmount').value = '';
-    showToast('تم الإيداع');
-}
-
-function withdrawTreasury() {
-    const data = getData();
-    const amt = parseFloat(document.getElementById('treasuryAmount').value);
-    if(!amt || amt <= 0) return showToast('أدخل مبلغ');
-    if(data.treasury < amt) return showToast('الرصيد غير كافي');
-    data.treasury -= amt;
-    data.treasuryLog.push({ desc: 'سحب يدوي', amount: -amt });
-    saveLocal();
-    updateUI();
-    document.getElementById('treasuryAmount').value = '';
-    showToast('تم السحب');
-}
-
 // ============================================
-// الرسوم البيانية (تم إصلاح الـ undefined)
-// ============================================
-function drawCharts() {
-    const data = getData();
-    // إذا مفيش بيانات، نرجع فاضي
-    if(data.sales.length === 0 && data.expenses.length === 0) {
-        if(chartInstances.sales) chartInstances.sales.destroy();
-        if(chartInstances.treasury) chartInstances.treasury.destroy();
-        return;
-    }
-
-    const salesTotal = data.sales.reduce((s, i) => s + i.total, 0);
-    const expensesTotal = data.expenses.reduce((s, i) => s + i.amount, 0);
-    const treasury = data.treasury;
-    const collectionsTotal = data.collections.reduce((s, i) => s + i.amount, 0);
-
-    // إزالة الـ undefined بإعطاء اسم واضح
-    if(chartInstances.sales) chartInstances.sales.destroy();
-    chartInstances.sales = new Chart(document.getElementById('salesChart'), {
-        type: 'bar',
-        data: {
-            labels: ['مبيعات', 'مصروفات', 'تحصيل'],
-            datasets: [{
-                label: 'الحركة المالية',
-                data: [salesTotal, expensesTotal, collectionsTotal],
-                backgroundColor: ['#00B894', '#E17055', '#FDCB6E']
-            }]
-        },
-        options: {
-            plugins: {
-                legend: { display: false } // إخفاء الـ undefined من فوق الرسم
-            }
-        }
-    });
-
-    if(chartInstances.treasury) chartInstances.treasury.destroy();
-    chartInstances.treasury = new Chart(document.getElementById('treasuryChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['الخزنة', 'مصروفات'],
-            datasets: [{
-                label: 'توزيع الرصيد',
-                data: [treasury, expensesTotal],
-                backgroundColor: ['#2E4057', '#E17055']
-            }]
-        },
-        options: {
-            plugins: {
-                legend: { display: true, position: 'bottom' }
-            }
-        }
-    });
-}
-
-// ============================================
-// طباعة الفواتير (PDF)
+// الطباعة
 // ============================================
 function generateInvoiceHTML(item, type) {
     const profile = appData.users[appData.currentUser].profile || { shopName: 'نظام راشد' };
@@ -485,7 +468,7 @@ function generateInvoiceHTML(item, type) {
             </div>
             <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:10px;">
                 <span>${type === 'sale' ? 'العميل' : 'المورد'}: ${party}</span>
-                <span>التاريخ: ${item.date}</span>
+                <span>رقم الفاتورة: ${item.id}</span>
             </div>
             <table style="width:100%;border-collapse:collapse;font-size:14px;">
                 <tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">المنتج</th><th style="padding:8px;text-align:right;">الكمية</th><th style="padding:8px;text-align:right;">السعر</th><th style="padding:8px;text-align:right;">الإجمالي</th></tr>
@@ -501,26 +484,13 @@ function printSaleInvoice(id) {
     const data = getData();
     const sale = data.sales.find(s => s.id === id);
     if(!sale) return showToast('الفاتورة غير موجودة');
-    
-    // إنشاء نافذة جديدة للطباعة
     const win = window.open('', '_blank');
-    win.document.write(`
-        <html><head><title>طباعة الفاتورة</title>
-        <style>
-            body { margin: 0; padding: 20px; background: white; }
-            .print-area { max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { padding: 8px; text-align: right; border-bottom: 1px solid #ddd; }
-            th { background: #2E4057; color: white; }
-            h2 { margin: 0; }
-        </style>
-        </head><body>
-    `);
+    win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${sale.id}</title><style>body{background:white;padding:20px;}</style></head><body>`);
     win.document.write(generateInvoiceHTML(sale, 'sale'));
     win.document.write(`</body></html>`);
     win.document.close();
     win.focus();
-    win.print(); // يفتح نافذة الطباعة مباشرة
+    win.print();
 }
 
 function printPurchaseInvoice(id) {
@@ -528,18 +498,7 @@ function printPurchaseInvoice(id) {
     const purchase = data.purchases.find(p => p.id === id);
     if(!purchase) return showToast('الفاتورة غير موجودة');
     const win = window.open('', '_blank');
-    win.document.write(`
-        <html><head><title>طباعة الفاتورة</title>
-        <style>
-            body { margin: 0; padding: 20px; background: white; }
-            .print-area { max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { padding: 8px; text-align: right; border-bottom: 1px solid #ddd; }
-            th { background: #2E4057; color: white; }
-            h2 { margin: 0; }
-        </style>
-        </head><body>
-    `);
+    win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${purchase.id}</title><style>body{background:white;padding:20px;}</style></head><body>`);
     win.document.write(generateInvoiceHTML(purchase, 'purchase'));
     win.document.write(`</body></html>`);
     win.document.close();
@@ -554,8 +513,41 @@ function printAllInvoices() {
 }
 
 // ============================================
-// التقارير
+// الرسوم البيانية والتقارير
 // ============================================
+function drawCharts() {
+    const data = getData();
+    if(data.sales.length === 0 && data.expenses.length === 0) {
+        if(chartInstances.sales) chartInstances.sales.destroy();
+        if(chartInstances.treasury) chartInstances.treasury.destroy();
+        return;
+    }
+    const salesTotal = data.sales.reduce((s, i) => s + i.total, 0);
+    const expensesTotal = data.expenses.reduce((s, i) => s + i.amount, 0);
+    const treasury = data.treasury;
+    const collectionsTotal = data.collections.reduce((s, i) => s + i.amount, 0);
+
+    if(chartInstances.sales) chartInstances.sales.destroy();
+    chartInstances.sales = new Chart(document.getElementById('salesChart'), {
+        type: 'bar',
+        data: {
+            labels: ['مبيعات', 'مصروفات', 'تحصيل'],
+            datasets: [{ label: 'الحركة المالية', data: [salesTotal, expensesTotal, collectionsTotal], backgroundColor: ['#00B894', '#E17055', '#FDCB6E'] }]
+        },
+        options: { plugins: { legend: { display: false } } }
+    });
+
+    if(chartInstances.treasury) chartInstances.treasury.destroy();
+    chartInstances.treasury = new Chart(document.getElementById('treasuryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['الخزنة', 'مصروفات'],
+            datasets: [{ label: 'توزيع الرصيد', data: [treasury, expensesTotal], backgroundColor: ['#2E4057', '#E17055'] }]
+        },
+        options: { plugins: { legend: { display: true, position: 'bottom' } } }
+    });
+}
+
 function showReport(type) {
     const data = getData();
     const totalSales = data.sales.reduce((s, i) => s + i.total, 0);
@@ -584,19 +576,19 @@ function showReport(type) {
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>المصروفات</span>
-                    <span style="color:#E17055;">${totalExpenses} ج.м</span>
+                    <span style="color:#E17055;">${totalExpenses} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>التحصيل</span>
-                    <span style="color:#00B894;">${totalCollections} ج.м</span>
+                    <span style="color:#00B894;">${totalCollections} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>سداد الموردين</span>
-                    <span style="color:#E17055;">${totalSupplierPayments} ج.м</span>
+                    <span style="color:#E17055;">${totalSupplierPayments} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
                     <span style="font-weight:bold;">صافي الربح</span>
-                    <span style="color:${profit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${profit} ج.м</span>
+                    <span style="color:${profit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${profit} ج.م</span>
                 </div>
             </div>
         `;
@@ -615,19 +607,19 @@ function showReport(type) {
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>مبيعات اليوم</span>
-                    <span style="color:#00B894;">${todaySales} ج.м</span>
+                    <span style="color:#00B894;">${todaySales} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>مشتريات اليوم</span>
-                    <span style="color:#E17055;">${todayPurchases} ج.м</span>
+                    <span style="color:#E17055;">${todayPurchases} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>مصروفات اليوم</span>
-                    <span style="color:#E17055;">${todayExpenses} ج.м</span>
+                    <span style="color:#E17055;">${todayExpenses} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
                     <span style="font-weight:bold;">صافي ربح اليوم</span>
-                    <span style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${todayProfit} ج.м</span>
+                    <span style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${todayProfit} ج.م</span>
                 </div>
             </div>
         `;
@@ -643,15 +635,15 @@ function showReport(type) {
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span style="color:#aaa;">الأصول (الخزنة)</span>
-                    <span style="color:#00B894;">${totalAssets} ج.м</span>
+                    <span style="color:#00B894;">${totalAssets} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span style="color:#aaa;">الخصوم (الآجل)</span>
-                    <span style="color:#E17055;">${totalLiabilities} ج.м</span>
+                    <span style="color:#E17055;">${totalLiabilities} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
                     <span style="color:#fff;">حقوق الملكية</span>
-                    <span style="color:${equity >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${equity} ج.м</span>
+                    <span style="color:${equity >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${equity} ج.م</span>
                 </div>
             </div>
         `;
@@ -678,8 +670,8 @@ function showReport(type) {
                         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
                             <span style="color:#aaa;">${s.date}</span>
                             <span style="color:#fff;">بيع - ${s.product}</span>
-                            <span style="color:#E17055;">${s.total} ج.м</span>
-                            <span style="color:#fff;">${balance} ج.м</span>
+                            <span style="color:#E17055;">${s.total} ج.م</span>
+                            <span style="color:#fff;">${balance} ج.م</span>
                         </div>
                     `;
                 });
@@ -689,8 +681,8 @@ function showReport(type) {
                         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
                             <span style="color:#aaa;">${new Date(c.id).toLocaleDateString()}</span>
                             <span style="color:#fff;">تحصيل</span>
-                            <span style="color:#00B894;">${c.amount} ج.м</span>
-                            <span style="color:#fff;">${balance} ج.м</span>
+                            <span style="color:#00B894;">${c.amount} ج.م</span>
+                            <span style="color:#fff;">${balance} ج.م</span>
                         </div>
                     `;
                 });
@@ -704,8 +696,8 @@ function showReport(type) {
                         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
                             <span style="color:#aaa;">${p.date}</span>
                             <span style="color:#fff;">شراء - ${p.product}</span>
-                            <span style="color:#E17055;">${p.total} ج.м</span>
-                            <span style="color:#fff;">${balance} ج.м</span>
+                            <span style="color:#E17055;">${p.total} ج.م</span>
+                            <span style="color:#fff;">${balance} ج.م</span>
                         </div>
                     `;
                 });
@@ -715,8 +707,8 @@ function showReport(type) {
                         <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
                             <span style="color:#aaa;">${new Date(p.id).toLocaleDateString()}</span>
                             <span style="color:#fff;">سداد مورد</span>
-                            <span style="color:#00B894;">${p.amount} ج.м</span>
-                            <span style="color:#fff;">${balance} ج.м</span>
+                            <span style="color:#00B894;">${p.amount} ج.م</span>
+                            <span style="color:#fff;">${balance} ج.م</span>
                         </div>
                     `;
                 });
@@ -739,7 +731,7 @@ function showReport(type) {
                         ${rows}
                         <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894; font-weight:bold;">
                             <span style="color:#fff;">الرصيد النهائي</span>
-                            <span style="color:${balance > 0 ? '#E17055' : '#00B894'}; font-weight:bold;">${balance} ج.м</span>
+                            <span style="color:${balance > 0 ? '#E17055' : '#00B894'}; font-weight:bold;">${balance} ج.م</span>
                         </div>
                     </div>
                 `;
@@ -751,6 +743,52 @@ function showReport(type) {
     document.getElementById('reportContent').innerHTML = html;
 }
 
+// ============================================
+// الذكاء الاصطناعي (AI Report)
+// ============================================
+function showAIReport() {
+    const data = getData();
+    const totalSales = data.sales.reduce((s, i) => s + i.total, 0);
+    const totalPurchases = data.purchases.reduce((s, i) => s + i.total, 0);
+    const totalExpenses = data.expenses.reduce((s, i) => s + i.amount, 0);
+    const profit = totalSales - totalPurchases - totalExpenses;
+    const totalProducts = data.products.length;
+    const totalClients = data.clients.length;
+
+    let report = `🤖 **تحليل الذكاء الاصطناعي لعملك**\n\n`;
+    report += `📊 **إجمالي المبيعات:** ${totalSales} ج.م\n`;
+    report += `📉 **إجمالي المشتريات:** ${totalPurchases} ج.م\n`;
+    report += `💸 **إجمالي المصروفات:** ${totalExpenses} ج.م\n`;
+    report += `💰 **صافي الربح:** ${profit} ج.م\n\n`;
+
+    if(profit > 0) {
+        report += `✅ **الأداء المالي:** عملك يحقق أرباحاً. استمر في تطوير مبيعاتك.\n`;
+        if(totalExpenses > (totalSales * 0.3)) {
+            report += `⚠️ **نصيحة:** مصروفاتك تمثل ${((totalExpenses/totalSales)*100).toFixed(1)}% من مبيعاتك. حاول تقليل المصروفات غير الضرورية.\n`;
+        }
+    } else {
+        report += `⚠️ **الأداء المالي:** عملك يحقق خسائر. راجع المصروفات واستراتيجية التسعير.\n`;
+    }
+
+    if(totalProducts === 0) {
+        report += `📦 **تنبيه المخزون:** لم تضف أي منتجات بعد. ابدأ بإضافة منتجات.\n`;
+    }
+
+    const topProduct = data.sales.reduce((acc, s) => {
+        acc[s.product] = (acc[s.product] || 0) + s.qty;
+        return acc;
+    }, {});
+    const bestSeller = Object.keys(topProduct).sort((a, b) => topProduct[b] - topProduct[a])[0];
+    if(bestSeller) {
+        report += `🏆 **المنتج الأكثر مبيعاً:** ${bestSeller} (تم بيع ${topProduct[bestSeller]} قطعة)\n`;
+    }
+
+    alert(report);
+}
+
+// ============================================
+// التوست
+// ============================================
 function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -758,6 +796,9 @@ function showToast(msg) {
     setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// ============================================
+// بدء التشغيل
+// ============================================
 loadLocal();
 if(appData.currentUser && appData.users[appData.currentUser]) {
     document.getElementById('authContainer').style.display = 'none';
@@ -766,4 +807,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     updateUI();
     switchPage('dashboard');
 }
-console.log('✅ نظام راشد V28.3 - إصلاح الرسم البياني والطباعة');
+console.log('✅ نظام راشد V29 - النسخة النهائية المتكاملة (باركود، ترقيم، ذكاء اصطناعي)');
