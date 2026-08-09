@@ -4,46 +4,53 @@
     --sidebar-width: 250px;
 }
 * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
-body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
+body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
 
-.app-layout { display: flex; flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; }
-.main-content { flex: 1; padding: 20px; margin-bottom: 70px; }
+/* ===== هيكل التطبيق ===== */
+.app-wrapper { display: flex; width: 100%; max-width: 1200px; margin: 0 auto; height: 100vh; overflow: hidden; }
+.main-content { flex: 1; padding: 20px 20px 80px 20px; overflow-y: auto; height: 100vh; }
 
+/* ===== الشريط الجانبي (للكمبيوتر فقط) ===== */
 .sidebar {
     width: var(--sidebar-width);
     background: var(--primary); color: white;
-    height: 100vh; position: sticky; top: 0;
-    padding: 20px; display: flex; flex-direction: column; gap: 10px;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.1); border-radius: 0 16px 16px 0;
+    display: flex; flex-direction: column; padding: 20px;
+    height: 100vh; border-radius: 0 16px 16px 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
-.sidebar-brand { font-size: 22px; font-weight: bold; margin-bottom: 30px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+.sidebar-brand { font-size: 24px; font-weight: bold; text-align: center; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
 .sidebar .nav-btn {
-    background: rgba(255,255,255,0.1); border: none; color: white; padding: 12px 15px;
+    background: rgba(255,255,255,0.05); border: none; color: white; padding: 12px 15px;
     border-radius: 10px; font-size: 14px; cursor: pointer; text-align: right;
-    display: flex; align-items: center; gap: 10px; transition: 0.2s;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 5px; transition: 0.2s;
 }
-.sidebar .nav-btn:hover { background: rgba(255,255,255,0.2); transform: translateX(-5px); }
-.sidebar .nav-btn i { width: 20px; }
+.sidebar .nav-btn:hover { background: rgba(255,255,255,0.15); }
+.sidebar .logout-btn { margin-top: auto; background: rgba(225,112,85,0.2); color: #E17055; }
 
+/* ===== الشريط السفلي (للموبايل فقط) ===== */
 .bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0;
     background: white; border-top: 1px solid #eee;
-    display: none; justify-content: space-around; padding: 10px 0; z-index: 100;
+    display: none; justify-content: space-around; padding: 8px 0; z-index: 100;
     box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
 }
 .bottom-nav button {
     background: none; border: none; display: flex; flex-direction: column; align-items: center;
-    font-size: 11px; color: #777; cursor: pointer; gap: 2px;
+    font-size: 10px; color: #777; cursor: pointer; gap: 2px;
 }
 .bottom-nav button i { font-size: 20px; }
+.bottom-nav button:hover { color: var(--primary); }
 
-.page { display: none; padding: 10px 0; }
+/* ===== الصفحات ===== */
+.page { display: none; height: 100%; }
 .page.active { display: block; }
 
+/* ===== الشريط العلوي ===== */
 .top-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 2px solid var(--primary); margin-bottom: 20px; }
 .brand { font-size: 22px; font-weight: bold; color: var(--primary); }
+.version { font-size: 14px; color: #777; font-weight: normal; }
 .user-info { font-size: 14px; font-weight: bold; }
 
+/* ===== لوحة المربعات ===== */
 .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; }
 .dash-card {
     background: white; border-radius: var(--radius); padding: 25px; text-align: center;
@@ -59,32 +66,39 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; display:
 .card-treasury { background: #00B894; color: white; border: none; }
 .card-reports { background: #2E4057; color: white; border: none; }
 
+/* ===== المودالات ===== */
 .modal-box { background: white; border-radius: var(--radius); padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border: 1px solid #eee; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
 .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #777; }
 
+/* ===== الخزنة ===== */
 .treasury-balance { font-size: 22px; font-weight: bold; text-align: center; padding: 15px; background: var(--primary); color: white; border-radius: var(--radius); margin-bottom: 15px; }
 .treasury-section { background: white; border: 1px solid #eee; border-radius: var(--radius); padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
 .section-title-green { color: var(--secondary); margin-top: 0; font-size: 16px; border-bottom: 2px solid var(--secondary); padding-bottom: 8px; margin-bottom: 12px; }
 .section-title-blue { color: var(--primary); margin-top: 0; font-size: 16px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 12px; }
 .section-title-red { color: var(--danger); margin-top: 0; font-size: 16px; border-bottom: 2px solid var(--danger); padding-bottom: 8px; margin-bottom: 12px; }
 
+/* ===== الأزرار ===== */
 .btn-main { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-bottom: 8px; }
 .btn-green { background: var(--secondary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 .btn-red { background: var(--danger); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
+/* ===== حقول الإدخال ===== */
 .form-group { margin-bottom: 12px; }
 .form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 4px; color: #777; }
 .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #eee; border-radius: 8px; font-size: 14px; outline: none; }
 .form-group input:focus { border-color: var(--primary); }
 
+/* ===== القوائم ===== */
 .list-view { margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; }
 .list-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; }
 
+/* ===== التقارير ===== */
 .report-box { background: #1e1e2e; color: #fff; padding: 20px; border-radius: var(--radius); font-size: 14px; min-height: 100px; margin-top: 10px; }
 .report-box b { color: #00B894; }
 .report-box hr { border: 0; border-top: 1px solid #444; margin: 15px 0; }
 
+/* ===== الدخول ===== */
 .auth-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); padding: 20px; }
 .auth-box { background: white; padding: 30px; border-radius: var(--radius); width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 .auth-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; }
@@ -92,19 +106,20 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; display:
 .btn-auth.btn-green { background: var(--secondary); }
 .btn-auth.btn-back { background: #eee; color: #333; }
 
+/* ===== التوست ===== */
 .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; opacity: 0; transition: 0.3s; z-index: 99999; text-align: center; width: 90%; pointer-events: none; }
 .toast.show { opacity: 1; }
 
+/* ===== التجاوب (Responsive) - هنا السر ===== */
 @media (min-width: 769px) {
     .bottom-nav { display: none; }
     .sidebar { display: flex; }
-    .main-content { margin-bottom: 0; }
+    .main-content { padding: 20px; margin-bottom: 0; height: 100vh; }
 }
 
 @media (max-width: 768px) {
     .sidebar { display: none; }
     .bottom-nav { display: flex; }
-    .main-content { padding: 15px; margin-bottom: 70px; }
+    .main-content { padding: 15px 15px 80px 15px; height: auto; overflow-y: auto; }
     .dashboard-grid { grid-template-columns: 1fr 1fr; }
-    .treasury-section .form-group[style*="display:flex; gap:10px;"] { flex-direction: column; gap: 5px; }
 }

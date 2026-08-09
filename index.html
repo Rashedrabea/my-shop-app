@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V26.1 - الإصلاحات</title>
+    <title>نظام راشد V26.2 - التصميم النهائي</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -15,7 +15,7 @@
     <!-- شاشة الدخول -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V26.1</h2>
+            <h2>نظام راشد V26.2</h2>
             <div id="loginForm">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
                 <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -34,9 +34,11 @@
 
     <!-- التطبيق الرئيسي -->
     <div id="appContainer" style="display:none;">
-        <div class="app-layout">
+        
+        <div class="app-wrapper">
+            <!-- الشريط الجانبي للكمبيوتر (مخفي في الموبايل أوتوماتيك) -->
             <div class="sidebar" id="sidebar">
-                <div class="sidebar-brand">راشد V26.1</div>
+                <div class="sidebar-brand">📊 راشد</div>
                 <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
                 <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
                 <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i> المشتريات</button>
@@ -44,26 +46,38 @@
                 <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> جهات الاتصال</button>
                 <button class="nav-btn" onclick="switchPage('treasury')"><i class="fas fa-coins"></i> الخزنة</button>
                 <button class="nav-btn" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i> التقارير</button>
-                <button class="nav-btn" onclick="logout()" style="color:var(--danger); margin-top:auto;"><i class="fas fa-sign-out-alt"></i> خروج</button>
+                <button class="nav-btn logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
             </div>
 
+            <!-- المحتوى الرئيسي -->
             <div class="main-content">
+                
+                <!-- الشريط العلوي -->
                 <div class="top-bar">
-                    <div class="brand">راشد V26.1</div>
+                    <div class="brand">نظام راشد <span class="version">V26.2</span></div>
                     <div class="user-info">👤 <span id="userDisplay">admin</span></div>
                 </div>
 
-                <!-- صفحة المبيعات -->
-                <div id="page-sales" class="page active">
+                <!-- الصفحات -->
+                <div id="page-dashboard" class="page active">
+                    <div class="dashboard-grid">
+                        <div class="dash-card card-sales" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
+                        <div class="dash-card card-purchases" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></div>
+                        <div class="dash-card card-products" onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
+                        <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
+                        <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
+                        <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
+                    </div>
+                </div>
+
+                <div id="page-sales" class="page">
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>🛒 المبيعات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                         <div style="display:flex; gap:10px; margin-bottom:15px;">
                             <button onclick="switchSalesMode('add')" id="saleModeAdd" class="btn-main" style="flex:1;">تسجيل بيع</button>
                             <button onclick="switchSalesMode('return')" id="saleModeReturn" class="btn-main" style="flex:1; background:#eee; color:#333;">مرتجع بيع</button>
                         </div>
-                        <button onclick="openBarcodeScanner()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:8px; margin-bottom:10px; cursor:pointer;">
-                            📷 مسح باركود المنتج
-                        </button>
+                        <button onclick="openBarcodeScanner()" style="width:100%; padding:10px; background:#333; color:white; border:none; border-radius:8px; margin-bottom:10px; cursor:pointer;">📷 مسح باركود المنتج</button>
                         <div id="saleAddFields">
                             <div class="form-group"><label>العميل</label><input type="text" id="saleClient" placeholder="اسم العميل"></div>
                             <div class="form-group"><label>المنتـج</label><select id="saleProduct"><option>اختر المنتج</option></select></div>
@@ -83,7 +97,6 @@
                     </div>
                 </div>
 
-                <!-- صفحة المشتريات (تم إضافة نوع الدفع) -->
                 <div id="page-purchases" class="page">
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>🚚 المشتريات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
@@ -110,7 +123,6 @@
                     </div>
                 </div>
 
-                <!-- باقي الصفحات كما هي (المخزون، جهات الاتصال، الخزنة، التقارير) -->
                 <div id="page-products" class="page">
                     <div class="modal-box" style="width:100%;max-width:600px;margin:auto;">
                         <div class="modal-header"><h2>📦 المخزون</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
@@ -186,9 +198,11 @@
                         <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
                     </div>
                 </div>
+                
             </div>
         </div>
 
+        <!-- الشريط السفلي للموبايل فقط -->
         <div class="bottom-nav">
             <button onclick="switchPage('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
             <button onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
