@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V23 - Collections & Returns</title>
+    <title>نظام راشد V23.1 - التعديلات</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -15,8 +15,7 @@
     <!-- شاشة الدخول -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V23</h2>
-            <p class="auth-sub">نظام محاسبي متكامل</p>
+            <h2>نظام راشد V23.1</h2>
             <div id="loginForm">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
                 <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -36,33 +35,29 @@
     <!-- التطبيق الرئيسي -->
     <div id="appContainer" style="display:none;">
         <div class="top-bar">
-            <div class="brand">راشد V23</div>
+            <div class="brand">راشد V23.1</div>
             <div class="user-info">👤 <span id="userDisplay">admin</span></div>
         </div>
 
+        <!-- المربعات (رجعنا الألوان) -->
         <div class="dashboard-grid">
-            <div class="dash-card" onclick="openModal('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
-            <div class="dash-card" onclick="openModal('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></div>
-            <div class="dash-card" onclick="openModal('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
-            <div class="dash-card" onclick="openModal('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
-            <div class="dash-card" onclick="openModal('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
-            <div class="dash-card" onclick="openModal('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
+            <div class="dash-card card-sales" onclick="openModal('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
+            <div class="dash-card card-purchases" onclick="openModal('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></div>
+            <div class="dash-card card-products" onclick="openModal('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
+            <div class="dash-card card-clients" onclick="openModal('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
+            <div class="dash-card card-treasury" onclick="openModal('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
+            <div class="dash-card card-reports" onclick="openModal('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
         </div>
     </div>
 
-    <!-- النوافذ المنبثقة (Modals) -->
-    
-    <!-- مودال المبيعات (محدث مع زر المرتجع) -->
+    <!-- مودال المبيعات -->
     <div class="modal-overlay" id="modal-sales">
         <div class="modal-box">
-            <div class="modal-header"><h2><i class="fas fa-shopping-cart"></i> المبيعات</h2><button class="modal-close" onclick="closeModal('sales')">&times;</button></div>
-            
+            <div class="modal-header"><h2>🛒 مبيعات</h2><button class="modal-close" onclick="closeModal('sales')">&times;</button></div>
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button onclick="switchSalesMode('add')" id="saleModeAdd" style="flex:1; padding:8px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">تسجيل بيع</button>
-                <button onclick="switchSalesMode('return')" id="saleModeReturn" style="flex:1; padding:8px; background:#eee; color:#333; border:none; border-radius:8px; cursor:pointer;">مرتجع بيع</button>
+                <button onclick="switchSalesMode('add')" id="saleModeAdd" style="flex:1; background:var(--primary); color:white; border:none; border-radius:8px; padding:8px; cursor:pointer;">تسجيل بيع</button>
+                <button onclick="switchSalesMode('return')" id="saleModeReturn" style="flex:1; background:#eee; color:#333; border:none; border-radius:8px; padding:8px; cursor:pointer;">مرتجع بيع</button>
             </div>
-
-            <!-- حقول تسجيل البيع -->
             <div id="saleAddFields">
                 <div class="form-group"><label>العميل</label><input type="text" id="saleClient" placeholder="اسم العميل"></div>
                 <div class="form-group"><label>المنتـج</label><select id="saleProduct"><option>اختر المنتج</option></select></div>
@@ -71,29 +66,25 @@
                 <div class="form-group"><label>نوع الدفع</label><select id="saleType"><option value="cash">كاش</option><option value="credit">آجل (دين)</option></select></div>
                 <button class="btn-main" onclick="addSale()">تسجيل البيع</button>
             </div>
-
-            <!-- حقول مرتجع البيع -->
             <div id="saleReturnFields" style="display:none;">
                 <div class="form-group"><label>العميل (مرتجع)</label><input type="text" id="returnClient" placeholder="اسم العميل"></div>
                 <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnProduct"><option>اختر المنتج</option></select></div>
                 <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnQty" value="1"></div>
-                <div class="form-group"><label>سعر الشراء عند الإرجاع</label><input type="number" id="returnPrice"></div>
+                <!-- تم التعديل هنا: سعر البيع -->
+                <div class="form-group"><label>سعر البيع عند الإرجاع</label><input type="number" id="returnPrice"></div>
                 <button class="btn-main" onclick="addSaleReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
             </div>
         </div>
     </div>
 
-    <!-- مودال المشتريات (محدث مع زر المرتجع) -->
+    <!-- مودال المشتريات -->
     <div class="modal-overlay" id="modal-purchases">
         <div class="modal-box">
-            <div class="modal-header"><h2><i class="fas fa-truck"></i> المشتريات</h2><button class="modal-close" onclick="closeModal('purchases')">&times;</button></div>
-
+            <div class="modal-header"><h2>🚚 مشتريات</h2><button class="modal-close" onclick="closeModal('purchases')">&times;</button></div>
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button onclick="switchPurchaseMode('add')" id="purchaseModeAdd" style="flex:1; padding:8px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">تسجيل شراء</button>
-                <button onclick="switchPurchaseMode('return')" id="purchaseModeReturn" style="flex:1; padding:8px; background:#eee; color:#333; border:none; border-radius:8px; cursor:pointer;">مرتجع شراء</button>
+                <button onclick="switchPurchaseMode('add')" id="purchaseModeAdd" style="flex:1; background:var(--primary); color:white; border:none; border-radius:8px; padding:8px; cursor:pointer;">تسجيل شراء</button>
+                <button onclick="switchPurchaseMode('return')" id="purchaseModeReturn" style="flex:1; background:#eee; color:#333; border:none; border-radius:8px; padding:8px; cursor:pointer;">مرتجع شراء</button>
             </div>
-
-            <!-- حقول تسجيل الشراء -->
             <div id="purchaseAddFields">
                 <div class="form-group"><label>المورد</label><input type="text" id="purchaseSupplier" placeholder="اسم المورد"></div>
                 <div class="form-group"><label>المنتـج</label><select id="purchaseProduct"><option>اختر المنتج</option></select></div>
@@ -101,13 +92,12 @@
                 <div class="form-group"><label>سعر الشراء</label><input type="number" id="purchasePrice"></div>
                 <button class="btn-main" onclick="addPurchase()">تسجيل الشراء</button>
             </div>
-
-            <!-- حقول مرتجع الشراء -->
             <div id="purchaseReturnFields" style="display:none;">
                 <div class="form-group"><label>المورد (مرتجع)</label><input type="text" id="returnSupplier" placeholder="اسم المورد"></div>
                 <div class="form-group"><label>المنتـج (مرتجع)</label><select id="returnPurchaseProduct"><option>اختر المنتج</option></select></div>
                 <div class="form-group"><label>الكمية المرتجعة</label><input type="number" id="returnPurchaseQty" value="1"></div>
-                <div class="form-group"><label>سعر البيع عند الإرجاع</label><input type="number" id="returnPurchasePrice"></div>
+                <!-- تم التعديل هنا: سعر الشراء -->
+                <div class="form-group"><label>سعر الشراء عند الإرجاع</label><input type="number" id="returnPurchasePrice"></div>
                 <button class="btn-main" onclick="addPurchaseReturn()" style="background:var(--danger);">تسجيل المرتجع</button>
             </div>
         </div>
@@ -116,7 +106,7 @@
     <!-- مودال المخزون -->
     <div class="modal-overlay" id="modal-products">
         <div class="modal-box">
-            <div class="modal-header"><h2><i class="fas fa-warehouse"></i> المخزون</h2><button class="modal-close" onclick="closeModal('products')">&times;</button></div>
+            <div class="modal-header"><h2>📦 المخزون</h2><button class="modal-close" onclick="closeModal('products')">&times;</button></div>
             <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
             <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
             <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
@@ -129,7 +119,7 @@
     <!-- مودال جهات الاتصال -->
     <div class="modal-overlay" id="modal-clients">
         <div class="modal-box">
-            <div class="modal-header"><h2><i class="fas fa-address-book"></i> جهات الاتصال</h2><button class="modal-close" onclick="closeModal('clients')">&times;</button></div>
+            <div class="modal-header"><h2>👤 جهات الاتصال</h2><button class="modal-close" onclick="closeModal('clients')">&times;</button></div>
             <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
             <div class="form-group"><label>رقم الهاتف</label><input type="text" id="contactPhone" placeholder="مثال: 01012345678"></div>
             <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress" placeholder="العنوان بالتفصيل"></div>
@@ -139,46 +129,34 @@
         </div>
     </div>
 
-    <!-- مودال الخزنة (محدث مع التحصيل والسداد) -->
+    <!-- مودال الخزنة -->
     <div class="modal-overlay" id="modal-treasury">
         <div class="modal-box">
-            <div class="modal-header"><h2><i class="fas fa-coins"></i> الخزنة</h2><button class="modal-close" onclick="closeModal('treasury')">&times;</button></div>
-            
-            <div class="treasury-balance">
-                الرصيد الحالي: <span id="treasuryDisplay">0</span> ج.م
-            </div>
-
-            <div class="form-group">
-                <label>إيداع / سحب</label>
+            <div class="modal-header"><h2>💰 الخزنة</h2><button class="modal-close" onclick="closeModal('treasury')">&times;</button></div>
+            <div class="treasury-balance">الرصيد الحالي: <span id="treasuryDisplay">0</span> ج.م</div>
+            <div style="background:#f9f9f9;padding:10px;border-radius:8px;margin-bottom:10px;">
                 <div style="display:flex; gap:8px;">
-                    <input type="number" id="treasuryAmount" placeholder="المبلغ">
+                    <input type="number" id="treasuryAmount" placeholder="المبلغ" style="flex:1;">
                     <button onclick="addToTreasury()" class="btn-small-green">إيداع</button>
                     <button onclick="withdrawTreasury()" class="btn-small-red">سحب</button>
                 </div>
             </div>
-
-            <!-- قسم التحصيل الجديد -->
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-            <div class="form-group">
-                <label style="color:var(--secondary); font-weight:bold;">💰 تحصيل دين من عميل</label>
-                <div style="display:flex; gap:8px;">
+            <div style="background:#fff;padding:10px;border-radius:8px;border:1px solid #eee;margin-bottom:10px;">
+                <label style="font-weight:bold;color:var(--secondary);font-size:14px;">💰 تحصيل دين من عميل</label>
+                <div style="display:flex; gap:8px; margin-top:5px;">
                     <input type="text" id="collectClient" placeholder="اسم العميل" style="flex:1;">
                     <input type="number" id="collectAmount" placeholder="المبلغ" style="flex:1;">
                 </div>
                 <button onclick="collectDebt()" class="btn-small-green" style="width:100%; margin-top:5px;">تسجيل التحصيل</button>
             </div>
-
-            <!-- قسم المصروفات -->
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-            <div class="form-group">
-                <label style="color:var(--danger); font-weight:bold;">💸 تسجيل مصروف</label>
-                <div style="display:flex; gap:8px;">
+            <div style="background:#fff;padding:10px;border-radius:8px;border:1px solid #eee;margin-bottom:10px;">
+                <label style="font-weight:bold;color:var(--danger);font-size:14px;">💸 تسجيل مصروف</label>
+                <div style="display:flex; gap:8px; margin-top:5px;">
                     <input type="text" id="expenseDesc" placeholder="بيان المصروف" style="flex:2;">
                     <input type="number" id="expenseAmount" placeholder="المبلغ" style="flex:1;">
                 </div>
                 <button onclick="addExpense()" class="btn-small-red" style="width:100%; margin-top:5px;">تسجيل مصروف</button>
             </div>
-
             <div id="treasuryLog" class="list-view"></div>
         </div>
     </div>
@@ -186,7 +164,7 @@
     <!-- مودال التقارير -->
     <div class="modal-overlay" id="modal-reports">
         <div class="modal-box">
-            <div class="modal-header"><h2><i class="fas fa-chart-pie"></i> التقارير</h2><button class="modal-close" onclick="closeModal('reports')">&times;</button></div>
+            <div class="modal-header"><h2>📊 التقارير</h2><button class="modal-close" onclick="closeModal('reports')">&times;</button></div>
             <div class="report-actions">
                 <button onclick="showReport('income')" class="btn-main" style="background:#00B894;">قائمة الدخل</button>
                 <button onclick="showReport('balance')" class="btn-main" style="background:#2E4057;">الميزانية</button>

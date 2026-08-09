@@ -10,7 +10,7 @@ body { background: var(--bg); margin: 0; padding: 10px 10px 80px 10px; }
 .brand { font-size: 22px; font-weight: bold; color: var(--primary); }
 .user-info { font-size: 14px; font-weight: bold; }
 
-/* لوحة المربعات */
+/* لوحة المربعات (رجعت الألوان) */
 .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .dash-card {
     background: var(--card); border-radius: var(--radius); padding: 25px; text-align: center;
@@ -20,13 +20,19 @@ body { background: var(--bg); margin: 0; padding: 10px 10px 80px 10px; }
 .dash-card i { font-size: 30px; display: block; margin-bottom: 8px; }
 .dash-card span { font-size: 14px; font-weight: bold; }
 
+.card-sales i { color: #2E4057; }
+.card-purchases i { color: #E17055; }
+.card-products i { color: #FDCB6E; }
+.card-clients i { color: #00B894; }
+.card-treasury { background: #00B894; color: white; border: none; }
+.card-reports { background: #2E4057; color: white; border: none; }
+
 /* النوافذ المنبثقة */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 9999; }
 .modal-overlay.active { display: flex; }
 .modal-box { background: var(--card); width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; border-radius: var(--radius); padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
 .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #777; }
-.modal-close:hover { color: var(--danger); }
 
 /* حقول الإدخال */
 .form-group { margin-bottom: 12px; }
@@ -34,8 +40,8 @@ body { background: var(--bg); margin: 0; padding: 10px 10px 80px 10px; }
 .form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #eee; border-radius: 8px; font-size: 14px; outline: none; }
 .form-group input:focus { border-color: var(--primary); }
 .btn-main { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; margin-bottom: 8px; }
-.btn-small-green { padding: 10px 20px; background: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-.btn-small-red { padding: 10px 20px; background: var(--danger); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.btn-small-green { padding: 10px 20px; background: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; }
+.btn-small-red { padding: 10px 20px; background: var(--danger); color: white; border: none; border-radius: 8px; cursor: pointer; }
 
 /* القوائم الداخلية */
 .list-view { margin-top: 10px; max-height: 150px; overflow-y: auto; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; }
@@ -47,9 +53,7 @@ body { background: var(--bg); margin: 0; padding: 10px 10px 80px 10px; }
 /* نظام الدخول */
 .auth-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); padding: 20px; }
 .auth-box { background: white; padding: 30px; border-radius: var(--radius); width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-.auth-box h2 { color: var(--primary); margin-top: 0; }
-.auth-sub { font-size: 13px; color: #777; margin-bottom: 20px; }
-.auth-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+.auth-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; }
 .btn-auth { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 8px; }
 .btn-auth.btn-green { background: var(--secondary); }
 .btn-auth.btn-back { background: #eee; color: #333; }

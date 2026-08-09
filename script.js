@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V23 - Collections & Returns Logic
+   نظام راشد V23.1 - تعديلات
    ============================================ */
 
 // 1. إعدادات Firebase
@@ -20,11 +20,11 @@ let appData = {
 
 // دوال التخزين المحلي
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV23'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV23.1'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV23', JSON.stringify(appData));
+        localStorage.setItem('RashedV23.1', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
@@ -104,7 +104,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV23', JSON.stringify(appData));
+                localStorage.setItem('RashedV23.1', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -124,7 +124,6 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
     });
 });
 
-// التبديل بين تسجيل ومرتجع المبيعات
 function switchSalesMode(mode) {
     if(mode === 'add') {
         document.getElementById('saleModeAdd').style.background = 'var(--primary)';
@@ -140,12 +139,10 @@ function switchSalesMode(mode) {
         document.getElementById('saleModeAdd').style.color = '#333';
         document.getElementById('saleAddFields').style.display = 'none';
         document.getElementById('saleReturnFields').style.display = 'block';
-        // تحديث قوائم المنتجات للمرتجع
         updateSelects('returnProduct');
     }
 }
 
-// التبديل بين تسجيل ومرتجع المشتريات
 function switchPurchaseMode(mode) {
     if(mode === 'add') {
         document.getElementById('purchaseModeAdd').style.background = 'var(--primary)';
@@ -171,10 +168,8 @@ function switchPurchaseMode(mode) {
 function updateSelects(targetId = null) {
     if(!appData.currentUser) return;
     const data = getData();
-    
     const selectors = ['saleProduct', 'purchaseProduct'];
     if(targetId) selectors.push(targetId);
-    
     selectors.forEach(id => {
         const sel = document.getElementById(id);
         if(sel) {
@@ -189,68 +184,37 @@ function updateUI() {
     const data = getData();
     updateSelects();
 
-    // عرض جهات الاتصال
     document.getElementById('clientList').innerHTML = data.clients.map(c => `
-        <div class="list-item">
-            <div>
-                <strong>${c.name}</strong><br>
-                <small style="color:#777;">📞 ${c.phone || 'N/A'} | 📍 ${c.address || 'N/A'}</small>
-            </div>
-            <div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.type}</span></div>
-        </div>
+        <div class="list-item"><div><strong>${c.name}</strong><br><small style="color:#777;">📞 ${c.phone || 'N/A'} | 📍 ${c.address || 'N/A'}</small></div><div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.type}</span></div></div>
     `).join('');
 
-    // عرض المنتجات
     document.getElementById('productList').innerHTML = data.products.map(p => `
-        <div class="list-item">
-            <span>${p.name} <small style="color:#777;">(${p.qty} قطعة)</small></span>
-            <span style="font-weight:bold;">${p.sell} ج.م</span>
-        </div>
+        <div class="list-item"><span>${p.name} <small style="color:#777;">(${p.qty} قطعة)</small></span><span style="font-weight:bold;">${p.sell} ج.م</span></div>
     `).join('');
 
-    // تحديث الخزنة
     document.getElementById('treasuryDisplay').textContent = data.treasury;
     let logHtml = '';
-
-    // سجل الخزنة (إيداع/سحب/بيع/شراء)
     logHtml += data.treasuryLog.slice().reverse().map(t => `
-        <div class="list-item">
-            <span>${t.desc}</span>
-            <span style="font-weight:bold;color:${t.amount > 0 ? 'var(--secondary)' : 'var(--danger)'};">${t.amount} ج.م</span>
-        </div>
+        <div class="list-item"><span>${t.desc}</span><span style="font-weight:bold;color:${t.amount > 0 ? 'var(--secondary)' : 'var(--danger)'};">${t.amount} ج.م</span></div>
     `).join('');
-
-    // المصروفات
     logHtml += data.expenses.slice().reverse().map(e => `
-        <div class="list-item" style="color:var(--danger);">
-            <span>💸 ${e.desc}</span>
-            <span style="font-weight:bold;">-${e.amount} ج.م</span>
-        </div>
+        <div class="list-item" style="color:var(--danger);"><span>💸 ${e.desc}</span><span style="font-weight:bold;">-${e.amount} ج.م</span></div>
     `).join('');
-
-    // التحصيل
     logHtml += data.collections.slice().reverse().map(c => `
-        <div class="list-item" style="color:var(--secondary);">
-            <span>💰 تحصيل من ${c.client}</span>
-            <span style="font-weight:bold;">+${c.amount} ج.م</span>
-        </div>
+        <div class="list-item" style="color:var(--secondary);"><span>💰 تحصيل من ${c.client}</span><span style="font-weight:bold;">+${c.amount} ج.م</span></div>
     `).join('');
-
     document.getElementById('treasuryLog').innerHTML = logHtml || '<div style="text-align:center;color:#777;padding:10px;">لا توجد حركات مالية</div>';
 }
 
 // ============================================
 // 6. العمليات التجارية
 // ============================================
-
-// جهات الاتصال
 function addContact() {
     const data = getData();
     const name = document.getElementById('contactName').value.trim();
     const phone = document.getElementById('contactPhone').value.trim();
     const address = document.getElementById('contactAddress').value.trim();
     const type = document.getElementById('contactType').value;
-    
     if(!name) return showToast('أدخل الاسم');
     data.clients.push({ id: Date.now().toString(), name, phone, address, type });
     saveLocal();
@@ -262,7 +226,6 @@ function addContact() {
     showToast('تم إضافة جهة الاتصال');
 }
 
-// المنتجات
 function addProduct() {
     const data = getData();
     const name = document.getElementById('prodName').value.trim();
@@ -279,7 +242,6 @@ function addProduct() {
     showToast('تم إضافة المنتج');
 }
 
-// المبيعات
 function addSale() {
     const data = getData();
     const client = document.getElementById('saleClient').value.trim();
@@ -288,13 +250,10 @@ function addSale() {
     const price = parseFloat(document.getElementById('salePrice').value) || 0;
     const type = document.getElementById('saleType').value;
     if(!client || !productId || qty <= 0) return showToast('أكمل البيانات');
-    
     const prod = data.products.find(p => p.id === productId);
     if(!prod || prod.qty < qty) return showToast('الكمية غير متوفرة');
-    
     prod.qty -= qty;
     const total = qty * price;
-    
     data.sales.push({ id: Date.now().toString(), client, product: prod.name, qty, price, total, type });
     if(type === 'cash') {
         data.treasury += total;
@@ -306,32 +265,26 @@ function addSale() {
     showToast(`بيع بقيمة ${total} ج.م`);
 }
 
-// مرتجع المبيعات (جديد)
+// مرتجع المبيعات (تم إصلاح السعر ليكون سعر البيع)
 function addSaleReturn() {
     const data = getData();
     const client = document.getElementById('returnClient').value.trim();
     const productId = document.getElementById('returnProduct').value;
     const qty = parseInt(document.getElementById('returnQty').value) || 0;
-    const price = parseFloat(document.getElementById('returnPrice').value) || 0;
+    const price = parseFloat(document.getElementById('returnPrice').value) || 0; // سعر البيع
     if(!client || !productId || qty <= 0) return showToast('أكمل البيانات');
-    
     const prod = data.products.find(p => p.id === productId);
     if(!prod) return showToast('المنتج غير موجود');
-    
     prod.qty += qty;
     const total = qty * price;
-    
-    // سجل المرتجع (نعتبره عملية سالبة في المبيعات أو سجل منفصل)
     data.treasury -= total;
     data.treasuryLog.push({ desc: `مرتجع بيع - ${client}`, amount: -total });
-    
     saveLocal();
     updateUI();
     closeModal('sales');
     showToast(`تم استلام مرتجع بقيمة ${total} ج.م`);
 }
 
-// المشتريات
 function addPurchase() {
     const data = getData();
     const supplier = document.getElementById('purchaseSupplier').value.trim();
@@ -339,64 +292,49 @@ function addPurchase() {
     const qty = parseInt(document.getElementById('purchaseQty').value) || 0;
     const price = parseFloat(document.getElementById('purchasePrice').value) || 0;
     if(!supplier || !productId || qty <= 0) return showToast('أكمل البيانات');
-    
     const prod = data.products.find(p => p.id === productId);
     if(!prod) return showToast('المنتج غير موجود');
-    
     prod.qty += qty;
     const total = qty * price;
-    
     data.purchases.push({ id: Date.now().toString(), supplier, product: prod.name, qty, price, total });
     data.treasury -= total;
     data.treasuryLog.push({ desc: `شراء من ${supplier}`, amount: -total });
-    
     saveLocal();
     updateUI();
     closeModal('purchases');
     showToast(`شراء بقيمة ${total} ج.م`);
 }
 
-// مرتجع المشتريات (جديد)
+// مرتجع المشتريات (تم إصلاح السعر ليكون سعر الشراء)
 function addPurchaseReturn() {
     const data = getData();
     const supplier = document.getElementById('returnSupplier').value.trim();
     const productId = document.getElementById('returnPurchaseProduct').value;
     const qty = parseInt(document.getElementById('returnPurchaseQty').value) || 0;
-    const price = parseFloat(document.getElementById('returnPurchasePrice').value) || 0;
+    const price = parseFloat(document.getElementById('returnPurchasePrice').value) || 0; // سعر الشراء
     if(!supplier || !productId || qty <= 0) return showToast('أكمل البيانات');
-    
     const prod = data.products.find(p => p.id === productId);
     if(!prod) return showToast('المنتج غير موجود');
-    
     if(prod.qty < qty) return showToast('الكمية المرتجعة أكبر من المتاحة');
     prod.qty -= qty;
     const total = qty * price;
-    
     data.treasury += total;
     data.treasuryLog.push({ desc: `مرتجع شراء من ${supplier}`, amount: total });
-    
     saveLocal();
     updateUI();
     closeModal('purchases');
     showToast(`تم إرجاع منتجات بقيمة ${total} ج.م`);
 }
 
-// ============================================
-// 7. الخزنة والتحصيل
-// ============================================
-
-// التحصيل (جديد)
+// الخزنة
 function collectDebt() {
     const data = getData();
     const client = document.getElementById('collectClient').value.trim();
     const amount = parseFloat(document.getElementById('collectAmount').value);
-    
     if(!client || !amount || amount <= 0) return showToast('أدخل اسم العميل والمبلغ');
-    
     data.treasury += amount;
     data.collections.push({ id: Date.now().toString(), client, amount });
     data.treasuryLog.push({ desc: `تحصيل من ${client}`, amount: amount });
-    
     saveLocal();
     document.getElementById('collectClient').value = '';
     document.getElementById('collectAmount').value = '';
@@ -404,17 +342,14 @@ function collectDebt() {
     showToast(`تم تحصيل ${amount} ج.م من ${client}`);
 }
 
-// المصروفات
 function addExpense() {
     const data = getData();
     const desc = document.getElementById('expenseDesc').value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount').value);
     if(!desc || !amount || amount <= 0) return showToast('أدخل البيان والمبلغ');
     if(data.treasury < amount) return showToast('الرصيد غير كافي لدفع المصروف');
-    
     data.treasury -= amount;
     data.expenses.push({ id: Date.now().toString(), desc, amount });
-    
     saveLocal();
     document.getElementById('expenseDesc').value = '';
     document.getElementById('expenseAmount').value = '';
@@ -422,7 +357,6 @@ function addExpense() {
     showToast('تم تسجيل المصروف');
 }
 
-// إيداع وسحب
 function addToTreasury() {
     const data = getData();
     const amt = parseFloat(document.getElementById('treasuryAmount').value);
@@ -449,7 +383,7 @@ function withdrawTreasury() {
 }
 
 // ============================================
-// 8. التقارير
+// 7. التقارير
 // ============================================
 function showReport(type) {
     const data = getData();
@@ -477,7 +411,7 @@ function showReport(type) {
 }
 
 // ============================================
-// 9. التوست
+// 8. التوست
 // ============================================
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -487,7 +421,7 @@ function showToast(msg) {
 }
 
 // ============================================
-// 10. بدء التشغيل
+// 9. بدء التشغيل
 // ============================================
 loadLocal();
 if(appData.currentUser && appData.users[appData.currentUser]) {
@@ -496,4 +430,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     document.getElementById('userDisplay').textContent = appData.currentUser;
     updateUI();
 }
-console.log('✅ نظام راشد V23 - تم إضافة المرتجعات والتحصيل');
+console.log('✅ نظام راشد V23.1 - تم إصلاح الألوان والمرتجعات');
