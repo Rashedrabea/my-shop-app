@@ -15,7 +15,7 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
     display: flex; flex-direction: column; padding: 20px;
     height: 100vh; border-radius: 0 16px 16px 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
-.sidebar-brand { font-size: 24px; font-weight: bold; text-align: center; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+.sidebar-brand { font-size: 24px; font-weight: bold; text-align: center; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
 .sidebar .nav-btn {
     background: rgba(255,255,255,0.05); border: none; color: white; padding: 12px 15px;
     border-radius: 10px; font-size: 14px; cursor: pointer; text-align: right;
@@ -41,7 +41,8 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
 .page.active { display: block; }
 
 .top-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 2px solid var(--primary); margin-bottom: 20px; }
-.brand { font-size: 22px; font-weight: bold; color: var(--primary); }
+.brand { font-size: 22px; font-weight: bold; color: var(--primary); cursor: pointer; }
+.brand:hover { opacity: 0.7; }
 .version { font-size: 14px; color: #777; font-weight: normal; }
 .user-info { font-size: 14px; font-weight: bold; }
 
@@ -67,8 +68,11 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
     margin-top: 20px;
 }
 .chart-wrapper {
-    background: white; padding: 15px; border-radius: var(--radius);
-    border: 1px solid #eee; height: 220px;
+    background: white;
+    padding: 15px;
+    border-radius: var(--radius);
+    border: 1px solid #eee;
+    height: 220px;
 }
 .chart-wrapper h4 { margin: 0 0 10px 0; font-size: 14px; color: #333; }
 .chart-wrapper canvas { height: 160px !important; width: 100% !important; }
@@ -100,10 +104,13 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
 .list-view { margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; }
 .list-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; }
 
+.report-box { background: #1e1e2e; color: #fff; padding: 20px; border-radius: var(--radius); font-size: 14px; min-height: 100px; margin-top: 10px; }
+.report-box b { color: #00B894; }
+.report-box hr { border: 0; border-top: 1px solid #444; margin: 15px 0; }
+
 .auth-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); padding: 20px; }
-.auth-box { background: white; padding: 30px; border-radius: var(--radius); width: 100%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-.auth-box h2 { color: var(--primary); margin-top: 0; margin-bottom: 10px; }
-.auth-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+.auth-box { background: white; padding: 30px; border-radius: var(--radius); width: 100%; max-width: 380px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.auth-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; }
 .btn-auth { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--primary); color: white; font-weight: bold; font-size: 16px; cursor: pointer; margin-bottom: 8px; }
 .btn-auth.btn-green { background: var(--secondary); }
 .btn-auth.btn-back { background: #eee; color: #333; }
@@ -123,4 +130,10 @@ body { background: var(--bg); margin: 0; padding: 0; min-height: 100vh; }
     .main-content { padding: 15px 15px 80px 15px; height: auto; overflow-y: auto; }
     .dashboard-grid { grid-template-columns: 1fr 1fr; }
     .charts-container { grid-template-columns: 1fr !important; }
+}
+
+@media print {
+    body * { visibility: hidden; }
+    .print-area, .print-area * { visibility: visible; }
+    .print-area { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; }
 }
