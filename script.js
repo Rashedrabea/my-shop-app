@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V30 - النسخة الثابتة النهائية
+   نظام راشد V31 - Backup & Restore
    ============================================ */
 
 const firebaseConfig = {
@@ -17,11 +17,11 @@ let chartInstances = {};
 
 // دالة تحميل وحفظ البيانات
 function loadLocal() {
-    try { const raw = localStorage.getItem('RashedV30'); if (raw) appData = JSON.parse(raw); } catch(e) {}
+    try { const raw = localStorage.getItem('RashedV31'); if (raw) appData = JSON.parse(raw); } catch(e) {}
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV30', JSON.stringify(appData));
+        localStorage.setItem('RashedV31', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
@@ -106,7 +106,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV30', JSON.stringify(appData));
+                localStorage.setItem('RashedV31', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -372,6 +372,171 @@ function paySupplier() {
     showToast(`تم سداد ${amount} ج.م للمورد ${supplier}`);
 }
 
+function addExpense() {
+    const data = getData();
+    const desc = document.getElementById('expenseDesc').value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    if(!desc || !amount || amount <= 0) return showToast('أدخل البيان والمبلغ');
+    if(data.treasury < amount) return showToast('الرصيد غير كافي');
+    data.treasury -= amount;
+    data.expenses.push({ id: Date.now().toString(), desc, amount });
+    saveLocal();
+    document.getElementById('expenseDesc').value = '';
+    document.getElementById('expenseAmount').value = '';
+    updateUI();
+    showToast('تم تسجيل المصروف');
+}
+
+function addToTreasury() {
+    const data = getData();
+    const amt = parseFloat(document.getElementById('treasuryAmount').value);
+    if(!amt || amt <= 0) return showToast('أدخل مبلغ');
+    data.treasury += amt;
+    data.treasuryLog.push({ desc: 'إيداع يدوي', amount: amt });
+    saveLocal();
+    updateUI();
+    document.getElementById('treasuryAmount').value = '';
+    showToast('تم الإيداع');
+}
+
+function withdrawTreasury() {
+    const data = getData();
+    const amt = parseFloat(document.getElementById('treasuryAmount').value);
+    if(!amt || amt <= 0) return showToast('أدخل مبلغ');
+    if(data.treasury < amt) return showToast('الرصيد غير كافي');
+    data.treasury -= amt;
+    data.treasuryLog.push({ desc: 'سحب يدوي', amount: -amt });
+    saveLocal();
+    updateUI();
+    document.getElementById('treasuryAmount').value = '';
+    showToast('تم السحب');
+}
+
+// ============================================
+// مسح كل البيانات (جديد)
+// ============================================
+function clearAllData() {
+    if(!confirm('⚠️ هل أنت متأكد من مسح كل البيانات؟ هذا الإجراء لا يمكن التراجع عنه.')) return;
+    if(!confirm('⚠️ تأكيد نهائي: هل تريد حذف كل المبيعات والمشتريات والمخزون والخزنة؟')) return;
+    
+    const data = getData();
+    data.sales = [];
+    data.purchases = [];
+    data.products = [];
+    data.clients = [];
+    data.treasury = 0;
+    data.treasuryLog = [];
+    data.expenses = [];
+    data.collections = [];
+    data.supplierPayments = [];
+    data.saleCounter = 0;
+    data.purchaseCounter = 0;
+    
+    saveLocal();
+    updateUI();
+    showToast('🗑️ تم مسح كل البيانات بنجاح');
+}
+
+// ============================================
+// تصدير واستيراد النسخ الاحتياطي (Backup & Restore)
+// ============================================
+function exportBackup() {
+    const data = getData();
+    if(!data) return showToast('لا توجد بيانات للتصدير');
+    
+    // تحويل البيانات لملف JSON
+    const jsonData = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    // إنشاء رابط تحميل
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Rashed_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast('📥 تم تصدير النسخة الاحتياطية بنجاح');
+}
+
+function importBackup() {
+    // إنشاء عنصر إدخال ملف مخفي
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const importedData = JSON.parse(event.target.result);
+                
+                // التحقق من صحة البيانات
+                if(typeof importedData === 'object' && importedData !== null) {
+                    const data = getData();
+                    
+                    // دمج البيانات المستوردة مع البيانات الحالية (أو استبدالها)
+                    if(confirm('هل تريد استبدال البيانات الحالية بالبيانات المستوردة؟ (اختر "إلغاء" للدمج)')) {
+                        // استبدال كامل
+                        Object.assign(data, importedData);
+                    } else {
+                        // دمج البيانات (إضافة الفواتير والمنتجات الجديدة فقط)
+                        if(importedData.sales) {
+                            importedData.sales.forEach(s => {
+                                if(!data.sales.find(existing => existing.id === s.id)) {
+                                    data.sales.push(s);
+                                }
+                            });
+                        }
+                        if(importedData.purchases) {
+                            importedData.purchases.forEach(p => {
+                                if(!data.purchases.find(existing => existing.id === p.id)) {
+                                    data.purchases.push(p);
+                                }
+                            });
+                        }
+                        if(importedData.products) {
+                            importedData.products.forEach(p => {
+                                if(!data.products.find(existing => existing.id === p.id)) {
+                                    data.products.push(p);
+                                }
+                            });
+                        }
+                        if(importedData.clients) {
+                            importedData.clients.forEach(c => {
+                                if(!data.clients.find(existing => existing.id === c.id)) {
+                                    data.clients.push(c);
+                                }
+                            });
+                        }
+                        // تحديث الرصيد
+                        data.treasury = importedData.treasury || data.treasury;
+                        data.saleCounter = importedData.saleCounter || data.saleCounter;
+                        data.purchaseCounter = importedData.purchaseCounter || data.purchaseCounter;
+                    }
+                    
+                    saveLocal();
+                    updateUI();
+                    showToast('📤 تم استيراد البيانات بنجاح');
+                } else {
+                    showToast('❌ ملف غير صالح');
+                }
+            } catch(err) {
+                showToast('❌ خطأ في قراءة الملف');
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
 // ============================================
 // الطباعة
 // ============================================
@@ -436,13 +601,11 @@ function printAllInvoices() {
 // ============================================
 function drawCharts() {
     const data = getData();
-    
-    // إذا مفيش بيانات على الإطلاق، نرسم بيانات افتراضية جميلة
     const salesTotal = data.sales.reduce((s, i) => s + i.total, 0);
     const expensesTotal = data.expenses.reduce((s, i) => s + i.amount, 0);
-    const treasury = data.treasury;
     const collectionsTotal = data.collections.reduce((s, i) => s + i.amount, 0);
 
+    // الرسم البياني للمبيعات (شريطي)
     if(chartInstances.sales) chartInstances.sales.destroy();
     chartInstances.sales = new Chart(document.getElementById('salesChart'), {
         type: 'bar',
@@ -457,14 +620,15 @@ function drawCharts() {
         options: { plugins: { legend: { display: false } } }
     });
 
+    // الرسم البياني للخزنة (تم تحويله لشريطي)
     if(chartInstances.treasury) chartInstances.treasury.destroy();
     chartInstances.treasury = new Chart(document.getElementById('treasuryChart'), {
-        type: 'doughnut',
+        type: 'bar',
         data: {
             labels: ['الخزنة', 'مصروفات'],
             datasets: [{
                 label: 'توزيع الرصيد',
-                data: [treasury, expensesTotal],
+                data: [data.treasury, expensesTotal],
                 backgroundColor: ['#2E4057', '#E17055']
             }]
         },
@@ -500,15 +664,15 @@ function showReport(type) {
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>المصروفات</span>
-                    <span style="color:#E17055;">${totalExpenses} ج.м</span>
+                    <span style="color:#E17055;">${totalExpenses} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>التحصيل</span>
-                    <span style="color:#00B894;">${totalCollections} ج.м</span>
+                    <span style="color:#00B894;">${totalCollections} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
                     <span>سداد الموردين</span>
-                    <span style="color:#E17055;">${totalSupplierPayments} ج.м</span>
+                    <span style="color:#E17055;">${totalSupplierPayments} ج.م</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
                     <span style="font-weight:bold;">صافي الربح</span>
@@ -682,8 +846,8 @@ function showAIReport() {
     let report = `🤖 **تحليل الذكاء الاصطناعي لعملك**\n\n`;
     report += `📊 **إجمالي المبيعات:** ${totalSales} ج.م\n`;
     report += `📉 **إجمالي المشتريات:** ${totalPurchases} ج.م\n`;
-    report += `💸 **إجمالي المصروفات:** ${totalExpenses} ج.م\n`;
-    report += `💰 **صافي الربح:** ${profit} ج.م\n\n`;
+    report += `💸 **إجمالي المصروفات:** ${totalExpenses} ج.м\n`;
+    report += `💰 **صافي الربح:** ${profit} ج.м\n\n`;
 
     if(profit > 0) {
         report += `✅ **الأداء المالي:** عملك يحقق أرباحاً. استمر في تطوير مبيعاتك.\n`;
@@ -698,7 +862,6 @@ function showAIReport() {
         report += `📦 **تنبيه المخزون:** لم تضف أي منتجات بعد. ابدأ بإضافة منتجات.\n`;
     }
 
-    // تحليل المنتج الأكثر مبيعاً
     const productSales = {};
     data.sales.forEach(s => {
         productSales[s.product] = (productSales[s.product] || 0) + s.qty;
@@ -739,4 +902,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     updateUI();
     switchPage('dashboard');
 }
-console.log('✅ نظام راشد V30 - النسخة النهائية المستقرة');
+console.log('✅ نظام راشد V31 - Backup, Restore, و Clear Data');
