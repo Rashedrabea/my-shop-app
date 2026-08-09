@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V34 - النسخة الكاملة</title>
+    <title>نظام راشد V35 - النهائية</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -18,7 +18,7 @@
     <!-- شاشة الدخول -->
     <div class="auth-container" id="authContainer">
         <div class="auth-box">
-            <h2>نظام راشد V34</h2>
+            <h2>نظام راشد V35</h2>
             <div id="loginForm">
                 <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
                 <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -39,20 +39,22 @@
     <div id="appContainer" style="display:none;">
         <div class="app-wrapper">
             <div class="sidebar" id="sidebar">
-                <div class="sidebar-brand" onclick="handleLogoClick()">📊 راشد V34</div>
+                <!-- حدث الضغط المتكرر هنا -->
+                <div class="sidebar-brand" onclick="handleLogoClick()">📊 راشد V35</div>
                 <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
                 <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
                 <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i> المشتريات</button>
                 <button class="nav-btn" onclick="switchPage('products')"><i class="fas fa-warehouse"></i> المخزون</button>
                 <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> جهات الاتصال</button>
                 <button class="nav-btn" onclick="switchPage('treasury')"><i class="fas fa-coins"></i> الخزنة</button>
+                <button class="nav-btn" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i> التقارير</button>
                 <button class="nav-btn" onclick="switchPage('settings')"><i class="fas fa-cog"></i> الإعدادات</button>
                 <button class="nav-btn logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
             </div>
 
             <div class="main-content">
                 <div class="top-bar">
-                    <div class="brand">نظام راشد <span class="version">V34</span></div>
+                    <div class="brand">نظام راشد <span class="version">V35</span></div>
                     <div class="user-info">👤 <span id="userDisplay">admin</span></div>
                 </div>
 
@@ -64,7 +66,7 @@
                         <div class="dash-card card-products" onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
                         <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
                         <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
-                        <div class="dash-card card-reports" onclick="switchPage('settings')"><i class="fas fa-chart-pie"></i><span>الإعدادات</span></div>
+                        <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
                     </div>
                     
                     <div class="charts-container">
@@ -76,6 +78,13 @@
                             <h4>💰 رصيد الخزنة</h4>
                             <canvas id="treasuryChart"></canvas>
                         </div>
+                    </div>
+
+                    <!-- الذكاء الاصطناعي -->
+                    <div style="margin-top:15px;">
+                        <button onclick="showAIReport()" style="width:100%; padding:15px; background:linear-gradient(135deg, #2E4057, #00B894); color:white; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer;">
+                            🤖 تحليل الذكاء الاصطناعي للبيانات المالية
+                        </button>
                     </div>
                 </div>
 
@@ -211,7 +220,29 @@
                     </div>
                 </div>
 
-                <!-- صفحة الإعدادات (الترخيص والشركة) -->
+                <!-- صفحة التقارير (رجعت كلها) -->
+                <div id="page-reports" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>📊 التقارير المالية</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+                            <button onclick="showReport('income')" class="btn-main" style="background:#00B894;">📈 قائمة الدخل</button>
+                            <button onclick="showReport('balance')" class="btn-main" style="background:#6C5CE7;">⚖️ الميزانية</button>
+                            <button onclick="showReport('daily')" class="btn-main" style="background:#E17055;">📅 تقرير اليوم</button>
+                            <button onclick="showReport('trial')" class="btn-main" style="background:#FDCB6E; color:#333;">📋 ميزان المراجعة</button>
+                            <button onclick="showReport('statement')" class="btn-main" style="background:#2E4057; color:white;">📋 كشف حساب</button>
+                            <button onclick="printAllInvoices()" class="btn-main" style="background:#333; color:white;">🖨️ طباعة الفواتير</button>
+                        </div>
+                        <div class="form-group" id="statementClientField" style="display:none;">
+                            <label>اختر جهة الاتصال لعرض كشف الحساب</label>
+                            <select id="statementClientSelect" onchange="showReport('statement')">
+                                <option value="">-- اختر --</option>
+                            </select>
+                        </div>
+                        <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
+                    </div>
+                </div>
+
+                <!-- صفحة الإعدادات (بيانات الشركة والترخيص) -->
                 <div id="page-settings" class="page">
                     <div class="modal-box">
                         <div class="modal-header"><h2>⚙️ الإعدادات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
@@ -229,7 +260,7 @@
                                 <button onclick="activateLicense()" class="btn-green" style="padding:10px 20px;">تفعيل</button>
                             </div>
                             <div style="background:#f9f9f9; padding:15px; border-radius:8px; font-size:14px; margin-bottom:10px;">
-                                <p style="margin:0 0 10px 0;"><strong>للشراء والتفعيل:</strong></p>
+                                <p style="margin:0 0 10px 0; text-align:center;"><strong>للشراء والتفعيل:</strong></p>
                                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px 0;">
                                     <span>📱 فودافون كاش</span>
                                     <a href="https://www.vodafone.com.eg/vfcash" target="_blank" style="color:var(--primary); font-weight:bold; text-decoration:none;">01011993799</a>
@@ -257,12 +288,13 @@
             </div>
         </div>
 
+        <!-- الشريط السفلي -->
         <div class="bottom-nav">
             <button onclick="switchPage('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
             <button onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
             <button onclick="switchPage('purchases')"><i class="fas fa-truck-loading"></i><span>مشتريات</span></button>
             <button onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></button>
-            <button onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></button>
+            <button onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></button>
         </div>
     </div>
 
