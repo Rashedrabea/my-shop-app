@@ -1,5 +1,5 @@
 /* ============================================
-   نظام راشد V34 - النسخة الكاملة المتكاملة
+   نظام راشد V35 - النسخة النهائية المستقرة
    ============================================ */
 
 const firebaseConfig = {
@@ -17,8 +17,7 @@ let appData = {
     currentUser: null,
     license: { isActive: false, key: '', trialStart: null },
     admin: { password: 'admin123', logins: 0, usersCount: 0 },
-    company: { name: '', branch: 'رئيسي', address: '', phone: '', cr: '', tax: '' },
-    employees: []
+    company: { name: '', branch: 'رئيسي', address: '', phone: '', cr: '', tax: '' }
 };
 
 let chartInstances = {};
@@ -26,7 +25,7 @@ let logoClickCount = 0;
 
 function loadLocal() {
     try {
-        const raw = localStorage.getItem('RashedV34');
+        const raw = localStorage.getItem('RashedV35');
         if (raw) {
             const parsed = JSON.parse(raw);
             appData = parsed;
@@ -35,7 +34,7 @@ function loadLocal() {
 }
 function saveLocal() {
     try {
-        localStorage.setItem('RashedV34', JSON.stringify(appData));
+        localStorage.setItem('RashedV35', JSON.stringify(appData));
         syncCloud();
     } catch(e) {}
 }
@@ -48,7 +47,7 @@ function getData() {
 }
 
 // ============================================
-// نظام الدخول
+// نظام الدخول والخروج
 // ============================================
 function toggleAuthMode() {
     document.getElementById('loginForm').style.display = document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
@@ -123,7 +122,7 @@ function loadFromCloud() {
             const data = snapshot.val();
             if(data) {
                 appData.users[uid].data = data;
-                localStorage.setItem('RashedV34', JSON.stringify(appData));
+                localStorage.setItem('RashedV35', JSON.stringify(appData));
                 updateUI();
                 showToast('☁️ تم تحديث البيانات من السحابة');
             }
@@ -172,7 +171,7 @@ function checkTrialStatus() {
 
 function activateLicense() {
     const input = document.getElementById('licenseKeyInput').value.trim();
-    const validKeys = ['RASHED-PRO-2026', 'PREMIUM-2026', 'V34-LICENSE'];
+    const validKeys = ['RASHED-PRO-2026', 'PREMIUM-2026', 'V35-LICENSE'];
     if(validKeys.includes(input)) {
         appData.license.isActive = true;
         appData.license.key = input;
@@ -500,21 +499,18 @@ function updateUI() {
     const data = getData();
     updateSelects();
 
-    // تحديث قوائم جهات الاتصال والمخزون
     document.getElementById('clientList').innerHTML = data.clients.map(c => `
-        <div class="list-item"><span><strong>${c.name}</strong> - ${c.type}</span></div>
+        <div class="list-item"><span><strong>${c.name}</strong><br><small>${c.phone || ''} | ${c.type}</small></span></div>
     `).join('');
 
     document.getElementById('productList').innerHTML = data.products.map(p => `
-        <div class="list-item"><span><strong>${p.name}</strong> (${p.qty}) - ${p.sell} ج.م</span></div>
+        <div class="list-item"><span><strong>${p.name}</strong><br><small>${p.desc || ''} | كمية: ${p.qty}</small></span><span>${p.sell} ج.م</span></div>
     `).join('');
 
-    // تحديث سجل الخزنة
     document.getElementById('treasuryLog').innerHTML = data.treasuryLog.slice().reverse().map(t => `
         <div class="list-item"><span>${t.desc}</span><span>${t.amount} ج.م</span></div>
     `).join('') || '<div style="text-align:center;color:#777;padding:10px;">لا توجد حركات</div>';
 
-    // تحديث قائمة المبيعات
     document.getElementById('saleList').innerHTML = data.sales.slice().reverse().map(s => `
         <div class="list-item">
             <span>${s.client} - ${s.product}</span>
@@ -525,7 +521,6 @@ function updateUI() {
         </div>
     `).join('');
 
-    // تحديث قائمة المشتريات
     document.getElementById('purchaseList').innerHTML = data.purchases.slice().reverse().map(p => `
         <div class="list-item">
             <span>${p.supplier} - ${p.product}</span>
@@ -536,16 +531,13 @@ function updateUI() {
         </div>
     `).join('');
 
-    // تحديث بيانات الشركة في الإعدادات
+    document.getElementById('treasuryDisplay').textContent = data.treasury;
     document.getElementById('compName').value = appData.company.name || '';
     document.getElementById('compBranch').value = appData.company.branch || 'رئيسي';
     document.getElementById('compAddress').value = appData.company.address || '';
     document.getElementById('compPhone').value = appData.company.phone || '';
     document.getElementById('compCR').value = appData.company.cr || '';
     document.getElementById('compTax').value = appData.company.tax || '';
-    
-    // تحديث الخزنة
-    document.getElementById('treasuryDisplay').textContent = data.treasury;
 }
 
 function switchPage(page) {
@@ -584,16 +576,182 @@ function drawCharts() {
 }
 
 // ============================================
+// التقارير وكشف الحساب
+// ============================================
+function showReport(type) {
+    const data = getData();
+    const totalSales = data.sales.reduce((s, i) => s + i.total, 0);
+    const totalPurchases = data.purchases.reduce((s, i) => s + i.total, 0);
+    const totalExpenses = data.expenses.reduce((s, i) => s + i.amount, 0);
+    const profit = totalSales - totalPurchases - totalExpenses;
+    
+    let html = '';
+    
+    if(type === 'income') {
+        html = `<div style="background:#252538; border-radius:12px; padding:15px;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #444; padding:8px 0;">
+                <span style="color:#aaa;">📈 قائمة الدخل</span><span style="color:#fff;">المبلغ</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span>الإيرادات (المبيعات)</span><span style="color:#00B894;">${totalSales} ج.م</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span>التكاليف (المشتريات)</span><span style="color:#E17055;">${totalPurchases} ج.م</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span>المصروفات</span><span style="color:#E17055;">${totalExpenses} ج.м</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
+                <span style="font-weight:bold;">صافي الربح</span><span style="color:${profit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${profit} ج.м</span>
+            </div>
+        </div>`;
+    } else if(type === 'daily') {
+        const today = new Date().toLocaleDateString();
+        const todaySales = data.sales.filter(s => s.date === today).reduce((s, i) => s + i.total, 0);
+        const todayPurchases = data.purchases.filter(p => p.date === today).reduce((s, i) => s + i.total, 0);
+        const todayExpenses = data.expenses.filter(e => e.date === today).reduce((s, i) => s + i.amount, 0);
+        const todayProfit = todaySales - todayPurchases - todayExpenses;
+        html = `<div style="background:#252538; border-radius:12px; padding:15px;">
+            <div style="text-align:center; border-bottom:1px solid #444; padding-bottom:10px; margin-bottom:10px;">
+                <span style="color:#fff; font-size:16px; font-weight:bold;">📅 تقرير الخزنة اليومي</span><br>
+                <span style="color:#aaa; font-size:12px;">${today}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span>مبيعات اليوم</span><span style="color:#00B894;">${todaySales} ج.м</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span>مشتريات اليوم</span><span style="color:#E17055;">${todayPurchases} ج.м</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span>مصروفات اليوم</span><span style="color:#E17055;">${todayExpenses} ج.м</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
+                <span style="font-weight:bold;">صافي ربح اليوم</span><span style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${todayProfit} ج.м</span>
+            </div>
+        </div>`;
+    } else if(type === 'trial') {
+        const totalAssets = data.treasury;
+        const totalLiabilities = data.sales.filter(s => s.type === 'credit').reduce((s, i) => s + i.total, 0);
+        const equity = totalAssets - totalLiabilities;
+        html = `<div style="background:#252538; border-radius:12px; padding:15px;">
+            <div style="text-align:center; border-bottom:1px solid #444; padding-bottom:10px; margin-bottom:10px;">
+                <span style="color:#fff; font-size:16px; font-weight:bold;">📋 ميزان المراجعة</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span style="color:#aaa;">الأصول (الخزنة)</span><span style="color:#00B894;">${totalAssets} ج.м</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #333;">
+                <span style="color:#aaa;">الخصوم (الآجل)</span><span style="color:#E17055;">${totalLiabilities} ج.м</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894;">
+                <span style="color:#fff;">حقوق الملكية</span><span style="color:${equity >= 0 ? '#00B894' : '#E17055'}; font-weight:bold;">${equity} j.m</span>
+            </div>
+        </div>`;
+    } else if(type === 'statement') {
+        const clientName = document.getElementById('statementClientSelect').value;
+        if(!clientName) {
+            document.getElementById('statementClientField').style.display = 'block';
+            html = `<div style="color:#aaa; text-align:center; padding:20px;">الرجاء اختيار جهة الاتصال</div>`;
+        } else {
+            document.getElementById('statementClientField').style.display = 'block';
+            const clientSales = data.sales.filter(s => s.client === clientName);
+            const clientCollections = data.collections.filter(c => c.client === clientName);
+            const clientPurchases = data.purchases.filter(p => p.supplier === clientName);
+            const clientPayments = data.supplierPayments.filter(p => p.supplier === clientName);
+            
+            let balance = 0;
+            let rows = '';
+            
+            const isClient = data.clients.find(c => c.name === clientName && (c.type === 'عميل' || c.type === 'كلاهما'));
+            if(isClient) {
+                clientSales.forEach(s => {
+                    balance += s.total;
+                    rows += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
+                        <span style="color:#aaa;">${s.date}</span>
+                        <span style="color:#fff;">بيع - ${s.product}</span>
+                        <span style="color:#E17055;">${s.total} ج.м</span>
+                        <span style="color:#fff;">${balance} ج.м</span>
+                    </div>`;
+                });
+                clientCollections.forEach(c => {
+                    balance -= c.amount;
+                    rows += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
+                        <span style="color:#aaa;">${new Date(c.id).toLocaleDateString()}</span>
+                        <span style="color:#fff;">تحصيل</span>
+                        <span style="color:#00B894;">${c.amount} ج.м</span>
+                        <span style="color:#fff;">${balance} ج.м</span>
+                    </div>`;
+                });
+            }
+            const isSupplier = data.clients.find(c => c.name === clientName && (c.type === 'مورد' || c.type === 'كلاهما'));
+            if(isSupplier) {
+                clientPurchases.forEach(p => {
+                    balance += p.total;
+                    rows += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
+                        <span style="color:#aaa;">${p.date}</span>
+                        <span style="color:#fff;">شراء - ${p.product}</span>
+                        <span style="color:#E17055;">${p.total} ج.м</span>
+                        <span style="color:#fff;">${balance} ج.м</span>
+                    </div>`;
+                });
+                clientPayments.forEach(p => {
+                    balance -= p.amount;
+                    rows += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #333; font-size:13px;">
+                        <span style="color:#aaa;">${new Date(p.id).toLocaleDateString()}</span>
+                        <span style="color:#fff;">سداد مورد</span>
+                        <span style="color:#00B894;">${p.amount} ج.м</span>
+                        <span style="color:#fff;">${balance} ج.м</span>
+                    </div>`;
+                });
+            }
+            if(!rows) {
+                html = `<div style="color:#aaa; text-align:center; padding:20px;">لا توجد معاملات</div>`;
+            } else {
+                html = `<div style="background:#252538; border-radius:12px; padding:15px;">
+                    <div style="text-align:center; border-bottom:1px solid #444; padding-bottom:10px; margin-bottom:10px;">
+                        <span style="color:#fff; font-size:16px; font-weight:bold;">📋 كشف حساب ${clientName}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:2px solid #00B894; font-weight:bold;">
+                        <span style="color:#fff;">التاريخ</span><span style="color:#fff;">البيان</span><span style="color:#fff;">المبلغ</span><span style="color:#fff;">الرصيد</span>
+                    </div>
+                    ${rows}
+                    <div style="display:flex; justify-content:space-between; padding-top:10px; margin-top:10px; border-top:2px solid #00B894; font-weight:bold;">
+                        <span style="color:#fff;">الرصيد النهائي</span>
+                        <span style="color:${balance > 0 ? '#E17055' : '#00B894'}; font-weight:bold;">${balance} ج.м</span>
+                    </div>
+                </div>`;
+            }
+        }
+    }
+    document.getElementById('reportContent').innerHTML = html;
+}
+
+// ============================================
+// الذكاء الاصطناعي
+// ============================================
+function showAIReport() {
+    const data = getData();
+    const totalSales = data.sales.reduce((s, i) => s + i.total, 0);
+    const totalPurchases = data.purchases.reduce((s, i) => s + i.total, 0);
+    const totalExpenses = data.expenses.reduce((s, i) => s + i.amount, 0);
+    const profit = totalSales - totalPurchases - totalExpenses;
+    let report = `🤖 تحليل الذكاء الاصطناعي:\n\n`;
+    report += `مبيعات: ${totalSales} ج.م\nمشتريات: ${totalPurchases} ج.م\nمصروفات: ${totalExpenses} ج.م\n`;
+    if(profit > 0) report += `✅ الربح: ${profit} ج.م`;
+    else report += `⚠️ الخسارة: ${profit} ج.م`;
+    alert(report);
+}
+
+// ============================================
 // الطباعة
 // ============================================
 function generateInvoiceHTML(item, type) {
-    const profile = appData.users[appData.currentUser].profile || { shopName: 'نظام راشد' };
     const title = type === 'sale' ? 'فاتورة بيع' : 'فاتورة شراء';
     const party = type === 'sale' ? item.client : item.supplier;
     return `
-        <div class="print-area" style="direction:rtl;font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto;border:1px solid #ddd;border-radius:10px;background:white;">
+        <div style="direction:rtl;font-family:Arial;padding:20px;max-width:600px;margin:auto;border:1px solid #ddd;border-radius:10px;background:white;">
             <div style="text-align:center;border-bottom:2px solid #2E4057;padding-bottom:15px;margin-bottom:15px;">
-                <h2 style="margin:0;">${profile.shopName}</h2>
+                <h2 style="margin:0;">نظام راشد</h2>
                 <p style="font-size:12px;color:#777;">${title}</p>
             </div>
             <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:10px;">
@@ -615,7 +773,7 @@ function printSaleInvoice(id) {
     const sale = data.sales.find(s => s.id === id);
     if(!sale) return showToast('الفاتورة غير موجودة');
     const win = window.open('', '_blank');
-    win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${sale.id}</title><style>body{background:white;padding:20px;}</style></head><body>`);
+    win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة</title></head><body>`);
     win.document.write(generateInvoiceHTML(sale, 'sale'));
     win.document.write(`</body></html>`);
     win.document.close();
@@ -628,12 +786,18 @@ function printPurchaseInvoice(id) {
     const purchase = data.purchases.find(p => p.id === id);
     if(!purchase) return showToast('الفاتورة غير موجودة');
     const win = window.open('', '_blank');
-    win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${purchase.id}</title><style>body{background:white;padding:20px;}</style></head><body>`);
+    win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة</title></head><body>`);
     win.document.write(generateInvoiceHTML(purchase, 'purchase'));
     win.document.write(`</body></html>`);
     win.document.close();
     win.focus();
     win.print();
+}
+
+function printAllInvoices() {
+    const data = getData();
+    if(data.sales.length === 0) return showToast('لا توجد فواتير');
+    data.sales.forEach(s => printSaleInvoice(s.id));
 }
 
 // ============================================
@@ -658,4 +822,4 @@ if(appData.currentUser && appData.users[appData.currentUser]) {
     updateUI();
     switchPage('dashboard');
 }
-console.log('✅ نظام راشد V34 - النسخة الكاملة والمستقرة');
+console.log('✅ نظام راشد V35 - النسخة النهائية المستقرة');
