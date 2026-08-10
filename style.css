@@ -106,7 +106,8 @@ body { background: var(--bg-color); margin: 0; padding: 0; min-height: 100vh; co
 .dash-card span { font-size: 14px; font-weight: bold; }
 .card-sales i { color: #2E4057; }
 .card-purchases i { color: #E17055; }
-.card-products i { color: #FDCB6E; }
+.card-warehouse i { color: #FDCB6E; }
+.card-products i { color: #0984e3; }
 .card-clients i { color: #00B894; }
 .card-treasury { background: #00B894; color: white; border: none; }
 .card-reports { background: #2E4057; color: white; border: none; }
