@@ -181,3 +181,88 @@ body.theme-green .top-bar { border-color: #00b894; }
 body.theme-purple { --primary: #2c1a4d; --bg-color: #3d266b; --card-bg: #2c1a4d; --text-color: #eee; }
 body.theme-purple .modal-box { background: #2c1a4d; }
 body.theme-purple .top-bar { border-color: #a29bfe; }
+
+/* ===== الإعدادات ===== */
+.settings-section {
+    background: var(--card-bg);
+    border: 1px solid #eee;
+    border-radius: var(--radius);
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.btn-theme {
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.2s;
+    border: 2px solid transparent;
+}
+.btn-theme:hover { transform: scale(1.05); }
+
+.btn-sm {
+    padding: 8px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.2s;
+}
+.btn-sm:hover { background: #f0f0f0; }
+
+/* ===== Switch ===== */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .slider { background: var(--secondary); }
+input:checked + .slider:before { transform: translateX(22px); }
+
+/* ===== السمات ===== */
+body.theme-dark { --bg-color: #1a1a2e; --card-bg: #16213e; --text-color: #eee; --border: #333; }
+body.theme-dark .modal-box { background: #16213e; border-color: #333; }
+body.theme-dark .list-item { border-color: #333; }
+body.theme-dark .form-group input, body.theme-dark .form-group select { background: #1a1a2e; color: white; border-color: #444; }
+body.theme-dark .top-bar { border-color: #00B894; }
+body.theme-dark .chart-wrapper { background: #16213e; border-color: #333; }
+body.theme-dark .treasury-section { background: #16213e; border-color: #333; }
+body.theme-dark .settings-section { background: #16213e; border-color: #333; }
+
+body.theme-blue { --primary: #0c2461; --bg-color: #1a2a6c; --card-bg: #16255e; --text-color: #eee; }
+body.theme-blue .modal-box { background: #16255e; }
+body.theme-blue .top-bar { border-color: #6C5CE7; }
+
+body.theme-green { --primary: #0a3d2e; --secondary: #00b894; --bg-color: #0d4a3a; --card-bg: #0a3528; --text-color: #eee; }
+body.theme-green .modal-box { background: #0a3528; }
+body.theme-green .top-bar { border-color: #00b894; }
+
+body.theme-purple { --primary: #2c1a4d; --bg-color: #3d266b; --card-bg: #2c1a4d; --text-color: #eee; }
+body.theme-purple .modal-box { background: #2c1a4d; }
+body.theme-purple .top-bar { border-color: #a29bfe; }
