@@ -1,5 +1,5 @@
 // ============================================================
-// نظام راشد V31 - النسخة الكاملة
+// نظام راشد V31 - ERP متكامل
 // ============================================================
 
 // ============================================================
@@ -22,19 +22,13 @@ let appData = { users: {}, currentUser: null, adminPin: '1234', activityLog: [] 
 let chartInstances = {};
 let clickCount = 0;
 let clickTimer = null;
-let firebaseApp = null;
-let firebaseAuth = null;
-let firebaseDb = null;
+let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 
 // متغيرات الفواتير
-let saleItems = [];
-let saleTotal = 0;
-let returnSaleItems = [];
-let returnSaleTotal = 0;
-let purchaseItems = [];
-let purchaseTotal = 0;
-let returnPurchaseItems = [];
-let returnPurchaseTotal = 0;
+let saleItems = [], saleTotal = 0;
+let returnSaleItems = [], returnSaleTotal = 0;
+let purchaseItems = [], purchaseTotal = 0;
+let returnPurchaseItems = [], returnPurchaseTotal = 0;
 
 // ============================================================
 // 3. تهيئة Firebase
@@ -46,9 +40,7 @@ function initFirebase() {
             firebaseAuth = firebase.auth(firebaseApp);
             firebaseDb = firebase.database(firebaseApp);
         }
-    } catch(e) {
-        console.warn('Firebase error:', e);
-    }
+    } catch(e) { console.warn('Firebase:', e); }
     return { app: firebaseApp, auth: firebaseAuth, db: firebaseDb };
 }
 
@@ -64,57 +56,55 @@ function loadLocal() {
             if (!appData.activityLog) appData.activityLog = [];
             if (!appData.users) appData.users = {};
         }
-    } catch(e) { console.warn('Load error:', e); }
+    } catch(e) {}
 }
 
 function saveLocal() {
     try {
         localStorage.setItem('RashedV31', JSON.stringify(appData));
         syncCloud();
-    } catch(e) { console.warn('Save error:', e); }
+    } catch(e) {}
 }
 
 function getData() {
     if (!appData.currentUser || !appData.users[appData.currentUser]) {
         return {
             sales: [], purchases: [], products: [], clients: [],
-            treasury: 0, treasuryLog: [], expenses: [],
-            collections: [], supplierPayments: [],
-            warehouse: [],
+            treasury: 0, treasuryLog: [], expenses: [], collections: [],
+            supplierPayments: [], warehouse: [],
             saleCounter: 0, purchaseCounter: 0,
             returnSaleCounter: 0, returnPurchaseCounter: 0,
             profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
-            settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
+            settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep' }
         };
     }
-    
-    const data = appData.users[appData.currentUser].data || {};
-    if (!data.sales) data.sales = [];
-    if (!data.purchases) data.purchases = [];
-    if (!data.products) data.products = [];
-    if (!data.clients) data.clients = [];
-    if (data.treasury === undefined) data.treasury = 0;
-    if (!data.treasuryLog) data.treasuryLog = [];
-    if (!data.expenses) data.expenses = [];
-    if (!data.collections) data.collections = [];
-    if (!data.supplierPayments) data.supplierPayments = [];
-    if (!data.warehouse) data.warehouse = [];
-    if (data.saleCounter === undefined) data.saleCounter = 0;
-    if (data.purchaseCounter === undefined) data.purchaseCounter = 0;
-    if (data.returnSaleCounter === undefined) data.returnSaleCounter = 0;
-    if (data.returnPurchaseCounter === undefined) data.returnPurchaseCounter = 0;
-    if (!data.profile) data.profile = { shopName: 'نظام راشد', branch: 'رئيسي' };
-    if (!data.settings) data.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 };
-    return data;
+    const d = appData.users[appData.currentUser].data || {};
+    if (!d.sales) d.sales = [];
+    if (!d.purchases) d.purchases = [];
+    if (!d.products) d.products = [];
+    if (!d.clients) d.clients = [];
+    if (d.treasury === undefined) d.treasury = 0;
+    if (!d.treasuryLog) d.treasuryLog = [];
+    if (!d.expenses) d.expenses = [];
+    if (!d.collections) d.collections = [];
+    if (!d.supplierPayments) d.supplierPayments = [];
+    if (!d.warehouse) d.warehouse = [];
+    if (d.saleCounter === undefined) d.saleCounter = 0;
+    if (d.purchaseCounter === undefined) d.purchaseCounter = 0;
+    if (d.returnSaleCounter === undefined) d.returnSaleCounter = 0;
+    if (d.returnPurchaseCounter === undefined) d.returnPurchaseCounter = 0;
+    if (!d.profile) d.profile = { shopName: 'نظام راشد', branch: 'رئيسي' };
+    if (!d.settings) d.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep' };
+    return d;
 }
 
 function syncCloud() {
     if (!appData.currentUser || !appData.users[appData.currentUser]) return;
     try {
         const { db } = initFirebase();
-        const data = appData.users[appData.currentUser].data;
-        if (data) db.ref('users/' + appData.currentUser + '/data').set(data);
-    } catch(e) { console.warn('Sync error:', e); }
+        const d = appData.users[appData.currentUser].data;
+        if (d) db.ref('users/' + appData.currentUser + '/data').set(d);
+    } catch(e) {}
 }
 
 // ============================================================
@@ -122,11 +112,11 @@ function syncCloud() {
 // ============================================================
 async function getUserLocation() {
     try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        return { ip: data.ip || 'غير معروف', country: data.country_name || 'غير معروف', city: data.city || 'غير معروف', region: data.region || 'غير معروف', browser: navigator.userAgent || 'غير معروف' };
+        const r = await fetch('https://ipapi.co/json/');
+        const d = await r.json();
+        return { ip: d.ip || 'غير معروف', country: d.country_name || 'غير معروف', city: d.city || 'غير معروف', browser: navigator.userAgent || 'غير معروف' };
     } catch(e) {
-        return { ip: 'غير معروف', country: 'غير معروف', city: 'غير معروف', region: 'غير معروف', browser: navigator.userAgent || 'غير معروف' };
+        return { ip: 'غير معروف', country: 'غير معروف', city: 'غير معروف', browser: navigator.userAgent || 'غير معروف' };
     }
 }
 
@@ -134,122 +124,81 @@ async function getUserLocation() {
 // 6. الدخول والخروج
 // ============================================================
 function toggleAuthMode() {
-    const login = document.getElementById('loginForm');
-    const register = document.getElementById('registerForm');
-    if (login) login.style.display = login.style.display === 'none' ? 'block' : 'none';
-    if (register) register.style.display = register.style.display === 'none' ? 'block' : 'none';
+    const l = document.getElementById('loginForm'), r = document.getElementById('registerForm');
+    if (l) l.style.display = l.style.display === 'none' ? 'block' : 'none';
+    if (r) r.style.display = r.style.display === 'none' ? 'block' : 'none';
 }
 
 async function handleLogin() {
-    const username = document.getElementById('loginUser').value.trim();
-    const pass = document.getElementById('loginPass').value.trim();
-    const email = username + '@rashed.com';
-    if (!username || !pass) return showToast('⚠️ أدخل البيانات');
-    
+    const u = document.getElementById('loginUser').value.trim(), p = document.getElementById('loginPass').value.trim();
+    if (!u || !p) return showToast('⚠️ أدخل البيانات');
     try {
         const { auth } = initFirebase();
-        await auth.signInWithEmailAndPassword(email, pass);
-        const user = auth.currentUser;
-        const location = await getUserLocation();
-        
+        await auth.signInWithEmailAndPassword(u + '@rashed.com', p);
+        const user = auth.currentUser, loc = await getUserLocation();
         appData.currentUser = user.uid;
         if (!appData.users[user.uid]) {
             appData.users[user.uid] = {
-                displayName: username,
-                fullName: username,
-                phone: '',
-                address: '',
-                data: {
-                    sales: [], purchases: [], products: [], clients: [],
-                    treasury: 0, treasuryLog: [], expenses: [],
-                    collections: [], supplierPayments: [],
-                    warehouse: [],
-                    saleCounter: 0, purchaseCounter: 0,
-                    returnSaleCounter: 0, returnPurchaseCounter: 0,
-                    profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
-                    settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
-                }
+                displayName: u, fullName: u, phone: '', address: '',
+                data: { sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [], supplierPayments: [], warehouse: [], saleCounter: 0, purchaseCounter: 0, returnSaleCounter: 0, returnPurchaseCounter: 0, profile: { shopName: 'نظام راشد', branch: 'رئيسي' }, settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep' } }
             };
         }
-        
         appData.users[user.uid].lastLogin = new Date().toISOString();
-        appData.users[user.uid].lastLocation = location;
-        appData.activityLog.push({ userId: user.uid, username: username, action: 'دخول', time: new Date().toISOString(), ip: location.ip, country: location.country, city: location.city, browser: location.browser });
+        appData.users[user.uid].lastLocation = loc;
+        appData.activityLog.push({ userId: user.uid, username: u, action: 'دخول', time: new Date().toISOString(), ip: loc.ip, country: loc.country });
         saveLocal();
         enterApp();
-        showToast('✅ مرحباً ' + username);
-    } catch(error) {
-        if (error.code === 'auth/user-not-found') showToast('❌ المستخدم غير موجود');
-        else if (error.code === 'auth/wrong-password') showToast('❌ كلمة المرور خطأ');
-        else showToast('❌ ' + error.message);
+        showToast('✅ مرحباً ' + u);
+    } catch(e) {
+        if (e.code === 'auth/user-not-found') showToast('❌ المستخدم غير موجود');
+        else if (e.code === 'auth/wrong-password') showToast('❌ كلمة المرور خطأ');
+        else showToast('❌ ' + e.message);
     }
 }
 
 async function handleRegister() {
-    const username = document.getElementById('regUser').value.trim();
-    const pass = document.getElementById('regPass').value.trim();
-    const confirm = document.getElementById('regPassConfirm').value.trim();
-    const fullName = document.getElementById('regFullName').value.trim();
-    const phone = document.getElementById('regPhone').value.trim();
-    const address = document.getElementById('regAddress').value.trim();
-    const email = username + '@rashed.com';
-    
-    if (!username || username.length < 3) return showToast('⚠️ 3 أحرف على الأقل');
-    if (pass.length < 6) return showToast('⚠️ 6 أحرف على الأقل');
-    if (pass !== confirm) return showToast('⚠️ غير متطابقة');
-    if (!fullName) return showToast('⚠️ أدخل الاسم الكامل');
-    
+    const u = document.getElementById('regUser').value.trim(), p = document.getElementById('regPass').value.trim(), c = document.getElementById('regPassConfirm').value.trim();
+    const fn = document.getElementById('regFullName').value.trim(), ph = document.getElementById('regPhone').value.trim(), ad = document.getElementById('regAddress').value.trim();
+    if (!u || u.length < 3) return showToast('⚠️ 3 أحرف');
+    if (p.length < 6) return showToast('⚠️ 6 أحرف');
+    if (p !== c) return showToast('⚠️ غير متطابقة');
+    if (!fn) return showToast('⚠️ الاسم الكامل');
     try {
         const { auth, db } = initFirebase();
-        const result = await auth.createUserWithEmailAndPassword(email, pass);
-        const user = result.user;
-        const location = await getUserLocation();
-        
+        const result = await auth.createUserWithEmailAndPassword(u + '@rashed.com', p);
+        const user = result.user, loc = await getUserLocation();
         await db.ref('users/' + user.uid + '/data').set({
-            sales: [], purchases: [], products: [], clients: [],
-            treasury: 0, treasuryLog: [], expenses: [],
-            collections: [], supplierPayments: [],
-            warehouse: [],
-            saleCounter: 0, purchaseCounter: 0,
-            returnSaleCounter: 0, returnPurchaseCounter: 0,
+            sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [], supplierPayments: [], warehouse: [],
+            saleCounter: 0, purchaseCounter: 0, returnSaleCounter: 0, returnPurchaseCounter: 0,
             profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
-            settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
+            settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep' }
         });
-        
         appData.currentUser = user.uid;
         appData.users[user.uid] = {
-            displayName: username,
-            fullName: fullName,
-            phone: phone,
-            address: address,
-            lastLogin: new Date().toISOString(),
-            lastLocation: location,
+            displayName: u, fullName: fn, phone: ph, address: ad,
+            lastLogin: new Date().toISOString(), lastLocation: loc,
             data: {
-                sales: [], purchases: [], products: [], clients: [],
-                treasury: 0, treasuryLog: [], expenses: [],
-                collections: [], supplierPayments: [],
-                warehouse: [],
-                saleCounter: 0, purchaseCounter: 0,
-                returnSaleCounter: 0, returnPurchaseCounter: 0,
+                sales: [], purchases: [], products: [], clients: [], treasury: 0, treasuryLog: [], expenses: [], collections: [], supplierPayments: [], warehouse: [],
+                saleCounter: 0, purchaseCounter: 0, returnSaleCounter: 0, returnPurchaseCounter: 0,
                 profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
-                settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
+                settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep' }
             }
         };
-        appData.activityLog.push({ userId: user.uid, username: username, action: 'تسجيل حساب جديد', time: new Date().toISOString(), ip: location.ip, country: location.country, city: location.city, browser: location.browser });
+        appData.activityLog.push({ userId: user.uid, username: u, action: 'تسجيل جديد', time: new Date().toISOString(), ip: loc.ip, country: loc.country });
         saveLocal();
         enterApp();
         showToast('✅ تم إنشاء الحساب');
-    } catch(error) {
-        if (error.code === 'auth/email-already-in-use') showToast('⚠️ الاسم مستخدم');
-        else showToast('❌ ' + error.message);
+    } catch(e) {
+        if (e.code === 'auth/email-already-in-use') showToast('⚠️ الاسم مستخدم');
+        else showToast('❌ ' + e.message);
     }
 }
 
 function logout() {
     if (confirm('تسجيل الخروج؟')) {
         const { auth } = initFirebase();
-        const username = appData.users[appData.currentUser]?.displayName || 'مستخدم';
-        appData.activityLog.push({ userId: appData.currentUser, username: username, action: 'خروج', time: new Date().toISOString() });
+        const u = appData.users[appData.currentUser]?.displayName || 'مستخدم';
+        appData.activityLog.push({ userId: appData.currentUser, username: u, action: 'خروج', time: new Date().toISOString() });
         saveLocal();
         auth.signOut().then(() => { appData.currentUser = null; saveLocal(); location.reload(); });
     }
@@ -258,8 +207,8 @@ function logout() {
 function enterApp() {
     document.getElementById('authContainer').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
-    const displayName = appData.users[appData.currentUser]?.fullName || appData.users[appData.currentUser]?.displayName || 'مستخدم';
-    document.getElementById('userDisplay').textContent = displayName;
+    const dn = appData.users[appData.currentUser]?.fullName || appData.users[appData.currentUser]?.displayName || 'مستخدم';
+    document.getElementById('userDisplay').textContent = dn;
     loadSettings();
     updateUI();
     updateAdminPanel();
@@ -272,78 +221,60 @@ function autoLogin() {
 }
 
 // ============================================================
-// 7. التنقل بين الصفحات
+// 7. التنقل
 // ============================================================
 function switchPage(page) {
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-    const target = document.getElementById('page-' + page);
-    if (target) target.classList.add('active');
+    const t = document.getElementById('page-' + page);
+    if (t) t.classList.add('active');
     if (page === 'dashboard') drawCharts();
     if (page === 'reports') updateReportSelects();
-    if (page === 'sales') { 
-        // التحقق من الوضع الحالي
-        if (document.getElementById('saleModeReturn').classList.contains('active')) {
-            initReturnSale();
-        } else {
-            initSaleInvoice();
-        }
+    if (page === 'sales') {
+        if (document.getElementById('saleModeReturn').classList.contains('active')) initReturnSale();
+        else initSaleInvoice();
     }
     if (page === 'purchases') {
-        if (document.getElementById('purchaseModeReturn').classList.contains('active')) {
-            initReturnPurchase();
-        } else {
-            initPurchaseInvoice();
-        }
+        if (document.getElementById('purchaseModeReturn').classList.contains('active')) initReturnPurchase();
+        else initPurchaseInvoice();
     }
     if (page === 'settings') {
         loadSettings();
-        const data = getData();
+        const d = getData();
         document.getElementById('settingsUser').textContent = appData.users[appData.currentUser]?.fullName || appData.users[appData.currentUser]?.displayName || 'مستخدم';
-        document.getElementById('settingsProducts').textContent = data.products.length;
-        document.getElementById('settingsClients').textContent = data.clients.length;
+        document.getElementById('settingsProducts').textContent = d.products.length;
+        document.getElementById('settingsClients').textContent = d.clients.length;
     }
     if (page === 'admin') updateAdminPanel();
     if (page === 'warehouse') updateWarehouseLog();
 }
 
 // ============================================================
-// 8. فاتورة المبيعات - بيع
+// 8. المبيعات
 // ============================================================
 function initSaleInvoice() {
-    const data = getData();
-    const today = new Date().toLocaleDateString('ar-EG');
-    document.getElementById('saleInvoiceDate').value = today;
-    data.saleCounter = (data.saleCounter || 0) + 1;
-    const invNum = 'INV-' + String(data.saleCounter).padStart(4, '0');
-    document.getElementById('saleInvoiceNumber').value = invNum;
-    saleItems = [];
-    saleTotal = 0;
+    const d = getData();
+    document.getElementById('saleInvoiceDate').value = new Date().toLocaleDateString('ar-EG');
+    d.saleCounter = (d.saleCounter || 0) + 1;
+    document.getElementById('saleInvoiceNumber').value = 'INV-' + String(d.saleCounter).padStart(4, '0');
+    saleItems = []; saleTotal = 0;
     updateSaleUI();
     saveLocal();
 }
 
 function searchProductForSale() {
-    const input = document.getElementById('saleProductSearch').value.trim();
-    if (!input) return;
-    const data = getData();
-    let product = data.products.find(p => p.barcode === input);
-    if (!product) product = data.products.find(p => p.name && p.name.toLowerCase().includes(input.toLowerCase()));
-    if (product) {
-        document.getElementById('salePrice').value = product.sell || 0;
-        document.getElementById('saleQty').value = 1;
-        document.getElementById('saleProductSearch').value = product.name;
-        showToast('✅ تم العثور على: ' + product.name);
-    }
+    const inp = document.getElementById('saleProductSearch').value.trim();
+    if (!inp) return;
+    const d = getData();
+    let p = d.products.find(x => x.barcode === inp);
+    if (!p) p = d.products.find(x => x.name && x.name.toLowerCase().includes(inp.toLowerCase()));
+    if (p) { document.getElementById('salePrice').value = p.sell || 0; document.getElementById('saleQty').value = 1; document.getElementById('saleProductSearch').value = p.name; showToast('✅ ' + p.name); }
 }
 
 function addProductToSale() {
-    const name = document.getElementById('saleProductSearch').value.trim();
-    const qty = parseInt(document.getElementById('saleQty').value) || 1;
-    const price = parseFloat(document.getElementById('salePrice').value) || 0;
-    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل اسم المنتج وسعر صحيح');
-    const data = getData();
-    const product = data.products.find(p => p.name === name);
-    if (product && product.qty < qty) return showToast(`⚠️ الكمية غير متوفرة! المتاح: ${product.qty}`);
+    const name = document.getElementById('saleProductSearch').value.trim(), qty = parseInt(document.getElementById('saleQty').value) || 1, price = parseFloat(document.getElementById('salePrice').value) || 0;
+    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل البيانات');
+    const d = getData(), p = d.products.find(x => x.name === name);
+    if (p && p.qty < qty) return showToast('⚠️ الكمية غير متوفرة');
     const total = qty * price;
     saleItems.push({ name, qty, price, total });
     saleTotal += total;
@@ -357,20 +288,13 @@ function addProductToSale() {
 function updateSaleUI() {
     const list = document.getElementById('saleItemsList');
     if (!list) return;
-    if (saleItems.length === 0) {
-        list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">أضف منتجات للفاتورة</div>';
-        document.getElementById('saleTotalDisplay').textContent = '0 ج.م';
-        updateSaleBalance();
-        return;
-    }
+    if (saleItems.length === 0) { list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">أضف منتجات</div>'; document.getElementById('saleTotalDisplay').textContent = '0 ج.م'; updateSaleBalance(); return; }
     let html = '';
-    saleItems.forEach((item, index) => {
+    saleItems.forEach((item, i) => {
         html += `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;align-items:center;">
-            <span>${item.name}</span>
-            <span style="text-align:center;">${item.qty}</span>
-            <span style="text-align:center;">${item.price} ج.م</span>
+            <span>${item.name}</span><span style="text-align:center;">${item.qty}</span><span style="text-align:center;">${item.price} ج.م</span>
             <span style="text-align:center;font-weight:bold;">${item.total} ج.م</span>
-            <span style="text-align:center;"><button onclick="removeSaleItem(${index})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
+            <span style="text-align:center;"><button onclick="removeSaleItem(${i})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
         </div>`;
     });
     list.innerHTML = html;
@@ -378,65 +302,38 @@ function updateSaleUI() {
     updateSaleBalance();
 }
 
-function removeSaleItem(index) {
-    saleTotal -= saleItems[index].total;
-    saleItems.splice(index, 1);
-    updateSaleUI();
-    showToast('🗑️ تم حذف المنتج');
-}
+function removeSaleItem(i) { saleTotal -= saleItems[i].total; saleItems.splice(i, 1); updateSaleUI(); showToast('🗑️ تم الحذف'); }
 
 function updateSaleBalance() {
-    const paid = parseFloat(document.getElementById('salePaid').value) || 0;
-    const balance = saleTotal - paid;
+    const paid = parseFloat(document.getElementById('salePaid').value) || 0, bal = saleTotal - paid;
     const el = document.getElementById('saleBalanceDisplay');
-    el.textContent = balance + ' ج.م';
-    el.style.color = balance > 0 ? '#E17055' : '#00B894';
+    el.textContent = bal + ' ج.م';
+    el.style.color = bal > 0 ? '#E17055' : '#00B894';
 }
 
 function saveSaleInvoice() {
-    const client = document.getElementById('saleClient').value.trim();
-    const invNum = document.getElementById('saleInvoiceNumber').value;
-    const date = document.getElementById('saleInvoiceDate').value;
-    const type = document.getElementById('saleType').value;
-    const paid = parseFloat(document.getElementById('salePaid').value) || 0;
+    const client = document.getElementById('saleClient').value.trim(), invNum = document.getElementById('saleInvoiceNumber').value;
+    const date = document.getElementById('saleInvoiceDate').value, type = document.getElementById('saleType').value, paid = parseFloat(document.getElementById('salePaid').value) || 0;
     if (!client) return showToast('⚠️ أدخل اسم العميل');
-    if (saleItems.length === 0) return showToast('⚠️ أضف منتجات للفاتورة');
-    
-    const data = getData();
-    let canSave = true;
-    saleItems.forEach(item => {
-        const product = data.products.find(p => p.name === item.name);
-        if (product && product.qty < item.qty) { canSave = false; showToast(`⚠️ الكمية غير متوفرة لـ ${item.name}`); }
-    });
-    if (!canSave) return;
-    
-    saleItems.forEach(item => {
-        const product = data.products.find(p => p.name === item.name);
-        if (product) product.qty -= item.qty;
-    });
-    
-    const invoice = { id: invNum, client, date, type, items: JSON.parse(JSON.stringify(saleItems)), total: saleTotal, paid, balance: saleTotal - paid, isReturn: false };
-    if (!data.sales) data.sales = [];
-    data.sales.push(invoice);
-    
-    if (type === 'cash') {
-        data.treasury = (data.treasury || 0) + paid;
-        data.treasuryLog.push({ desc: 'بيع كاش - ' + client + ' (' + invNum + ')', amount: paid });
-    } else if (paid > 0) {
-        data.treasury = (data.treasury || 0) + paid;
-        data.treasuryLog.push({ desc: 'دفعة مبيعات - ' + client + ' (' + invNum + ')', amount: paid });
-    }
-    
+    if (saleItems.length === 0) return showToast('⚠️ أضف منتجات');
+    const d = getData();
+    let can = true;
+    saleItems.forEach(item => { const p = d.products.find(x => x.name === item.name); if (p && p.qty < item.qty) { can = false; showToast('⚠️ الكمية غير متوفرة لـ ' + item.name); } });
+    if (!can) return;
+    saleItems.forEach(item => { const p = d.products.find(x => x.name === item.name); if (p) p.qty -= item.qty; });
+    const inv = { id: invNum, client, date, type, items: JSON.parse(JSON.stringify(saleItems)), total: saleTotal, paid, balance: saleTotal - paid, isReturn: false };
+    d.sales.push(inv);
+    if (type === 'cash') { d.treasury = (d.treasury || 0) + paid; d.treasuryLog.push({ desc: 'بيع كاش - ' + client + ' (' + invNum + ')', amount: paid }); }
+    else if (paid > 0) { d.treasury = (d.treasury || 0) + paid; d.treasuryLog.push({ desc: 'دفعة - ' + client + ' (' + invNum + ')', amount: paid }); }
     saveLocal();
-    showToast('✅ تم حفظ الفاتورة ' + invNum + ' بقيمة ' + saleTotal + ' ج.م');
+    showToast('✅ تم حفظ ' + invNum + ' بقيمة ' + saleTotal + ' ج.م');
     printSaleInvoice(invNum);
     clearSaleInvoice();
     updateUI();
 }
 
 function clearSaleInvoice() {
-    saleItems = [];
-    saleTotal = 0;
+    saleItems = []; saleTotal = 0;
     document.getElementById('saleClient').value = '';
     document.getElementById('salePaid').value = 0;
     updateSaleUI();
@@ -446,84 +343,56 @@ function clearSaleInvoice() {
     initSaleInvoice();
 }
 
-function printSaleInvoice(invoiceId) {
-    const data = getData();
-    const invoice = data.sales.find(s => s.id === invoiceId);
-    if (!invoice) return showToast('⚠️ الفاتورة غير موجودة');
-    const profile = data.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
-    const typeNames = { cash: 'كاش', credit: 'آجل', installment: 'تقسيط' };
-    let itemsHtml = '';
-    invoice.items.forEach(item => {
-        itemsHtml += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;">${item.total} ج.م</td></tr>`;
-    });
-    let printContent = `<div style="direction:rtl;font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:1px solid #ddd;border-radius:10px;">
+function printSaleInvoice(id) {
+    const d = getData(), inv = d.sales.find(s => s.id === id);
+    if (!inv) return showToast('⚠️ غير موجودة');
+    const p = d.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
+    const tn = { cash: 'كاش', credit: 'آجل', installment: 'تقسيط' };
+    let items = '';
+    inv.items.forEach(item => { items += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;">${item.total} ج.م</td></tr>`; });
+    const html = `<div style="direction:rtl;font-family:Arial;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:1px solid #ddd;border-radius:10px;">
         <div style="text-align:center;border-bottom:2px solid #2E4057;padding-bottom:15px;margin-bottom:20px;">
-            <h2 style="margin:0;color:#2E4057;">${profile.shopName}</h2>
-            <p style="font-size:12px;color:#666;margin:2px 0;">${profile.branch || ''}</p>
-            <p style="font-size:14px;font-weight:bold;color:#2E4057;margin:5px 0;">فاتورة بيع</p>
+            <h2 style="margin:0;color:#2E4057;">${p.shopName}</h2>
+            <p style="font-size:12px;color:#666;">${p.branch || ''}</p>
+            <p style="font-size:14px;font-weight:bold;color:#2E4057;">فاتورة بيع</p>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:15px;">
-            <div><strong>رقم الفاتورة:</strong> ${invoice.id}<br><strong>التاريخ:</strong> ${invoice.date}</div>
-            <div style="text-align:left;"><strong>العميل:</strong> ${invoice.client}<br><strong>نوع الدفع:</strong> ${typeNames[invoice.type] || invoice.type}</div>
+            <div><strong>رقم:</strong> ${inv.id}<br><strong>التاريخ:</strong> ${inv.date}</div>
+            <div style="text-align:left;"><strong>العميل:</strong> ${inv.client}<br><strong>نوع الدفع:</strong> ${tn[inv.type] || inv.type}</div>
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:15px;">
             <thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;border:1px solid #2E4057;">المنتج</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">الكمية</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">السعر</th><th style="padding:8px;text-align:left;border:1px solid #2E4057;">الإجمالي</th></tr></thead>
-            <tbody>${itemsHtml}</tbody>
+            <tbody>${items}</tbody>
             <tfoot>
-                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${invoice.total} ج.م</td></tr>
-                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${invoice.paid || 0} ج.م</td></tr>
-                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(invoice.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${invoice.balance || 0} ج.م</td></tr>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${inv.total} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${inv.paid || 0} ج.م</td></tr>
+                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(inv.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${inv.balance || 0} ج.م</td></tr>
             </tfoot>
         </table>
-        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا - ${profile.shopName}</div>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا</div>
     </div>`;
     const win = window.open('', '_blank');
-    if (win) {
-        win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${invoice.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${printContent}</body></html>`);
-        win.document.close();
-        win.focus();
-        setTimeout(() => { win.print(); }, 500);
-    }
+    if (win) { win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${inv.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${html}</body></html>`); win.document.close(); win.focus(); setTimeout(() => win.print(), 500); }
 }
 
 // ============================================================
-// 9. فاتورة المبيعات - مرتجع بيع
+// 9. مرتجع بيع
 // ============================================================
 function initReturnSale() {
-    const data = getData();
-    const today = new Date().toLocaleDateString('ar-EG');
-    document.getElementById('saleInvoiceDate').value = today;
-    data.returnSaleCounter = (data.returnSaleCounter || 0) + 1;
-    const invNum = 'RET-INV-' + String(data.returnSaleCounter).padStart(4, '0');
-    document.getElementById('saleInvoiceNumber').value = invNum;
-    returnSaleItems = [];
-    returnSaleTotal = 0;
+    const d = getData();
+    document.getElementById('saleInvoiceDate').value = new Date().toLocaleDateString('ar-EG');
+    d.returnSaleCounter = (d.returnSaleCounter || 0) + 1;
+    document.getElementById('saleInvoiceNumber').value = 'RET-INV-' + String(d.returnSaleCounter).padStart(4, '0');
+    returnSaleItems = []; returnSaleTotal = 0;
     updateReturnSaleUI();
     saveLocal();
 }
 
-function searchProductForReturnSale() {
-    const input = document.getElementById('saleProductSearch').value.trim();
-    if (!input) return;
-    const data = getData();
-    let product = data.products.find(p => p.barcode === input);
-    if (!product) product = data.products.find(p => p.name && p.name.toLowerCase().includes(input.toLowerCase()));
-    if (product) {
-        document.getElementById('salePrice').value = product.sell || 0;
-        document.getElementById('saleQty').value = 1;
-        document.getElementById('saleProductSearch').value = product.name;
-        showToast('✅ تم العثور على: ' + product.name);
-    }
-}
-
 function addProductToReturnSale() {
-    const name = document.getElementById('saleProductSearch').value.trim();
-    const qty = parseInt(document.getElementById('saleQty').value) || 1;
-    const price = parseFloat(document.getElementById('salePrice').value) || 0;
-    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل اسم المنتج وسعر صحيح');
-    const data = getData();
-    const product = data.products.find(p => p.name === name);
-    if (!product) return showToast('⚠️ المنتج غير موجود في المخزون');
+    const name = document.getElementById('saleProductSearch').value.trim(), qty = parseInt(document.getElementById('saleQty').value) || 1, price = parseFloat(document.getElementById('salePrice').value) || 0;
+    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل البيانات');
+    const d = getData(), p = d.products.find(x => x.name === name);
+    if (!p) return showToast('⚠️ المنتج غير موجود');
     const total = qty * price;
     returnSaleItems.push({ name, qty, price, total });
     returnSaleTotal += total;
@@ -537,20 +406,13 @@ function addProductToReturnSale() {
 function updateReturnSaleUI() {
     const list = document.getElementById('saleItemsList');
     if (!list) return;
-    if (returnSaleItems.length === 0) {
-        list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">أضف منتجات للمرتجع</div>';
-        document.getElementById('saleTotalDisplay').textContent = '0 ج.م';
-        updateReturnSaleBalance();
-        return;
-    }
+    if (returnSaleItems.length === 0) { list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">أضف منتجات للمرتجع</div>'; document.getElementById('saleTotalDisplay').textContent = '0 ج.م'; updateReturnSaleBalance(); return; }
     let html = '';
-    returnSaleItems.forEach((item, index) => {
+    returnSaleItems.forEach((item, i) => {
         html += `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;align-items:center;background:#fff5f5;">
-            <span>${item.name}</span>
-            <span style="text-align:center;">${item.qty}</span>
-            <span style="text-align:center;">${item.price} ج.م</span>
+            <span>${item.name}</span><span style="text-align:center;">${item.qty}</span><span style="text-align:center;">${item.price} ج.م</span>
             <span style="text-align:center;font-weight:bold;color:#E17055;">${item.total} ج.م</span>
-            <span style="text-align:center;"><button onclick="removeReturnSaleItem(${index})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
+            <span style="text-align:center;"><button onclick="removeReturnSaleItem(${i})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
         </div>`;
     });
     list.innerHTML = html;
@@ -558,59 +420,38 @@ function updateReturnSaleUI() {
     updateReturnSaleBalance();
 }
 
-function removeReturnSaleItem(index) {
-    returnSaleTotal -= returnSaleItems[index].total;
-    returnSaleItems.splice(index, 1);
-    updateReturnSaleUI();
-    showToast('🗑️ تم حذف المنتج');
-}
+function removeReturnSaleItem(i) { returnSaleTotal -= returnSaleItems[i].total; returnSaleItems.splice(i, 1); updateReturnSaleUI(); showToast('🗑️ تم الحذف'); }
 
 function updateReturnSaleBalance() {
-    const paid = parseFloat(document.getElementById('salePaid').value) || 0;
-    const balance = returnSaleTotal - paid;
+    const paid = parseFloat(document.getElementById('salePaid').value) || 0, bal = returnSaleTotal - paid;
     const el = document.getElementById('saleBalanceDisplay');
-    el.textContent = balance + ' ج.م';
-    el.style.color = balance > 0 ? '#E17055' : '#00B894';
+    el.textContent = bal + ' ج.م';
+    el.style.color = bal > 0 ? '#E17055' : '#00B894';
 }
 
 function saveReturnSaleInvoice() {
-    const client = document.getElementById('saleClient').value.trim();
-    const invNum = document.getElementById('saleInvoiceNumber').value;
-    const date = document.getElementById('saleInvoiceDate').value;
-    const type = document.getElementById('saleType').value;
-    const paid = parseFloat(document.getElementById('salePaid').value) || 0;
+    const client = document.getElementById('saleClient').value.trim(), invNum = document.getElementById('saleInvoiceNumber').value;
+    const date = document.getElementById('saleInvoiceDate').value, type = document.getElementById('saleType').value, paid = parseFloat(document.getElementById('salePaid').value) || 0;
     if (!client) return showToast('⚠️ أدخل اسم العميل');
-    if (returnSaleItems.length === 0) return showToast('⚠️ أضف منتجات للمرتجع');
-    
-    const data = getData();
+    if (returnSaleItems.length === 0) return showToast('⚠️ أضف منتجات');
+    const d = getData();
     returnSaleItems.forEach(item => {
-        let product = data.products.find(p => p.name === item.name);
-        if (product) {
-            product.qty = (product.qty || 0) + item.qty;
-        } else {
-            data.products.push({ id: Date.now().toString(), name: item.name, desc: 'تم إضافته من مرتجع', qty: item.qty, buy: item.price * 0.8, sell: item.price, barcode: Math.floor(10000000 + Math.random() * 90000000).toString() });
-        }
+        let p = d.products.find(x => x.name === item.name);
+        if (p) p.qty = (p.qty || 0) + item.qty;
+        else d.products.push({ id: Date.now().toString(), name: item.name, desc: 'من مرتجع', qty: item.qty, buy: item.price * 0.8, sell: item.price, barcode: Math.floor(10000000 + Math.random() * 90000000).toString(), category: 'عام', unit: 'قطعة', minQty: 0 });
     });
-    
-    const invoice = { id: invNum, client, date, type, items: JSON.parse(JSON.stringify(returnSaleItems)), total: returnSaleTotal, paid, balance: returnSaleTotal - paid, isReturn: true };
-    if (!data.sales) data.sales = [];
-    data.sales.push(invoice);
-    
-    if (type === 'cash') {
-        data.treasury = (data.treasury || 0) - paid;
-        data.treasuryLog.push({ desc: 'مرتجع بيع كاش - ' + client + ' (' + invNum + ')', amount: -paid });
-    }
-    
+    const inv = { id: invNum, client, date, type, items: JSON.parse(JSON.stringify(returnSaleItems)), total: returnSaleTotal, paid, balance: returnSaleTotal - paid, isReturn: true };
+    d.sales.push(inv);
+    if (type === 'cash') { d.treasury = (d.treasury || 0) - paid; d.treasuryLog.push({ desc: 'مرتجع بيع كاش - ' + client + ' (' + invNum + ')', amount: -paid }); }
     saveLocal();
-    showToast('✅ تم حفظ مرتجع البيع ' + invNum + ' بقيمة ' + returnSaleTotal + ' ج.م');
+    showToast('✅ تم حفظ مرتجع ' + invNum + ' بقيمة ' + returnSaleTotal + ' ج.م');
     printReturnSaleInvoice(invNum);
     clearReturnSaleInvoice();
     updateUI();
 }
 
 function clearReturnSaleInvoice() {
-    returnSaleItems = [];
-    returnSaleTotal = 0;
+    returnSaleItems = []; returnSaleTotal = 0;
     document.getElementById('saleClient').value = '';
     document.getElementById('salePaid').value = 0;
     updateReturnSaleUI();
@@ -620,65 +461,54 @@ function clearReturnSaleInvoice() {
     initReturnSale();
 }
 
-function printReturnSaleInvoice(invoiceId) {
-    const data = getData();
-    const invoice = data.sales.find(s => s.id === invoiceId);
-    if (!invoice) return showToast('⚠️ الفاتورة غير موجودة');
-    const profile = data.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
-    let itemsHtml = '';
-    invoice.items.forEach(item => {
-        itemsHtml += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;color:#E17055;">${item.total} ج.م</td></tr>`;
-    });
-    let printContent = `<div style="direction:rtl;font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:2px solid #E17055;border-radius:10px;">
+function printReturnSaleInvoice(id) {
+    const d = getData(), inv = d.sales.find(s => s.id === id);
+    if (!inv) return showToast('⚠️ غير موجودة');
+    const p = d.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
+    let items = '';
+    inv.items.forEach(item => { items += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;color:#E17055;">${item.total} ج.م</td></tr>`; });
+    const html = `<div style="direction:rtl;font-family:Arial;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:2px solid #E17055;border-radius:10px;">
         <div style="text-align:center;border-bottom:2px solid #E17055;padding-bottom:15px;margin-bottom:20px;">
-            <h2 style="margin:0;color:#E17055;">${profile.shopName}</h2>
-            <p style="font-size:12px;color:#666;margin:2px 0;">${profile.branch || ''}</p>
-            <p style="font-size:14px;font-weight:bold;color:#E17055;margin:5px 0;">📝 مرتجع بيع</p>
+            <h2 style="margin:0;color:#E17055;">${p.shopName}</h2>
+            <p style="font-size:12px;color:#666;">${p.branch || ''}</p>
+            <p style="font-size:14px;font-weight:bold;color:#E17055;">📝 مرتجع بيع</p>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:15px;">
-            <div><strong>رقم المرتجع:</strong> ${invoice.id}<br><strong>التاريخ:</strong> ${invoice.date}</div>
-            <div style="text-align:left;"><strong>العميل:</strong> ${invoice.client}<br><strong>نوع الدفع:</strong> ${invoice.type === 'cash' ? 'كاش' : 'آجل'}</div>
+            <div><strong>رقم:</strong> ${inv.id}<br><strong>التاريخ:</strong> ${inv.date}</div>
+            <div style="text-align:left;"><strong>العميل:</strong> ${inv.client}<br><strong>نوع الدفع:</strong> ${inv.type === 'cash' ? 'كاش' : 'آجل'}</div>
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:15px;">
             <thead><tr style="background:#E17055;color:white;"><th style="padding:8px;text-align:right;border:1px solid #E17055;">المنتج</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">الكمية</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">السعر</th><th style="padding:8px;text-align:left;border:1px solid #E17055;">الإجمالي</th></tr></thead>
-            <tbody>${itemsHtml}</tbody>
+            <tbody>${items}</tbody>
             <tfoot>
-                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">إجمالي المرتجع</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:16px;">${invoice.total} ج.م</td></tr>
-                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع (مسترد)</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${invoice.paid || 0} ج.م</td></tr>
-                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(invoice.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${invoice.balance || 0} ج.م</td></tr>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:16px;">${inv.total} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${inv.paid || 0} ج.م</td></tr>
+                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(inv.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${inv.balance || 0} ج.م</td></tr>
             </tfoot>
         </table>
-        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا - ${profile.shopName}</div>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا</div>
     </div>`;
     const win = window.open('', '_blank');
-    if (win) {
-        win.document.write(`<html><head><meta charset="UTF-8"><title>مرتجع ${invoice.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${printContent}</body></html>`);
-        win.document.close();
-        win.focus();
-        setTimeout(() => { win.print(); }, 500);
-    }
+    if (win) { win.document.write(`<html><head><meta charset="UTF-8"><title>مرتجع ${inv.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${html}</body></html>`); win.document.close(); win.focus(); setTimeout(() => win.print(), 500); }
 }
 
 function switchSalesMode(mode) {
-    const addFields = document.getElementById('saleAddFields');
-    const returnFields = document.getElementById('saleReturnFields');
-    const addBtn = document.getElementById('saleModeAdd');
-    const returnBtn = document.getElementById('saleModeReturn');
-    
+    const a = document.getElementById('saleAddFields'), r = document.getElementById('saleReturnFields');
+    const ab = document.getElementById('saleModeAdd'), rb = document.getElementById('saleModeReturn');
     if (mode === 'add') {
-        if (addFields) addFields.style.display = 'block';
-        if (returnFields) returnFields.style.display = 'none';
-        if (addBtn) addBtn.classList.add('active');
-        if (returnBtn) returnBtn.classList.remove('active');
+        if (a) a.style.display = 'block';
+        if (r) r.style.display = 'none';
+        if (ab) ab.classList.add('active');
+        if (rb) rb.classList.remove('active');
         document.getElementById('saleProductSearch').placeholder = '🔍 اكتب اسم أو باركود';
         document.getElementById('saleInvoiceNumber').style.borderColor = '#2E4057';
         document.querySelector('.modal-box').style.borderColor = '#eee';
         initSaleInvoice();
     } else {
-        if (addFields) addFields.style.display = 'none';
-        if (returnFields) returnFields.style.display = 'block';
-        if (addBtn) addBtn.classList.remove('active');
-        if (returnBtn) returnBtn.classList.add('active');
+        if (a) a.style.display = 'none';
+        if (r) r.style.display = 'block';
+        if (ab) ab.classList.remove('active');
+        if (rb) rb.classList.add('active');
         document.getElementById('saleProductSearch').placeholder = '🔍 اكتب اسم المنتج للمرتجع';
         document.getElementById('saleInvoiceNumber').style.borderColor = '#E17055';
         document.querySelector('.modal-box').style.borderColor = '#E17055';
@@ -687,39 +517,29 @@ function switchSalesMode(mode) {
 }
 
 // ============================================================
-// 10. فاتورة المشتريات - شراء
+// 10. المشتريات
 // ============================================================
 function initPurchaseInvoice() {
-    const data = getData();
-    const today = new Date().toLocaleDateString('ar-EG');
-    document.getElementById('purchaseInvoiceDate').value = today;
-    data.purchaseCounter = (data.purchaseCounter || 0) + 1;
-    const purNum = 'PUR-' + String(data.purchaseCounter).padStart(4, '0');
-    document.getElementById('purchaseInvoiceNumber').value = purNum;
-    purchaseItems = [];
-    purchaseTotal = 0;
+    const d = getData();
+    document.getElementById('purchaseInvoiceDate').value = new Date().toLocaleDateString('ar-EG');
+    d.purchaseCounter = (d.purchaseCounter || 0) + 1;
+    document.getElementById('purchaseInvoiceNumber').value = 'PUR-' + String(d.purchaseCounter).padStart(4, '0');
+    purchaseItems = []; purchaseTotal = 0;
     updatePurchaseUI();
     saveLocal();
 }
 
 function searchProductForPurchase() {
-    const input = document.getElementById('purchaseProductSearch').value.trim();
-    if (!input) return;
-    const data = getData();
-    let product = data.products.find(p => p.name && p.name.toLowerCase().includes(input.toLowerCase()));
-    if (product) {
-        document.getElementById('purchasePrice').value = product.buy || 0;
-        document.getElementById('purchaseQty').value = 1;
-        document.getElementById('purchaseProductSearch').value = product.name;
-        showToast('✅ تم العثور على: ' + product.name);
-    }
+    const inp = document.getElementById('purchaseProductSearch').value.trim();
+    if (!inp) return;
+    const d = getData();
+    let p = d.products.find(x => x.name && x.name.toLowerCase().includes(inp.toLowerCase()));
+    if (p) { document.getElementById('purchasePrice').value = p.buy || 0; document.getElementById('purchaseQty').value = 1; document.getElementById('purchaseProductSearch').value = p.name; showToast('✅ ' + p.name); }
 }
 
 function addProductToPurchase() {
-    const name = document.getElementById('purchaseProductSearch').value.trim();
-    const qty = parseInt(document.getElementById('purchaseQty').value) || 1;
-    const price = parseFloat(document.getElementById('purchasePrice').value) || 0;
-    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل اسم المنتج وسعر صحيح');
+    const name = document.getElementById('purchaseProductSearch').value.trim(), qty = parseInt(document.getElementById('purchaseQty').value) || 1, price = parseFloat(document.getElementById('purchasePrice').value) || 0;
+    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل البيانات');
     const total = qty * price;
     purchaseItems.push({ name, qty, price, total });
     purchaseTotal += total;
@@ -733,20 +553,13 @@ function addProductToPurchase() {
 function updatePurchaseUI() {
     const list = document.getElementById('purchaseItemsList');
     if (!list) return;
-    if (purchaseItems.length === 0) {
-        list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">أضف منتجات للفاتورة</div>';
-        document.getElementById('purchaseTotalDisplay').textContent = '0 ج.م';
-        updatePurchaseBalance();
-        return;
-    }
+    if (purchaseItems.length === 0) { list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">أضف منتجات</div>'; document.getElementById('purchaseTotalDisplay').textContent = '0 ج.م'; updatePurchaseBalance(); return; }
     let html = '';
-    purchaseItems.forEach((item, index) => {
+    purchaseItems.forEach((item, i) => {
         html += `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;align-items:center;">
-            <span>${item.name}</span>
-            <span style="text-align:center;">${item.qty}</span>
-            <span style="text-align:center;">${item.price} ج.م</span>
+            <span>${item.name}</span><span style="text-align:center;">${item.qty}</span><span style="text-align:center;">${item.price} ج.م</span>
             <span style="text-align:center;font-weight:bold;">${item.total} ج.م</span>
-            <span style="text-align:center;"><button onclick="removePurchaseItem(${index})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
+            <span style="text-align:center;"><button onclick="removePurchaseItem(${i})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
         </div>`;
     });
     list.innerHTML = html;
@@ -754,59 +567,38 @@ function updatePurchaseUI() {
     updatePurchaseBalance();
 }
 
-function removePurchaseItem(index) {
-    purchaseTotal -= purchaseItems[index].total;
-    purchaseItems.splice(index, 1);
-    updatePurchaseUI();
-    showToast('🗑️ تم حذف المنتج');
-}
+function removePurchaseItem(i) { purchaseTotal -= purchaseItems[i].total; purchaseItems.splice(i, 1); updatePurchaseUI(); showToast('🗑️ تم الحذف'); }
 
 function updatePurchaseBalance() {
-    const paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
-    const balance = purchaseTotal - paid;
+    const paid = parseFloat(document.getElementById('purchasePaid').value) || 0, bal = purchaseTotal - paid;
     const el = document.getElementById('purchaseBalanceDisplay');
-    el.textContent = balance + ' ج.م';
-    el.style.color = balance > 0 ? '#E17055' : '#00B894';
+    el.textContent = bal + ' ج.م';
+    el.style.color = bal > 0 ? '#E17055' : '#00B894';
 }
 
 function savePurchaseInvoice() {
-    const supplier = document.getElementById('purchaseSupplier').value.trim();
-    const invNum = document.getElementById('purchaseInvoiceNumber').value;
-    const date = document.getElementById('purchaseInvoiceDate').value;
-    const type = document.getElementById('purchaseType').value;
-    const paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
+    const supplier = document.getElementById('purchaseSupplier').value.trim(), invNum = document.getElementById('purchaseInvoiceNumber').value;
+    const date = document.getElementById('purchaseInvoiceDate').value, type = document.getElementById('purchaseType').value, paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
     if (!supplier) return showToast('⚠️ أدخل اسم المورد');
-    if (purchaseItems.length === 0) return showToast('⚠️ أضف منتجات للفاتورة');
-    
-    const data = getData();
+    if (purchaseItems.length === 0) return showToast('⚠️ أضف منتجات');
+    const d = getData();
     purchaseItems.forEach(item => {
-        let product = data.products.find(p => p.name === item.name);
-        if (product) {
-            product.qty = (product.qty || 0) + item.qty;
-        } else {
-            data.products.push({ id: Date.now().toString(), name: item.name, desc: '', qty: item.qty, buy: item.price, sell: item.price * 1.2, barcode: Math.floor(10000000 + Math.random() * 90000000).toString() });
-        }
+        let p = d.products.find(x => x.name === item.name);
+        if (p) p.qty = (p.qty || 0) + item.qty;
+        else d.products.push({ id: Date.now().toString(), name: item.name, desc: '', qty: item.qty, buy: item.price, sell: item.price * 1.2, barcode: Math.floor(10000000 + Math.random() * 90000000).toString(), category: 'عام', unit: 'قطعة', minQty: 0 });
     });
-    
-    const invoice = { id: invNum, supplier, date, type, items: JSON.parse(JSON.stringify(purchaseItems)), total: purchaseTotal, paid, balance: purchaseTotal - paid, isReturn: false };
-    if (!data.purchases) data.purchases = [];
-    data.purchases.push(invoice);
-    
-    if (type === 'cash') {
-        data.treasury = (data.treasury || 0) - paid;
-        data.treasuryLog.push({ desc: 'شراء كاش - ' + supplier + ' (' + invNum + ')', amount: -paid });
-    }
-    
+    const inv = { id: invNum, supplier, date, type, items: JSON.parse(JSON.stringify(purchaseItems)), total: purchaseTotal, paid, balance: purchaseTotal - paid, isReturn: false };
+    d.purchases.push(inv);
+    if (type === 'cash') { d.treasury = (d.treasury || 0) - paid; d.treasuryLog.push({ desc: 'شراء كاش - ' + supplier + ' (' + invNum + ')', amount: -paid }); }
     saveLocal();
-    showToast('✅ تم حفظ فاتورة الشراء ' + invNum + ' بقيمة ' + purchaseTotal + ' ج.م');
+    showToast('✅ تم حفظ ' + invNum + ' بقيمة ' + purchaseTotal + ' ج.م');
     printPurchaseInvoice(invNum);
     clearPurchaseInvoice();
     updateUI();
 }
 
 function clearPurchaseInvoice() {
-    purchaseItems = [];
-    purchaseTotal = 0;
+    purchaseItems = []; purchaseTotal = 0;
     document.getElementById('purchaseSupplier').value = '';
     document.getElementById('purchasePaid').value = 0;
     updatePurchaseUI();
@@ -816,83 +608,56 @@ function clearPurchaseInvoice() {
     initPurchaseInvoice();
 }
 
-function printPurchaseInvoice(invoiceId) {
-    const data = getData();
-    const invoice = data.purchases.find(p => p.id === invoiceId);
-    if (!invoice) return showToast('⚠️ الفاتورة غير موجودة');
-    const profile = data.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
-    let itemsHtml = '';
-    invoice.items.forEach(item => {
-        itemsHtml += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;">${item.total} ج.م</td></tr>`;
-    });
-    let printContent = `<div style="direction:rtl;font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:1px solid #ddd;border-radius:10px;">
+function printPurchaseInvoice(id) {
+    const d = getData(), inv = d.purchases.find(p => p.id === id);
+    if (!inv) return showToast('⚠️ غير موجودة');
+    const p = d.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
+    let items = '';
+    inv.items.forEach(item => { items += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;">${item.total} ج.م</td></tr>`; });
+    const html = `<div style="direction:rtl;font-family:Arial;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:1px solid #ddd;border-radius:10px;">
         <div style="text-align:center;border-bottom:2px solid #E17055;padding-bottom:15px;margin-bottom:20px;">
-            <h2 style="margin:0;color:#E17055;">${profile.shopName}</h2>
-            <p style="font-size:12px;color:#666;margin:2px 0;">${profile.branch || ''}</p>
-            <p style="font-size:14px;font-weight:bold;color:#E17055;margin:5px 0;">فاتورة شراء</p>
+            <h2 style="margin:0;color:#E17055;">${p.shopName}</h2>
+            <p style="font-size:12px;color:#666;">${p.branch || ''}</p>
+            <p style="font-size:14px;font-weight:bold;color:#E17055;">فاتورة شراء</p>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:15px;">
-            <div><strong>رقم الفاتورة:</strong> ${invoice.id}<br><strong>التاريخ:</strong> ${invoice.date}</div>
-            <div style="text-align:left;"><strong>المورد:</strong> ${invoice.supplier}<br><strong>نوع الدفع:</strong> ${invoice.type === 'cash' ? 'كاش' : 'آجل'}</div>
+            <div><strong>رقم:</strong> ${inv.id}<br><strong>التاريخ:</strong> ${inv.date}</div>
+            <div style="text-align:left;"><strong>المورد:</strong> ${inv.supplier}<br><strong>نوع الدفع:</strong> ${inv.type === 'cash' ? 'كاش' : 'آجل'}</div>
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:15px;">
             <thead><tr style="background:#E17055;color:white;"><th style="padding:8px;text-align:right;border:1px solid #E17055;">المنتج</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">الكمية</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">السعر</th><th style="padding:8px;text-align:left;border:1px solid #E17055;">الإجمالي</th></tr></thead>
-            <tbody>${itemsHtml}</tbody>
+            <tbody>${items}</tbody>
             <tfoot>
-                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:16px;">${invoice.total} ج.م</td></tr>
-                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${invoice.paid || 0} ج.م</td></tr>
-                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(invoice.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${invoice.balance || 0} ج.م</td></tr>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:16px;">${inv.total} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${inv.paid || 0} ج.م</td></tr>
+                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(inv.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${inv.balance || 0} ج.م</td></tr>
             </tfoot>
         </table>
-        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا - ${profile.shopName}</div>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا</div>
     </div>`;
     const win = window.open('', '_blank');
-    if (win) {
-        win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${invoice.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${printContent}</body></html>`);
-        win.document.close();
-        win.focus();
-        setTimeout(() => { win.print(); }, 500);
-    }
+    if (win) { win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${inv.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${html}</body></html>`); win.document.close(); win.focus(); setTimeout(() => win.print(), 500); }
 }
 
 // ============================================================
-// 11. فاتورة المشتريات - مرتجع شراء
+// 11. مرتجع شراء
 // ============================================================
 function initReturnPurchase() {
-    const data = getData();
-    const today = new Date().toLocaleDateString('ar-EG');
-    document.getElementById('purchaseInvoiceDate').value = today;
-    data.returnPurchaseCounter = (data.returnPurchaseCounter || 0) + 1;
-    const purNum = 'RET-PUR-' + String(data.returnPurchaseCounter).padStart(4, '0');
-    document.getElementById('purchaseInvoiceNumber').value = purNum;
-    returnPurchaseItems = [];
-    returnPurchaseTotal = 0;
+    const d = getData();
+    document.getElementById('purchaseInvoiceDate').value = new Date().toLocaleDateString('ar-EG');
+    d.returnPurchaseCounter = (d.returnPurchaseCounter || 0) + 1;
+    document.getElementById('purchaseInvoiceNumber').value = 'RET-PUR-' + String(d.returnPurchaseCounter).padStart(4, '0');
+    returnPurchaseItems = []; returnPurchaseTotal = 0;
     updateReturnPurchaseUI();
     saveLocal();
 }
 
-function searchProductForReturnPurchase() {
-    const input = document.getElementById('purchaseProductSearch').value.trim();
-    if (!input) return;
-    const data = getData();
-    let product = data.products.find(p => p.name && p.name.toLowerCase().includes(input.toLowerCase()));
-    if (product) {
-        document.getElementById('purchasePrice').value = product.buy || 0;
-        document.getElementById('purchaseQty').value = 1;
-        document.getElementById('purchaseProductSearch').value = product.name;
-        showToast('✅ تم العثور على: ' + product.name);
-    }
-}
-
 function addProductToReturnPurchase() {
-    const name = document.getElementById('purchaseProductSearch').value.trim();
-    const qty = parseInt(document.getElementById('purchaseQty').value) || 1;
-    const price = parseFloat(document.getElementById('purchasePrice').value) || 0;
-    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل اسم المنتج وسعر صحيح');
-    const data = getData();
-    const product = data.products.find(p => p.name === name);
-    if (!product) return showToast('⚠️ المنتج غير موجود');
-    if ((product.qty || 0) < qty) return showToast('⚠️ الكمية غير متوفرة للمرتجع');
+    const name = document.getElementById('purchaseProductSearch').value.trim(), qty = parseInt(document.getElementById('purchaseQty').value) || 1, price = parseFloat(document.getElementById('purchasePrice').value) || 0;
+    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل البيانات');
+    const d = getData(), p = d.products.find(x => x.name === name);
+    if (!p) return showToast('⚠️ المنتج غير موجود');
+    if ((p.qty || 0) < qty) return showToast('⚠️ الكمية غير متوفرة');
     const total = qty * price;
     returnPurchaseItems.push({ name, qty, price, total });
     returnPurchaseTotal += total;
@@ -906,20 +671,13 @@ function addProductToReturnPurchase() {
 function updateReturnPurchaseUI() {
     const list = document.getElementById('purchaseItemsList');
     if (!list) return;
-    if (returnPurchaseItems.length === 0) {
-        list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">أضف منتجات للمرتجع</div>';
-        document.getElementById('purchaseTotalDisplay').textContent = '0 ج.م';
-        updateReturnPurchaseBalance();
-        return;
-    }
+    if (returnPurchaseItems.length === 0) { list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;">أضف منتجات للمرتجع</div>'; document.getElementById('purchaseTotalDisplay').textContent = '0 ج.م'; updateReturnPurchaseBalance(); return; }
     let html = '';
-    returnPurchaseItems.forEach((item, index) => {
+    returnPurchaseItems.forEach((item, i) => {
         html += `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;align-items:center;background:#fff5f5;">
-            <span>${item.name}</span>
-            <span style="text-align:center;">${item.qty}</span>
-            <span style="text-align:center;">${item.price} ج.م</span>
+            <span>${item.name}</span><span style="text-align:center;">${item.qty}</span><span style="text-align:center;">${item.price} ج.م</span>
             <span style="text-align:center;font-weight:bold;color:#E17055;">${item.total} ج.م</span>
-            <span style="text-align:center;"><button onclick="removeReturnPurchaseItem(${index})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
+            <span style="text-align:center;"><button onclick="removeReturnPurchaseItem(${i})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
         </div>`;
     });
     list.innerHTML = html;
@@ -927,60 +685,37 @@ function updateReturnPurchaseUI() {
     updateReturnPurchaseBalance();
 }
 
-function removeReturnPurchaseItem(index) {
-    returnPurchaseTotal -= returnPurchaseItems[index].total;
-    returnPurchaseItems.splice(index, 1);
-    updateReturnPurchaseUI();
-    showToast('🗑️ تم حذف المنتج');
-}
+function removeReturnPurchaseItem(i) { returnPurchaseTotal -= returnPurchaseItems[i].total; returnPurchaseItems.splice(i, 1); updateReturnPurchaseUI(); showToast('🗑️ تم الحذف'); }
 
 function updateReturnPurchaseBalance() {
-    const paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
-    const balance = returnPurchaseTotal - paid;
+    const paid = parseFloat(document.getElementById('purchasePaid').value) || 0, bal = returnPurchaseTotal - paid;
     const el = document.getElementById('purchaseBalanceDisplay');
-    el.textContent = balance + ' ج.م';
-    el.style.color = balance > 0 ? '#E17055' : '#00B894';
+    el.textContent = bal + ' ج.م';
+    el.style.color = bal > 0 ? '#E17055' : '#00B894';
 }
 
 function saveReturnPurchaseInvoice() {
-    const supplier = document.getElementById('purchaseSupplier').value.trim();
-    const invNum = document.getElementById('purchaseInvoiceNumber').value;
-    const date = document.getElementById('purchaseInvoiceDate').value;
-    const type = document.getElementById('purchaseType').value;
-    const paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
+    const supplier = document.getElementById('purchaseSupplier').value.trim(), invNum = document.getElementById('purchaseInvoiceNumber').value;
+    const date = document.getElementById('purchaseInvoiceDate').value, type = document.getElementById('purchaseType').value, paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
     if (!supplier) return showToast('⚠️ أدخل اسم المورد');
-    if (returnPurchaseItems.length === 0) return showToast('⚠️ أضف منتجات للمرتجع');
-    
-    const data = getData();
+    if (returnPurchaseItems.length === 0) return showToast('⚠️ أضف منتجات');
+    const d = getData();
     returnPurchaseItems.forEach(item => {
-        const product = data.products.find(p => p.name === item.name);
-        if (product) {
-            if ((product.qty || 0) < item.qty) {
-                return showToast(`⚠️ الكمية غير متوفرة لـ ${item.name}`);
-            }
-            product.qty = (product.qty || 0) - item.qty;
-        }
+        const p = d.products.find(x => x.name === item.name);
+        if (p) { if ((p.qty || 0) < item.qty) return showToast('⚠️ الكمية غير متوفرة'); p.qty = (p.qty || 0) - item.qty; }
     });
-    
-    const invoice = { id: invNum, supplier, date, type, items: JSON.parse(JSON.stringify(returnPurchaseItems)), total: returnPurchaseTotal, paid, balance: returnPurchaseTotal - paid, isReturn: true };
-    if (!data.purchases) data.purchases = [];
-    data.purchases.push(invoice);
-    
-    if (type === 'cash') {
-        data.treasury = (data.treasury || 0) + paid;
-        data.treasuryLog.push({ desc: 'مرتجع شراء كاش - ' + supplier + ' (' + invNum + ')', amount: paid });
-    }
-    
+    const inv = { id: invNum, supplier, date, type, items: JSON.parse(JSON.stringify(returnPurchaseItems)), total: returnPurchaseTotal, paid, balance: returnPurchaseTotal - paid, isReturn: true };
+    d.purchases.push(inv);
+    if (type === 'cash') { d.treasury = (d.treasury || 0) + paid; d.treasuryLog.push({ desc: 'مرتجع شراء كاش - ' + supplier + ' (' + invNum + ')', amount: paid }); }
     saveLocal();
-    showToast('✅ تم حفظ مرتجع الشراء ' + invNum + ' بقيمة ' + returnPurchaseTotal + ' ج.م');
+    showToast('✅ تم حفظ مرتجع ' + invNum + ' بقيمة ' + returnPurchaseTotal + ' ج.م');
     printReturnPurchaseInvoice(invNum);
     clearReturnPurchaseInvoice();
     updateUI();
 }
 
 function clearReturnPurchaseInvoice() {
-    returnPurchaseItems = [];
-    returnPurchaseTotal = 0;
+    returnPurchaseItems = []; returnPurchaseTotal = 0;
     document.getElementById('purchaseSupplier').value = '';
     document.getElementById('purchasePaid').value = 0;
     updateReturnPurchaseUI();
@@ -990,65 +725,54 @@ function clearReturnPurchaseInvoice() {
     initReturnPurchase();
 }
 
-function printReturnPurchaseInvoice(invoiceId) {
-    const data = getData();
-    const invoice = data.purchases.find(p => p.id === invoiceId);
-    if (!invoice) return showToast('⚠️ الفاتورة غير موجودة');
-    const profile = data.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
-    let itemsHtml = '';
-    invoice.items.forEach(item => {
-        itemsHtml += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;color:#E17055;">${item.total} ج.م</td></tr>`;
-    });
-    let printContent = `<div style="direction:rtl;font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:2px solid #E17055;border-radius:10px;">
+function printReturnPurchaseInvoice(id) {
+    const d = getData(), inv = d.purchases.find(p => p.id === id);
+    if (!inv) return showToast('⚠️ غير موجودة');
+    const p = d.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
+    let items = '';
+    inv.items.forEach(item => { items += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;color:#E17055;">${item.total} ج.م</td></tr>`; });
+    const html = `<div style="direction:rtl;font-family:Arial;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:2px solid #E17055;border-radius:10px;">
         <div style="text-align:center;border-bottom:2px solid #E17055;padding-bottom:15px;margin-bottom:20px;">
-            <h2 style="margin:0;color:#E17055;">${profile.shopName}</h2>
-            <p style="font-size:12px;color:#666;margin:2px 0;">${profile.branch || ''}</p>
-            <p style="font-size:14px;font-weight:bold;color:#E17055;margin:5px 0;">📝 مرتجع شراء</p>
+            <h2 style="margin:0;color:#E17055;">${p.shopName}</h2>
+            <p style="font-size:12px;color:#666;">${p.branch || ''}</p>
+            <p style="font-size:14px;font-weight:bold;color:#E17055;">📝 مرتجع شراء</p>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:15px;">
-            <div><strong>رقم المرتجع:</strong> ${invoice.id}<br><strong>التاريخ:</strong> ${invoice.date}</div>
-            <div style="text-align:left;"><strong>المورد:</strong> ${invoice.supplier}<br><strong>نوع الدفع:</strong> ${invoice.type === 'cash' ? 'كاش' : 'آجل'}</div>
+            <div><strong>رقم:</strong> ${inv.id}<br><strong>التاريخ:</strong> ${inv.date}</div>
+            <div style="text-align:left;"><strong>المورد:</strong> ${inv.supplier}<br><strong>نوع الدفع:</strong> ${inv.type === 'cash' ? 'كاش' : 'آجل'}</div>
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:15px;">
             <thead><tr style="background:#E17055;color:white;"><th style="padding:8px;text-align:right;border:1px solid #E17055;">المنتج</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">الكمية</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">السعر</th><th style="padding:8px;text-align:left;border:1px solid #E17055;">الإجمالي</th></tr></thead>
-            <tbody>${itemsHtml}</tbody>
+            <tbody>${items}</tbody>
             <tfoot>
-                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">إجمالي المرتجع</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:16px;">${invoice.total} ج.م</td></tr>
-                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع (مسترد)</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${invoice.paid || 0} ج.م</td></tr>
-                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(invoice.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${invoice.balance || 0} ج.م</td></tr>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:16px;">${inv.total} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${inv.paid || 0} ج.م</td></tr>
+                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(inv.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${inv.balance || 0} ج.م</td></tr>
             </tfoot>
         </table>
-        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا - ${profile.shopName}</div>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا</div>
     </div>`;
     const win = window.open('', '_blank');
-    if (win) {
-        win.document.write(`<html><head><meta charset="UTF-8"><title>مرتجع ${invoice.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${printContent}</body></html>`);
-        win.document.close();
-        win.focus();
-        setTimeout(() => { win.print(); }, 500);
-    }
+    if (win) { win.document.write(`<html><head><meta charset="UTF-8"><title>مرتجع ${inv.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${html}</body></html>`); win.document.close(); win.focus(); setTimeout(() => win.print(), 500); }
 }
 
 function switchPurchaseMode(mode) {
-    const addFields = document.getElementById('purchaseAddFields');
-    const returnFields = document.getElementById('purchaseReturnFields');
-    const addBtn = document.getElementById('purchaseModeAdd');
-    const returnBtn = document.getElementById('purchaseModeReturn');
-    
+    const a = document.getElementById('purchaseAddFields'), r = document.getElementById('purchaseReturnFields');
+    const ab = document.getElementById('purchaseModeAdd'), rb = document.getElementById('purchaseModeReturn');
     if (mode === 'add') {
-        if (addFields) addFields.style.display = 'block';
-        if (returnFields) returnFields.style.display = 'none';
-        if (addBtn) addBtn.classList.add('active');
-        if (returnBtn) returnBtn.classList.remove('active');
+        if (a) a.style.display = 'block';
+        if (r) r.style.display = 'none';
+        if (ab) ab.classList.add('active');
+        if (rb) rb.classList.remove('active');
         document.getElementById('purchaseProductSearch').placeholder = '🔍 اكتب اسم المنتج';
         document.getElementById('purchaseInvoiceNumber').style.borderColor = '#E17055';
         document.querySelector('.modal-box').style.borderColor = '#eee';
         initPurchaseInvoice();
     } else {
-        if (addFields) addFields.style.display = 'none';
-        if (returnFields) returnFields.style.display = 'block';
-        if (addBtn) addBtn.classList.remove('active');
-        if (returnBtn) returnBtn.classList.add('active');
+        if (a) a.style.display = 'none';
+        if (r) r.style.display = 'block';
+        if (ab) ab.classList.remove('active');
+        if (rb) rb.classList.add('active');
         document.getElementById('purchaseProductSearch').placeholder = '🔍 اكتب اسم المنتج للمرتجع';
         document.getElementById('purchaseInvoiceNumber').style.borderColor = '#E17055';
         document.querySelector('.modal-box').style.borderColor = '#E17055';
@@ -1060,46 +784,41 @@ function switchPurchaseMode(mode) {
 // 12. المخازن
 // ============================================================
 function showWarehouseForm(type) {
-    const form = document.getElementById('warehouseForm');
-    const title = document.getElementById('warehouseFormTitle');
-    if (!form) return;
-    const titles = { 'add': '📥 إذن إضافة للمخزن', 'remove': '📤 إذن صرف من المخزن', 'inventory': '📋 جرد المخزن', 'opening': '📊 مخزون أول المدة' };
-    title.textContent = titles[type] || 'إذن مخزن';
-    form.style.display = 'block';
-    form.dataset.type = type;
-    const data = getData();
-    const select = document.getElementById('whProduct');
-    if (select) {
-        select.innerHTML = '<option value="">اختر المنتج</option>';
-        (data.products || []).forEach(p => { select.innerHTML += `<option value="${p.id}">${p.name} (${p.qty || 0})</option>`; });
+    const f = document.getElementById('warehouseForm'), t = document.getElementById('warehouseFormTitle');
+    if (!f) return;
+    const titles = { add: '📥 إذن إضافة', remove: '📤 إذن صرف', inventory: '📋 جرد', opening: '📊 مخزون أول المدة' };
+    t.textContent = titles[type] || 'إذن مخزن';
+    f.style.display = 'block';
+    f.dataset.type = type;
+    const d = getData();
+    const sel = document.getElementById('whProduct');
+    if (sel) {
+        sel.innerHTML = '<option value="">اختر</option>';
+        (d.products || []).forEach(p => { sel.innerHTML += `<option value="${p.id}">${p.name} (${p.qty || 0})</option>`; });
     }
     document.getElementById('whQty').value = 1;
     document.getElementById('whReason').value = '';
 }
 
 function saveWarehouse() {
-    const data = getData();
-    const type = document.getElementById('warehouseForm').dataset.type;
-    const productId = document.getElementById('whProduct').value;
-    const qty = parseInt(document.getElementById('whQty').value) || 0;
-    const reason = document.getElementById('whReason').value.trim() || 'بدون سبب';
-    if (!productId || qty <= 0) return showToast('⚠️ اختر المنتج والكمية');
-    const prod = data.products.find(p => p.id === productId);
-    if (!prod) return showToast('⚠️ المنتج غير موجود');
-    const typeNames = { 'add': 'إضافة', 'remove': 'صرف', 'inventory': 'جرد', 'opening': 'مخزون أول المدة' };
-    if (!data.warehouse) data.warehouse = [];
+    const d = getData(), type = document.getElementById('warehouseForm').dataset.type;
+    const pid = document.getElementById('whProduct').value, qty = parseInt(document.getElementById('whQty').value) || 0, reason = document.getElementById('whReason').value.trim() || 'بدون سبب';
+    if (!pid || qty <= 0) return showToast('⚠️ اختر المنتج والكمية');
+    const p = d.products.find(x => x.id === pid);
+    if (!p) return showToast('⚠️ المنتج غير موجود');
+    if (!d.warehouse) d.warehouse = [];
     if (type === 'add' || type === 'opening') {
-        prod.qty = (prod.qty || 0) + qty;
-        data.warehouse.push({ id: 'WH-' + Date.now(), type, product: prod.name, qty: qty, reason, date: new Date().toLocaleDateString('ar-EG') });
-        showToast(`✅ تم إضافة ${qty} من ${prod.name}`);
+        p.qty = (p.qty || 0) + qty;
+        d.warehouse.push({ id: 'WH-' + Date.now(), type, product: p.name, qty, reason, date: new Date().toLocaleDateString('ar-EG') });
+        showToast('✅ تم إضافة ' + qty + ' من ' + p.name);
     } else if (type === 'remove') {
-        if ((prod.qty || 0) < qty) return showToast('⚠️ الكمية غير متوفرة');
-        prod.qty -= qty;
-        data.warehouse.push({ id: 'WH-' + Date.now(), type, product: prod.name, qty: -qty, reason, date: new Date().toLocaleDateString('ar-EG') });
-        showToast(`✅ تم صرف ${qty} من ${prod.name}`);
+        if ((p.qty || 0) < qty) return showToast('⚠️ الكمية غير متوفرة');
+        p.qty -= qty;
+        d.warehouse.push({ id: 'WH-' + Date.now(), type, product: p.name, qty: -qty, reason, date: new Date().toLocaleDateString('ar-EG') });
+        showToast('✅ تم صرف ' + qty + ' من ' + p.name);
     } else if (type === 'inventory') {
-        data.warehouse.push({ id: 'INV-' + Date.now(), type, product: prod.name, qty: prod.qty || 0, reason, date: new Date().toLocaleDateString('ar-EG') });
-        showToast(`📋 تم جرد ${prod.name}: ${prod.qty || 0}`);
+        d.warehouse.push({ id: 'INV-' + Date.now(), type, product: p.name, qty: p.qty || 0, reason, date: new Date().toLocaleDateString('ar-EG') });
+        showToast('📋 تم جرد ' + p.name + ': ' + (p.qty || 0));
     }
     saveLocal();
     document.getElementById('warehouseForm').style.display = 'none';
@@ -1108,79 +827,98 @@ function saveWarehouse() {
 }
 
 function updateWarehouseLog() {
-    const data = getData();
-    const warehouse = data.warehouse || [];
-    const log = document.getElementById('warehouseLog');
+    const d = getData(), w = d.warehouse || [], log = document.getElementById('warehouseLog');
     if (!log) return;
-    const typeIcons = { 'add': '📥', 'remove': '📤', 'inventory': '📋', 'opening': '📊' };
-    log.innerHTML = warehouse.slice().reverse().map(w => `
-        <div class="list-item">
-            <div><span>${typeIcons[w.type] || '📦'} ${w.product}</span><small style="color:#999;display:block;font-size:11px;">${w.reason || ''} | ${w.date || ''}</small></div>
-            <div><span style="color:${(w.qty || 0) > 0 ? '#00B894' : '#E17055'};font-weight:bold;">${(w.qty || 0) > 0 ? '+' : ''}${w.qty || 0}</span></div>
-        </div>
-    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد حركات مخازن</div>';
+    const icons = { add: '📥', remove: '📤', inventory: '📋', opening: '📊' };
+    log.innerHTML = w.slice().reverse().map(x => `
+        <div class="list-item"><div><span>${icons[x.type] || '📦'} ${x.product}</span><small style="color:#999;display:block;font-size:11px;">${x.reason || ''} | ${x.date || ''}</small></div><div><span style="color:${(x.qty || 0) > 0 ? '#00B894' : '#E17055'};font-weight:bold;">${(x.qty || 0) > 0 ? '+' : ''}${x.qty || 0}</span></div></div>
+    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد حركات</div>';
 }
 
 function showWarehouseReport() {
-    const data = getData();
-    const warehouse = data.warehouse || [];
-    const products = data.products || [];
-    let report = '📊 تقرير المخازن\n\n📦 المنتجات الموجودة:\n';
-    products.forEach(p => { report += `  - ${p.name}: ${p.qty || 0} وحدة (سعر البيع: ${p.sell || 0} ج.م)\n`; });
-    report += '\n📋 آخر حركات المخازن:\n';
-    warehouse.slice().reverse().slice(0, 10).forEach(w => {
-        report += `  ${(w.qty || 0) > 0 ? '➕' : '➖'} ${w.product}: ${w.qty || 0} (${w.reason || ''}) - ${w.date || ''}\n`;
+    const d = getData(), w = d.warehouse || [], p = d.products || [];
+    let r = '📊 تقرير المخازن\n\n📦 المنتجات:\n';
+    p.forEach(x => { r += `  - ${x.name}: ${x.qty || 0} (سعر البيع: ${x.sell || 0})\n`; });
+    r += '\n📋 آخر الحركات:\n';
+    w.slice().reverse().slice(0, 10).forEach(x => {
+        r += `  ${(x.qty || 0) > 0 ? '➕' : '➖'} ${x.product}: ${x.qty || 0} (${x.reason || ''}) - ${x.date || ''}\n`;
     });
-    alert(report);
+    alert(r);
 }
 
 // ============================================================
-// 13. المنتجات وجهات الاتصال والخزنة
+// 13. المنتجات
 // ============================================================
 function addProduct() {
-    const data = getData();
+    const d = getData();
     const name = document.getElementById('prodName').value.trim();
     const desc = document.getElementById('prodDesc').value.trim();
     const qty = parseInt(document.getElementById('prodQty').value) || 0;
     const buy = parseFloat(document.getElementById('prodBuy').value) || 0;
     const sell = parseFloat(document.getElementById('prodSell').value) || 0;
-    if (!name || qty <= 0) return showToast('⚠️ أدخل الاسم والكمية');
-    const barcode = Math.floor(10000000 + Math.random() * 90000000).toString();
-    data.products.push({ id: Date.now().toString(), name, desc, qty, buy, sell, barcode });
+    const category = document.getElementById('prodCategory').value || 'عام';
+    const unit = document.getElementById('prodUnit').value || 'قطعة';
+    const minQty = parseInt(document.getElementById('prodMinQty').value) || 0;
+    const barcode = document.getElementById('prodBarcode').value.trim() || Math.floor(10000000 + Math.random() * 90000000).toString();
+    if (!name) return showToast('⚠️ أدخل اسم المنتج');
+    if (d.products.find(x => x.barcode === barcode)) return showToast('⚠️ الباركود موجود');
+    d.products.push({ id: Date.now().toString(), name, desc, qty, buy, sell, category, unit, minQty, barcode });
     saveLocal();
-    document.getElementById('prodName').value = '';
-    document.getElementById('prodDesc').value = '';
-    document.getElementById('prodQty').value = '';
-    document.getElementById('prodBuy').value = '';
-    document.getElementById('prodSell').value = '';
+    clearProductForm();
     updateUI();
-    showToast('✅ تم إضافة المنتج - الباركود: ' + barcode);
+    showToast('✅ تم إضافة ' + name + ' - الباركود: ' + barcode);
 }
 
+function clearProductForm() {
+    ['prodName', 'prodDesc', 'prodQty', 'prodBuy', 'prodSell', 'prodBarcode', 'prodMinQty'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+}
+
+// ============================================================
+// 14. جهات الاتصال
+// ============================================================
 function addContact() {
-    const data = getData();
+    const d = getData();
     const name = document.getElementById('contactName').value.trim();
     const phone = document.getElementById('contactPhone').value.trim();
     const address = document.getElementById('contactAddress').value.trim();
     const type = document.getElementById('contactType').value;
+    const balance = parseFloat(document.getElementById('contactBalance').value) || 0;
+    const creditLimit = parseFloat(document.getElementById('contactCreditLimit').value) || 0;
+    const taxNumber = document.getElementById('contactTaxNumber').value.trim();
+    const notes = document.getElementById('contactNotes').value.trim();
     if (!name) return showToast('⚠️ أدخل الاسم');
-    data.clients.push({ id: Date.now().toString(), name, phone, address, type });
+    d.clients.push({ id: Date.now().toString(), name, phone, address, type, balance, creditLimit, taxNumber, notes });
     saveLocal();
-    document.getElementById('contactName').value = '';
-    document.getElementById('contactPhone').value = '';
-    document.getElementById('contactAddress').value = '';
+    clearContactForm();
     updateUI();
-    showToast('✅ تم إضافة جهة الاتصال');
+    showToast('✅ تم إضافة ' + name);
 }
 
+function clearContactForm() {
+    ['contactName', 'contactPhone', 'contactAddress', 'contactTaxNumber', 'contactNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    ['contactBalance', 'contactCreditLimit'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '0';
+    });
+}
+
+// ============================================================
+// 15. الخزنة
+// ============================================================
 function collectDebt() {
-    const data = getData();
+    const d = getData();
     const client = document.getElementById('collectClient').value.trim();
     const amount = parseFloat(document.getElementById('collectAmount').value);
     if (!client || !amount || amount <= 0) return showToast('⚠️ أدخل البيانات');
-    data.treasury = (data.treasury || 0) + amount;
-    data.collections.push({ id: Date.now().toString(), client, amount });
-    data.treasuryLog.push({ desc: 'تحصيل من ' + client, amount: amount });
+    d.treasury = (d.treasury || 0) + amount;
+    d.collections.push({ id: Date.now().toString(), client, amount });
+    d.treasuryLog.push({ desc: 'تحصيل من ' + client, amount });
     saveLocal();
     document.getElementById('collectClient').value = '';
     document.getElementById('collectAmount').value = '';
@@ -1189,14 +927,14 @@ function collectDebt() {
 }
 
 function paySupplier() {
-    const data = getData();
+    const d = getData();
     const supplier = document.getElementById('paySupplier').value.trim();
     const amount = parseFloat(document.getElementById('payAmount').value);
     if (!supplier || !amount || amount <= 0) return showToast('⚠️ أدخل البيانات');
-    if ((data.treasury || 0) < amount) return showToast('⚠️ الرصيد غير كافي');
-    data.treasury = (data.treasury || 0) - amount;
-    data.supplierPayments.push({ id: Date.now().toString(), supplier, amount });
-    data.treasuryLog.push({ desc: 'سداد مورد - ' + supplier, amount: -amount });
+    if ((d.treasury || 0) < amount) return showToast('⚠️ الرصيد غير كافي');
+    d.treasury = (d.treasury || 0) - amount;
+    d.supplierPayments.push({ id: Date.now().toString(), supplier, amount });
+    d.treasuryLog.push({ desc: 'سداد مورد - ' + supplier, amount: -amount });
     saveLocal();
     document.getElementById('paySupplier').value = '';
     document.getElementById('payAmount').value = '';
@@ -1205,11 +943,11 @@ function paySupplier() {
 }
 
 function addToTreasury() {
-    const data = getData();
+    const d = getData();
     const amount = parseFloat(document.getElementById('treasuryAmount').value);
     if (!amount || amount <= 0) return showToast('⚠️ أدخل مبلغ صحيح');
-    data.treasury = (data.treasury || 0) + amount;
-    data.treasuryLog.push({ desc: 'إيداع في الخزنة', amount: amount });
+    d.treasury = (d.treasury || 0) + amount;
+    d.treasuryLog.push({ desc: 'إيداع في الخزنة', amount });
     saveLocal();
     document.getElementById('treasuryAmount').value = '';
     updateUI();
@@ -1217,12 +955,12 @@ function addToTreasury() {
 }
 
 function withdrawTreasury() {
-    const data = getData();
+    const d = getData();
     const amount = parseFloat(document.getElementById('treasuryAmount').value);
     if (!amount || amount <= 0) return showToast('⚠️ أدخل مبلغ صحيح');
-    if ((data.treasury || 0) < amount) return showToast('⚠️ الرصيد غير كافي');
-    data.treasury = (data.treasury || 0) - amount;
-    data.treasuryLog.push({ desc: 'سحب من الخزنة', amount: -amount });
+    if ((d.treasury || 0) < amount) return showToast('⚠️ الرصيد غير كافي');
+    d.treasury = (d.treasury || 0) - amount;
+    d.treasuryLog.push({ desc: 'سحب من الخزنة', amount: -amount });
     saveLocal();
     document.getElementById('treasuryAmount').value = '';
     updateUI();
@@ -1230,14 +968,14 @@ function withdrawTreasury() {
 }
 
 function addExpense() {
-    const data = getData();
+    const d = getData();
     const desc = document.getElementById('expenseDesc').value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount').value);
     if (!desc || !amount || amount <= 0) return showToast('⚠️ أدخل البيانات');
-    if ((data.treasury || 0) < amount) return showToast('⚠️ الرصيد غير كافي');
-    data.treasury = (data.treasury || 0) - amount;
-    data.expenses.push({ id: Date.now().toString(), desc, amount, date: new Date().toLocaleDateString() });
-    data.treasuryLog.push({ desc: 'مصروف: ' + desc, amount: -amount });
+    if ((d.treasury || 0) < amount) return showToast('⚠️ الرصيد غير كافي');
+    d.treasury = (d.treasury || 0) - amount;
+    d.expenses.push({ id: Date.now().toString(), desc, amount, date: new Date().toLocaleDateString() });
+    d.treasuryLog.push({ desc: 'مصروف: ' + desc, amount: -amount });
     saveLocal();
     document.getElementById('expenseDesc').value = '';
     document.getElementById('expenseAmount').value = '';
@@ -1246,112 +984,103 @@ function addExpense() {
 }
 
 // ============================================================
-// 14. التقارير
+// 16. التقارير
 // ============================================================
 function drawCharts() {
-    const data = getData();
-    const sales = data.sales || [];
-    const purchases = data.purchases || [];
-    const expenses = data.expenses || [];
-    const collections = data.collections || [];
-    const salesTotal = sales.reduce((s, i) => s + (i.total || 0), 0);
-    const purchasesTotal = purchases.reduce((s, i) => s + (i.total || 0), 0);
-    const expensesTotal = expenses.reduce((s, i) => s + (i.amount || 0), 0);
-    const collectionsTotal = collections.reduce((s, i) => s + (i.amount || 0), 0);
-    const treasury = data.treasury || 0;
+    const d = getData();
+    const s = d.sales || [], p = d.purchases || [], e = d.expenses || [], c = d.collections || [];
+    const st = s.reduce((sum, x) => sum + (x.total || 0), 0);
+    const pt = p.reduce((sum, x) => sum + (x.total || 0), 0);
+    const et = e.reduce((sum, x) => sum + (x.amount || 0), 0);
+    const ct = c.reduce((sum, x) => sum + (x.amount || 0), 0);
+    const tr = d.treasury || 0;
     if (chartInstances.sales) chartInstances.sales.destroy();
     chartInstances.sales = new Chart(document.getElementById('salesChart'), {
         type: 'bar',
-        data: { labels: ['المبيعات', 'المشتريات', 'المصروفات', 'التحصيل'], datasets: [{ label: 'الحركة المالية (ج.م)', data: [salesTotal, purchasesTotal, expensesTotal, collectionsTotal], backgroundColor: ['#2E4057', '#E17055', '#FDCB6E', '#00B894'], borderColor: ['#1a2a3a', '#c0392b', '#f39c12', '#00a87a'], borderWidth: 2, borderRadius: 8 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' ج.م'; } } } }, scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return value + ' ج.م'; } } } } }
+        data: { labels: ['المبيعات', 'المشتريات', 'المصروفات', 'التحصيل'], datasets: [{ label: 'الحركة المالية', data: [st, pt, et, ct], backgroundColor: ['#2E4057', '#E17055', '#FDCB6E', '#00B894'], borderRadius: 8 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
     });
     if (chartInstances.treasury) chartInstances.treasury.destroy();
     chartInstances.treasury = new Chart(document.getElementById('treasuryChart'), {
         type: 'doughnut',
-        data: { labels: ['الخزنة', 'المصروفات', 'المشتريات'], datasets: [{ data: [treasury, expensesTotal, purchasesTotal], backgroundColor: ['#2E4057', '#E17055', '#FDCB6E'], borderWidth: 3, borderColor: '#fff' }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 15, usePointStyle: true, pointStyle: 'circle' } }, tooltip: { callbacks: { label: function(context) { const total = context.dataset.data.reduce((a, b) => a + b, 0); const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0; return context.label + ': ' + context.parsed + ' ج.م (' + percentage + '%)'; } } } } }
+        data: { labels: ['الخزنة', 'المصروفات', 'المشتريات'], datasets: [{ data: [tr, et, pt], backgroundColor: ['#2E4057', '#E17055', '#FDCB6E'], borderWidth: 3, borderColor: '#fff' }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true } } } }
     });
 }
 
 function updateReportSelects() {
-    const data = getData();
-    const clients = data.clients || [];
-    const select = document.getElementById('statementClientSelect');
-    if (select) {
-        select.innerHTML = '<option value="">-- اختر --</option>';
-        clients.forEach(c => { if (c && c.name) select.innerHTML += `<option value="${c.name}">${c.name}</option>`; });
+    const d = getData();
+    const sel = document.getElementById('statementClientSelect');
+    if (sel) {
+        sel.innerHTML = '<option value="">-- اختر --</option>';
+        (d.clients || []).forEach(c => { if (c.name) sel.innerHTML += `<option value="${c.name}">${c.name}</option>`; });
     }
 }
 
 function showReport(type) {
-    const data = getData();
-    const sales = data.sales || [];
-    const purchases = data.purchases || [];
-    const expenses = data.expenses || [];
-    const collections = data.collections || [];
-    const supplierPayments = data.supplierPayments || [];
-    const totalSales = sales.reduce((s, i) => s + (i.total || 0), 0);
-    const totalPurchases = purchases.reduce((s, i) => s + (i.total || 0), 0);
-    const totalExpenses = expenses.reduce((s, i) => s + (i.amount || 0), 0);
-    const totalCollections = collections.reduce((s, i) => s + (i.amount || 0), 0);
-    const totalSupplierPayments = supplierPayments.reduce((s, i) => s + (i.amount || 0), 0);
-    const profit = totalSales - totalPurchases - totalExpenses;
+    const d = getData();
+    const s = d.sales || [], p = d.purchases || [], e = d.expenses || [], c = d.collections || [], sp = d.supplierPayments || [];
+    const st = s.reduce((sum, x) => sum + (x.total || 0), 0);
+    const pt = p.reduce((sum, x) => sum + (x.total || 0), 0);
+    const et = e.reduce((sum, x) => sum + (x.amount || 0), 0);
+    const ct = c.reduce((sum, x) => sum + (x.amount || 0), 0);
+    const spt = sp.reduce((sum, x) => sum + (x.amount || 0), 0);
+    const profit = st - pt - et;
     const today = new Date().toLocaleDateString('ar-EG');
     let html = '';
     if (type === 'income') {
-        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;font-family:Arial;">
+        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;">
             <div style="text-align:center;border-bottom:2px solid #00B894;padding-bottom:10px;margin-bottom:15px;"><h3 style="margin:0;color:#00B894;">📈 قائمة الدخل</h3><small style="color:#888;">${today}</small></div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;"><span>الإيرادات (المبيعات)</span><span style="color:#00B894;font-weight:bold;">${totalSales} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;"><span>تكلفة المشتريات</span><span style="color:#E17055;font-weight:bold;">${totalPurchases} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;"><span>المصروفات التشغيلية</span><span style="color:#E17055;font-weight:bold;">${totalExpenses} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;"><span>التحصيل من العملاء</span><span style="color:#00B894;font-weight:bold;">${totalCollections} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;"><span>سداد الموردين</span><span style="color:#E17055;font-weight:bold;">${totalSupplierPayments} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:15px 0;margin-top:10px;border-top:3px solid #00B894;font-size:18px;"><span style="font-weight:bold;">صافي الربح</span><span style="color:${profit >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${profit} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>الإيرادات</span><span style="color:#00B894;">${st} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>تكلفة المشتريات</span><span style="color:#E17055;">${pt} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>المصروفات</span><span style="color:#E17055;">${et} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>التحصيل</span><span style="color:#00B894;">${ct} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>سداد الموردين</span><span style="color:#E17055;">${spt} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding-top:10px;margin-top:10px;border-top:2px solid #00B894;font-size:18px;"><span>صافي الربح</span><span style="color:${profit >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${profit} ج.م</span></div>
         </div>`;
     } else if (type === 'daily') {
-        const todaySales = sales.filter(s => s.date === today).reduce((s, i) => s + (i.total || 0), 0);
-        const todayPurchases = purchases.filter(p => p.date === today).reduce((s, i) => s + (i.total || 0), 0);
-        const todayExpenses = expenses.filter(e => e.date === today).reduce((s, i) => s + (i.amount || 0), 0);
-        const todayCollections = collections.filter(c => c.date === today).reduce((s, i) => s + (i.amount || 0), 0);
-        const todayProfit = todaySales - todayPurchases - todayExpenses;
-        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;font-family:Arial;">
+        const ts = s.filter(x => x.date === today).reduce((sum, x) => sum + (x.total || 0), 0);
+        const tp = p.filter(x => x.date === today).reduce((sum, x) => sum + (x.total || 0), 0);
+        const te = e.filter(x => x.date === today).reduce((sum, x) => sum + (x.amount || 0), 0);
+        const tc = c.filter(x => x.date === today).reduce((sum, x) => sum + (x.amount || 0), 0);
+        const tProfit = ts - tp - te;
+        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;">
             <div style="text-align:center;border-bottom:2px solid #FDCB6E;padding-bottom:10px;margin-bottom:15px;"><h3 style="margin:0;color:#FDCB6E;">📅 تقرير اليوم</h3><small style="color:#888;">${today}</small></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>🛒 مبيعات اليوم</span><span style="color:#00B894;font-weight:bold;">${todaySales} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>🚚 مشتريات اليوم</span><span style="color:#E17055;font-weight:bold;">${todayPurchases} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>💸 مصروفات اليوم</span><span style="color:#E17055;font-weight:bold;">${todayExpenses} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>💰 تحصيل اليوم</span><span style="color:#00B894;font-weight:bold;">${todayCollections} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:15px 0;margin-top:10px;border-top:3px solid #FDCB6E;font-size:18px;"><span style="font-weight:bold;">صافي ربح اليوم</span><span style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${todayProfit} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>مبيعات اليوم</span><span style="color:#00B894;">${ts} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>مشتريات اليوم</span><span style="color:#E17055;">${tp} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>مصروفات اليوم</span><span style="color:#E17055;">${te} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>تحصيل اليوم</span><span style="color:#00B894;">${tc} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding-top:10px;margin-top:10px;border-top:2px solid #FDCB6E;font-size:18px;"><span>صافي ربح اليوم</span><span style="color:${tProfit >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${tProfit} ج.م</span></div>
         </div>`;
     } else if (type === 'trial') {
-        const totalAssets = data.treasury || 0;
-        const totalLiabilities = sales.filter(s => s.type === 'credit').reduce((s, i) => s + (i.total || 0), 0);
-        const equity = totalAssets - totalLiabilities;
-        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;font-family:Arial;">
+        const assets = d.treasury || 0;
+        const liabilities = s.filter(x => x.type === 'credit').reduce((sum, x) => sum + (x.total || 0), 0);
+        const equity = assets - liabilities;
+        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;">
             <div style="text-align:center;border-bottom:2px solid #6C5CE7;padding-bottom:10px;margin-bottom:15px;"><h3 style="margin:0;color:#6C5CE7;">📋 ميزان المراجعة</h3><small style="color:#888;">${today}</small></div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;"><span>🏦 الأصول (الخزنة)</span><span style="color:#00B894;font-weight:bold;">${totalAssets} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;"><span>📋 الخصوم (الآجل)</span><span style="color:#E17055;font-weight:bold;">${totalLiabilities} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:15px 0;margin-top:10px;border-top:3px solid #6C5CE7;font-size:18px;"><span style="font-weight:bold;">حقوق الملكية</span><span style="color:${equity >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${equity} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>الأصول (الخزنة)</span><span style="color:#00B894;">${assets} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>الخصوم (الآجل)</span><span style="color:#E17055;">${liabilities} ج.م</span></div>
+            <div style="display:flex;justify-content:space-between;padding-top:10px;margin-top:10px;border-top:2px solid #6C5CE7;font-size:18px;"><span>حقوق الملكية</span><span style="color:${equity >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${equity} ج.م</span></div>
         </div>`;
     } else if (type === 'statement') {
         const clientName = document.getElementById('statementClientSelect').value;
-        const statementField = document.getElementById('statementClientField');
+        const sf = document.getElementById('statementClientField');
         if (!clientName) {
-            if (statementField) statementField.style.display = 'block';
-            html = `<div style="color:#aaa;text-align:center;padding:40px;background:#1e1e2e;border-radius:12px;"><i class="fas fa-user" style="font-size:40px;display:block;margin-bottom:15px;"></i>اختر جهة الاتصال من القائمة أعلاه لعرض كشف الحساب</div>`;
+            if (sf) sf.style.display = 'block';
+            html = `<div style="color:#aaa;text-align:center;padding:40px;background:#1e1e2e;border-radius:12px;">اختر جهة الاتصال</div>`;
         } else {
-            if (statementField) statementField.style.display = 'block';
-            const clientSales = sales.filter(s => s.client === clientName);
-            const clientCollections = collections.filter(c => c.client === clientName);
-            let balance = 0;
-            let rows = '';
-            clientSales.forEach(s => { balance += (s.total || 0); rows += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:13px;"><span style="color:#aaa;">${s.date || ''}</span><span>بيع - ${s.product || ''}</span><span style="color:#E17055;">${s.total || 0} ج.م</span><span>${balance} ج.م</span></div>`; });
-            clientCollections.forEach(c => { balance -= (c.amount || 0); rows += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:13px;"><span style="color:#aaa;">${new Date(c.id).toLocaleDateString('ar-EG')}</span><span>تحصيل</span><span style="color:#00B894;">${c.amount || 0} ج.م</span><span>${balance} ج.م</span></div>`; });
-            html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;font-family:Arial;">
+            if (sf) sf.style.display = 'block';
+            const cs = s.filter(x => x.client === clientName);
+            const cc = c.filter(x => x.client === clientName);
+            let bal = 0, rows = '';
+            cs.forEach(x => { bal += (x.total || 0); rows += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:13px;"><span style="color:#aaa;">${x.date || ''}</span><span>بيع - ${x.product || ''}</span><span style="color:#E17055;">${x.total || 0} ج.م</span><span>${bal} ج.م</span></div>`; });
+            cc.forEach(x => { bal -= (x.amount || 0); rows += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:13px;"><span style="color:#aaa;">${new Date(x.id).toLocaleDateString('ar-EG')}</span><span>تحصيل</span><span style="color:#00B894;">${x.amount || 0} ج.م</span><span>${bal} ج.م</span></div>`; });
+            html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;">
                 <div style="text-align:center;border-bottom:2px solid #00B894;padding-bottom:10px;margin-bottom:15px;"><h3 style="margin:0;color:#00B894;">📋 كشف حساب ${clientName}</h3><small style="color:#888;">${today}</small></div>
-                <div style="display:grid;grid-template-columns:1fr 2fr 1.5fr 1.5fr;gap:5px;padding:10px 0;border-bottom:2px solid #00B894;font-weight:bold;font-size:13px;background:#2a2a3e;border-radius:8px 8px 0 0;padding:8px 10px;"><span>📅 التاريخ</span><span>📌 البيان</span><span>💰 المبلغ</span><span>⚖️ الرصيد</span></div>
+                <div style="display:grid;grid-template-columns:1fr 2fr 1.5fr 1.5fr;gap:5px;padding:10px 0;border-bottom:2px solid #00B894;font-weight:bold;font-size:13px;background:#2a2a3e;border-radius:8px 8px 0 0;padding:8px 10px;"><span>التاريخ</span><span>البيان</span><span>المبلغ</span><span>الرصيد</span></div>
                 ${rows || '<div style="text-align:center;padding:20px;color:#aaa;">لا توجد معاملات</div>'}
-                <div style="display:grid;grid-template-columns:2fr 1fr 1.5fr;gap:5px;padding:15px 0;margin-top:10px;border-top:3px solid #00B894;font-size:16px;font-weight:bold;background:#2a2a3e;border-radius:0 0 8px 8px;padding:10px;"><span></span><span style="color:#888;">الرصيد النهائي</span><span style="color:${balance > 0 ? '#E17055' : '#00B894'};font-size:18px;">${balance} ج.م</span></div>
-                <button onclick="printStatement('${clientName}')" style="width:100%;padding:12px;margin-top:10px;background:#2E4057;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">🖨️ طباعة كشف الحساب</button>
+                <div style="display:grid;grid-template-columns:2fr 1fr 1.5fr;gap:5px;padding:15px 0;margin-top:10px;border-top:3px solid #00B894;font-size:16px;font-weight:bold;background:#2a2a3e;border-radius:0 0 8px 8px;padding:10px;"><span></span><span style="color:#888;">الرصيد النهائي</span><span style="color:${bal > 0 ? '#E17055' : '#00B894'};font-size:18px;">${bal} ج.م</span></div>
+                <button onclick="printStatement('${clientName}')" style="width:100%;padding:12px;margin-top:10px;background:#2E4057;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">🖨️ طباعة</button>
             </div>`;
         }
     }
@@ -1359,219 +1088,260 @@ function showReport(type) {
 }
 
 function printStatement(clientName) {
-    const data = getData();
-    const sales = data.sales || [];
-    const collections = data.collections || [];
+    const d = getData(), s = d.sales || [], c = d.collections || [];
     const today = new Date().toLocaleDateString('ar-EG');
-    const clientSales = sales.filter(s => s.client === clientName);
-    const clientCollections = collections.filter(c => c.client === clientName);
-    let allTransactions = [];
-    clientSales.forEach(s => { allTransactions.push({ date: s.date || today, type: 'بيع', desc: `${s.product} (فاتورة: ${s.id})`, amount: s.total || 0 }); });
-    clientCollections.forEach(c => { allTransactions.push({ date: new Date(c.id).toLocaleDateString('ar-EG'), type: 'تحصيل', desc: 'تحصيل نقدي', amount: -(c.amount || 0) }); });
-    allTransactions.sort((a, b) => { const dateA = a.date.split('/').reverse().join('-'); const dateB = b.date.split('/').reverse().join('-'); return dateA.localeCompare(dateB); });
-    let balance = 0;
-    let rows = '';
-    allTransactions.forEach(t => { balance += t.amount; rows += `<tr><td style="padding:8px;border:1px solid #ddd;">${t.date}</td><td style="padding:8px;border:1px solid #ddd;">${t.type}</td><td style="padding:8px;border:1px solid #ddd;">${t.desc}</td><td style="padding:8px;border:1px solid #ddd;color:${t.amount > 0 ? '#00B894' : '#E17055'};font-weight:bold;">${t.amount > 0 ? '+' : ''}${t.amount} ج.م</td><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${balance} ج.م</td></tr>`; });
-    const profile = data.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
-    let printContent = `<div style="direction:rtl;font-family:Arial,sans-serif;padding:20px;max-width:800px;margin:auto;background:white;color:#333;">
-        <div style="text-align:center;border-bottom:2px solid #2E4057;padding-bottom:15px;margin-bottom:20px;"><h2 style="margin:0;color:#2E4057;">${profile.shopName}</h2><p style="font-size:14px;color:#666;margin:5px 0;">كشف حساب تفصيلي</p><p style="font-size:12px;color:#888;margin:0;">${clientName}</p><p style="font-size:12px;color:#888;margin:0;">التاريخ: ${today}</p></div>
+    const cs = s.filter(x => x.client === clientName);
+    const cc = c.filter(x => x.client === clientName);
+    let all = [];
+    cs.forEach(x => { all.push({ date: x.date || today, type: 'بيع', desc: `${x.product} (${x.id})`, amount: x.total || 0 }); });
+    cc.forEach(x => { all.push({ date: new Date(x.id).toLocaleDateString('ar-EG'), type: 'تحصيل', desc: 'تحصيل نقدي', amount: -(x.amount || 0) }); });
+    all.sort((a, b) => { const da = a.date.split('/').reverse().join('-'), db = b.date.split('/').reverse().join('-'); return da.localeCompare(db); });
+    let bal = 0, rows = '';
+    all.forEach(x => { bal += x.amount; rows += `<tr><td style="padding:8px;border:1px solid #ddd;">${x.date}</td><td style="padding:8px;border:1px solid #ddd;">${x.type}</td><td style="padding:8px;border:1px solid #ddd;">${x.desc}</td><td style="padding:8px;border:1px solid #ddd;color:${x.amount > 0 ? '#00B894' : '#E17055'};font-weight:bold;">${x.amount > 0 ? '+' : ''}${x.amount} ج.م</td><td style="padding:8px;border:1px solid #ddd;font-weight:bold;">${bal} ج.م</td></tr>`; });
+    const p = d.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
+    const html = `<div style="direction:rtl;font-family:Arial;padding:20px;max-width:800px;margin:auto;background:white;color:#333;">
+        <div style="text-align:center;border-bottom:2px solid #2E4057;padding-bottom:15px;margin-bottom:20px;"><h2 style="margin:0;color:#2E4057;">${p.shopName}</h2><p style="font-size:14px;color:#666;">كشف حساب تفصيلي</p><p style="font-size:12px;color:#888;">${clientName} - ${today}</p></div>
         <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#2E4057;color:white;"><th style="padding:10px;text-align:right;border:1px solid #2E4057;">التاريخ</th><th style="padding:10px;text-align:right;border:1px solid #2E4057;">البيان</th><th style="padding:10px;text-align:right;border:1px solid #2E4057;">الوصف</th><th style="padding:10px;text-align:right;border:1px solid #2E4057;">المبلغ</th><th style="padding:10px;text-align:right;border:1px solid #2E4057;">الرصيد</th></tr></thead><tbody>${rows || '<tr><td colspan="5" style="text-align:center;padding:20px;color:#999;">لا توجد معاملات</td></tr>'}</tbody>
-        <tfoot><tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:10px;border:1px solid #ddd;text-align:left;">الرصيد النهائي</td><td colspan="2" style="padding:10px;border:1px solid #ddd;color:${balance > 0 ? '#E17055' : '#00B894'};font-size:16px;">${balance} ج.م</td></tr></tfoot></table>
-        <div style="text-align:center;font-size:11px;color:#999;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا - ${profile.shopName}</div>
+        <tfoot><tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:10px;border:1px solid #ddd;text-align:left;">الرصيد النهائي</td><td colspan="2" style="padding:10px;border:1px solid #ddd;color:${bal > 0 ? '#E17055' : '#00B894'};font-size:16px;">${bal} ج.م</td></tr></tfoot></table>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا</div>
     </div>`;
     const win = window.open('', '_blank');
-    if (win) {
-        win.document.write(`<html><head><meta charset="UTF-8"><title>كشف حساب ${clientName}</title><style>body{margin:0;padding:20px;background:#f5f5f5;}@media print{body{background:white;padding:0;}}</style></head><body>${printContent}</body></html>`);
-        win.document.close();
-        win.focus();
-        setTimeout(() => { win.print(); }, 500);
+    if (win) { win.document.write(`<html><head><meta charset="UTF-8"><title>كشف حساب ${clientName}</title><style>body{margin:0;padding:20px;background:#f5f5f5;}@media print{body{background:white;padding:0;}}</style></head><body>${html}</body></html>`); win.document.close(); win.focus(); setTimeout(() => win.print(), 500); }
+}
+
+// ============================================================
+// 17. التقارير المتقدمة
+// ============================================================
+function showAdvancedReport(type) {
+    const d = getData();
+    const today = new Date().toLocaleDateString('ar-EG');
+    let html = '';
+
+    if (type === 'inventory') {
+        const p = d.products || [];
+        let rows = '';
+        p.forEach(x => {
+            const status = (x.qty || 0) <= (x.minQty || 0) ? '⚠️ منخفض' : '✅ جيد';
+            const color = (x.qty || 0) <= (x.minQty || 0) ? '#E17055' : '#00B894';
+            rows += `<tr style="border-bottom:1px solid #333;"><td style="padding:8px;">${x.name}</td><td style="padding:8px;text-align:center;">${x.category || 'عام'}</td><td style="padding:8px;text-align:center;">${x.qty || 0}</td><td style="padding:8px;text-align:center;">${x.minQty || 0}</td><td style="padding:8px;text-align:center;color:${color};">${status}</td><td style="padding:8px;text-align:center;">${x.sell || 0} ج.م</td></tr>`;
+        });
+        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;overflow-x:auto;">
+            <div style="text-align:center;border-bottom:2px solid #00B894;padding-bottom:10px;margin-bottom:15px;"><h3 style="margin:0;color:#00B894;">📦 تقرير المخزون</h3><small style="color:#888;">${today}</small></div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">المنتج</th><th style="padding:8px;text-align:center;">التصنيف</th><th style="padding:8px;text-align:center;">الكمية</th><th style="padding:8px;text-align:center;">الحد الأدنى</th><th style="padding:8px;text-align:center;">الحالة</th><th style="padding:8px;text-align:center;">سعر البيع</th></tr></thead><tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">لا توجد منتجات</td></tr>'}</tbody></table>
+            <button onclick="printInventoryReport()" style="width:100%;padding:12px;margin-top:10px;background:#2E4057;color:white;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">🖨️ طباعة</button>
+        </div>`;
+    } else if (type === 'clients') {
+        const c = d.clients || [];
+        const s = d.sales || [];
+        let rows = '';
+        c.forEach(x => {
+            const st = s.filter(si => si.client === x.name).reduce((sum, si) => sum + (si.total || 0), 0);
+            const isClient = x.type === 'عميل' || x.type === 'كلاهما';
+            const isSupplier = x.type === 'مورد' || x.type === 'كلاهما';
+            const tl = isClient && isSupplier ? 'عميل/مورد' : isClient ? 'عميل' : 'مورد';
+            rows += `<tr style="border-bottom:1px solid #333;"><td style="padding:8px;">${x.name}</td><td style="padding:8px;text-align:center;">${tl}</td><td style="padding:8px;text-align:center;">${x.phone || '-'}</td><td style="padding:8px;text-align:center;color:${(x.balance || 0) > 0 ? '#E17055' : '#00B894'};">${x.balance || 0} ج.م</td><td style="padding:8px;text-align:center;">${x.creditLimit || 0} ج.م</td><td style="padding:8px;text-align:center;color:#00B894;">${st} ج.م</td></tr>`;
+        });
+        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;overflow-x:auto;">
+            <div style="text-align:center;border-bottom:2px solid #6C5CE7;padding-bottom:10px;margin-bottom:15px;"><h3 style="margin:0;color:#6C5CE7;">👤 تقرير العملاء</h3><small style="color:#888;">${today}</small></div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">الاسم</th><th style="padding:8px;text-align:center;">النوع</th><th style="padding:8px;text-align:center;">الهاتف</th><th style="padding:8px;text-align:center;">الرصيد</th><th style="padding:8px;text-align:center;">الحد الائتماني</th><th style="padding:8px;text-align:center;">إجمالي المبيعات</th></tr></thead><tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">لا توجد جهات اتصال</td></tr>'}</tbody></table>
+        </div>`;
+    } else if (type === 'sales') {
+        const s = d.sales || [];
+        const byClient = {};
+        s.forEach(x => { if (!byClient[x.client]) byClient[x.client] = 0; byClient[x.client] += x.total || 0; });
+        let rows = '';
+        Object.keys(byClient).forEach(k => {
+            rows += `<tr style="border-bottom:1px solid #333;"><td style="padding:8px;">${k}</td><td style="padding:8px;text-align:center;">${s.filter(si => si.client === k).length}</td><td style="padding:8px;text-align:center;color:#00B894;">${byClient[k]} ج.م</td></tr>`;
+        });
+        const total = s.reduce((sum, x) => sum + (x.total || 0), 0);
+        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;overflow-x:auto;">
+            <div style="text-align:center;border-bottom:2px solid #FDCB6E;padding-bottom:10px;margin-bottom:15px;"><h3 style="margin:0;color:#FDCB6E;">📊 تقرير المبيعات</h3><small style="color:#888;">${today}</small></div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">العميل</th><th style="padding:8px;text-align:center;">عدد الفواتير</th><th style="padding:8px;text-align:center;">إجمالي المبيعات</th></tr></thead><tbody>${rows || '<tr><td colspan="3" style="text-align:center;padding:20px;color:#888;">لا توجد مبيعات</td></tr>'}</tbody></table>
+            <div style="display:flex;justify-content:space-between;padding:15px 0;margin-top:10px;border-top:2px solid #FDCB6E;font-size:16px;"><span>الإجمالي الكلي</span><span style="color:#FDCB6E;font-weight:bold;">${total} ج.م</span></div>
+        </div>`;
     }
+    document.getElementById('reportContent').innerHTML = html;
+}
+
+function printInventoryReport() {
+    const d = getData(), p = d.products || [];
+    const today = new Date().toLocaleDateString('ar-EG');
+    const profile = d.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
+    let rows = '';
+    p.forEach(x => {
+        const status = (x.qty || 0) <= (x.minQty || 0) ? '⚠️ منخفض' : '✅ جيد';
+        rows += `<tr><td style="padding:8px;border:1px solid #ddd;">${x.name}</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">${x.category || 'عام'}</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">${x.qty || 0}</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">${x.minQty || 0}</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">${status}</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">${x.sell || 0} ج.م</td></tr>`;
+    });
+    const html = `<div style="direction:rtl;font-family:Arial;padding:20px;max-width:900px;margin:auto;background:white;color:#333;">
+        <div style="text-align:center;border-bottom:2px solid #2E4057;padding-bottom:15px;margin-bottom:20px;"><h2 style="margin:0;color:#2E4057;">${profile.shopName}</h2><p style="font-size:12px;color:#666;">${profile.branch || ''}</p><p style="font-size:14px;font-weight:bold;color:#2E4057;">📦 تقرير المخزون</p><p style="font-size:12px;color:#888;">${today}</p></div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;border:1px solid #2E4057;">المنتج</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">التصنيف</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">الكمية</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">الحد الأدنى</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">الحالة</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">سعر البيع</th></tr></thead><tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">لا توجد منتجات</td></tr>'}</tbody></table>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:20px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا</div>
+    </div>`;
+    const win = window.open('', '_blank');
+    if (win) { win.document.write(`<html><head><meta charset="UTF-8"><title>تقرير المخزون</title><style>body{margin:0;padding:20px;background:#f5f5f5;}@media print{body{background:white;padding:0;}}</style></head><body>${html}</body></html>`); win.document.close(); win.focus(); setTimeout(() => win.print(), 500); }
 }
 
 function printAllInvoices() {
-    const data = getData();
-    const sales = data.sales || [];
-    if (sales.length === 0) return showToast('⚠️ لا توجد فواتير');
-    sales.forEach(s => printSaleInvoice(s.id));
+    const d = getData(), s = d.sales || [];
+    if (s.length === 0) return showToast('⚠️ لا توجد فواتير');
+    s.forEach(x => printSaleInvoice(x.id));
 }
 
 function showAIReport() {
-    const data = getData();
-    const sales = data.sales || [];
-    const purchases = data.purchases || [];
-    const expenses = data.expenses || [];
-    const products = data.products || [];
-    const clients = data.clients || [];
-    const totalSales = sales.reduce((s, i) => s + (i.total || 0), 0);
-    const totalPurchases = purchases.reduce((s, i) => s + (i.total || 0), 0);
-    const totalExpenses = expenses.reduce((s, i) => s + (i.amount || 0), 0);
-    const profit = totalSales - totalPurchases - totalExpenses;
-    let report = '🤖 تحليل الذكاء الاصطناعي\n\n📊 إجمالي المبيعات: ' + totalSales + ' ج.م\n📉 إجمالي المشتريات: ' + totalPurchases + ' ج.م\n💸 إجمالي المصروفات: ' + totalExpenses + ' ج.م\n💰 صافي الربح: ' + profit + ' ج.م\n\n📦 عدد المنتجات: ' + products.length + '\n👤 عدد العملاء: ' + clients.length + '\n\n';
-    if (profit > 0) { report += '✅ عملك يحقق أرباحاً. استمر في تطوير مبيعاتك.\n'; if (totalExpenses > (totalSales * 0.3)) { report += '⚠️ نصيحة: مصروفاتك تمثل ' + ((totalExpenses/totalSales)*100).toFixed(1) + '% من مبيعاتك. حاول تقليل المصروفات.\n'; } } else { report += '⚠️ عملك يحقق خسائر. راجع المصروفات واستراتيجية التسعير.\n'; }
-    if (products.length === 0) report += '📦 تنبيه: لم تضف أي منتجات بعد. ابدأ بإضافة منتجات.\n';
-    alert(report);
+    const d = getData();
+    const s = d.sales || [], p = d.purchases || [], e = d.expenses || [];
+    const st = s.reduce((sum, x) => sum + (x.total || 0), 0);
+    const pt = p.reduce((sum, x) => sum + (x.total || 0), 0);
+    const et = e.reduce((sum, x) => sum + (x.amount || 0), 0);
+    const profit = st - pt - et;
+    let r = '🤖 تحليل الذكاء الاصطناعي\n\n📊 إجمالي المبيعات: ' + st + ' ج.م\n📉 إجمالي المشتريات: ' + pt + ' ج.م\n💸 إجمالي المصروفات: ' + et + ' ج.م\n💰 صافي الربح: ' + profit + ' ج.م\n\n';
+    if (profit > 0) { r += '✅ عملك يحقق أرباحاً.\n'; if (et > (st * 0.3)) { r += '⚠️ نصيحة: المصروفات تمثل ' + ((et/st)*100).toFixed(1) + '% من المبيعات. حاول تقليلها.\n'; } } else { r += '⚠️ عملك يحقق خسائر. راجع المصروفات.\n'; }
+    if (d.products.length === 0) r += '📦 تنبيه: لم تضف أي منتجات.\n';
+    alert(r);
 }
 
 // ============================================================
-// 15. تحديث الواجهة
+// 18. تحديث الواجهة
 // ============================================================
 function updateUI() {
     if (!appData.currentUser) return;
-    const data = getData();
+    const d = getData();
     updateSelects();
-    
-    document.getElementById('clientList').innerHTML = (data.clients || []).map(c => `
-        <div class="list-item"><div><strong>${c.name || ''}</strong><br><small>📞 ${c.phone || ''}</small></div><div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.type || ''}</span></div></div>
+
+    document.getElementById('clientList').innerHTML = (d.clients || []).map(c => `
+        <div class="list-item"><div><strong>${c.name}</strong><br><small>📞 ${c.phone || ''}</small></div><div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.type}</span></div></div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد جهات اتصال</div>';
-    
-    document.getElementById('productList').innerHTML = (data.products || []).map(p => `
-        <div class="list-item"><div><strong>${p.name || ''}</strong><br><small>${p.desc || ''}</small></div><div><span style="font-weight:bold;">${p.sell || 0} ج.م (${p.qty || 0})</span></div></div>
+
+    document.getElementById('productList').innerHTML = (d.products || []).map(p => `
+        <div class="list-item"><div><strong>${p.name}</strong><br><small>${p.category || 'عام'} | ${p.unit || 'قطعة'}</small></div><div><span style="font-weight:bold;">${p.sell || 0} ج.م (${p.qty || 0})</span></div></div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد منتجات</div>';
-    
-    document.getElementById('treasuryDisplay').textContent = data.treasury || 0;
-    
-    let logHtml = '';
-    logHtml += (data.treasuryLog || []).slice().reverse().map(t => `<div class="list-item"><span>${t.desc || ''}</span><span style="font-weight:bold;color:${(t.amount || 0) > 0 ? '#00B894' : '#E17055'};">${t.amount || 0} ج.م</span></div>`).join('');
-    logHtml += (data.expenses || []).slice().reverse().map(e => `<div class="list-item" style="color:#E17055;"><span>💸 ${e.desc || ''}</span><span style="font-weight:bold;">-${e.amount || 0} ج.م</span></div>`).join('');
-    logHtml += (data.collections || []).slice().reverse().map(c => `<div class="list-item" style="color:#00B894;"><span>💰 تحصيل من ${c.client || ''}</span><span style="font-weight:bold;">+${c.amount || 0} ج.م</span></div>`).join('');
-    logHtml += (data.supplierPayments || []).slice().reverse().map(p => `<div class="list-item" style="color:#E17055;"><span>💸 سداد - ${p.supplier || ''}</span><span style="font-weight:bold;">-${p.amount || 0} ج.م</span></div>`).join('');
-    document.getElementById('treasuryLog').innerHTML = logHtml || '<div style="text-align:center;color:#999;padding:10px;">لا توجد حركات</div>';
-    
-    document.getElementById('saleList').innerHTML = (data.sales || []).slice().reverse().map(s => `
+
+    document.getElementById('treasuryDisplay').textContent = d.treasury || 0;
+
+    let log = '';
+    log += (d.treasuryLog || []).slice().reverse().map(t => `<div class="list-item"><span>${t.desc}</span><span style="font-weight:bold;color:${(t.amount || 0) > 0 ? '#00B894' : '#E17055'};">${t.amount || 0} ج.م</span></div>`).join('');
+    log += (d.expenses || []).slice().reverse().map(e => `<div class="list-item" style="color:#E17055;"><span>💸 ${e.desc}</span><span style="font-weight:bold;">-${e.amount || 0} ج.م</span></div>`).join('');
+    log += (d.collections || []).slice().reverse().map(c => `<div class="list-item" style="color:#00B894;"><span>💰 تحصيل من ${c.client}</span><span style="font-weight:bold;">+${c.amount || 0} ج.م</span></div>`).join('');
+    log += (d.supplierPayments || []).slice().reverse().map(p => `<div class="list-item" style="color:#E17055;"><span>💸 سداد - ${p.supplier}</span><span style="font-weight:bold;">-${p.amount || 0} ج.م</span></div>`).join('');
+    document.getElementById('treasuryLog').innerHTML = log || '<div style="text-align:center;color:#999;padding:10px;">لا توجد حركات</div>';
+
+    document.getElementById('saleList').innerHTML = (d.sales || []).slice().reverse().map(s => `
         <div class="list-item" style="flex-wrap:wrap;gap:5px;${s.isReturn ? 'background:#fff5f5;border-right:3px solid #E17055;' : ''}">
-            <div><strong>${s.id}</strong> ${s.isReturn ? '↩️' : ''} - ${s.client || ''}<small style="color:#999;display:block;font-size:11px;">${s.date || ''} | ${s.items ? s.items.length : 0} منتج</small></div>
+            <div><strong>${s.id}</strong> ${s.isReturn ? '↩️' : ''} - ${s.client}<small style="color:#999;display:block;font-size:11px;">${s.date} | ${s.items ? s.items.length : 0} منتج</small></div>
             <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:${s.isReturn ? '#E17055' : '#2E4057'};">${s.total || 0} ج.م</span><button onclick="${s.isReturn ? 'printReturnSaleInvoice' : 'printSaleInvoice'}('${s.id}')" style="background:${s.isReturn ? '#E17055' : '#2E4057'};color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
         </div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد فواتير</div>';
-    
-    document.getElementById('purchaseList').innerHTML = (data.purchases || []).slice().reverse().map(p => `
+
+    document.getElementById('purchaseList').innerHTML = (d.purchases || []).slice().reverse().map(p => `
         <div class="list-item" style="flex-wrap:wrap;gap:5px;${p.isReturn ? 'background:#fff5f5;border-right:3px solid #E17055;' : ''}">
-            <div><strong>${p.id}</strong> ${p.isReturn ? '↩️' : ''} - ${p.supplier || ''}<small style="color:#999;display:block;font-size:11px;">${p.date || ''} | ${p.items ? p.items.length : 0} منتج</small></div>
-            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:${p.isReturn ? '#E17055' : '#E17055'};">${p.total || 0} ج.م</span><button onclick="${p.isReturn ? 'printReturnPurchaseInvoice' : 'printPurchaseInvoice'}('${p.id}')" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
+            <div><strong>${p.id}</strong> ${p.isReturn ? '↩️' : ''} - ${p.supplier}<small style="color:#999;display:block;font-size:11px;">${p.date} | ${p.items ? p.items.length : 0} منتج</small></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:#E17055;">${p.total || 0} ج.م</span><button onclick="${p.isReturn ? 'printReturnPurchaseInvoice' : 'printPurchaseInvoice'}('${p.id}')" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
         </div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد فواتير شراء</div>';
-    
+
     updateWarehouseLog();
 }
 
 function updateSelects() {
-    const data = getData();
-    const products = data.products || [];
+    const d = getData();
+    const p = d.products || [];
     document.querySelectorAll('#saleProduct, #purchaseProduct, #returnProduct, #returnPurchaseProduct, #whProduct').forEach(sel => {
         if (sel) {
-            sel.innerHTML = '<option value="">اختر المنتج</option>';
-            products.forEach(p => { if (p && p.id) sel.innerHTML += `<option value="${p.id}">${p.name || 'منتج'} (${p.qty || 0})</option>`; });
+            sel.innerHTML = '<option value="">اختر</option>';
+            p.forEach(x => { if (x.id) sel.innerHTML += `<option value="${x.id}">${x.name} (${x.qty || 0})</option>`; });
         }
     });
 }
 
 // ============================================================
-// 16. الإعدادات
+// 19. الإعدادات
 // ============================================================
 function getSettings() {
-    const data = getData();
-    if (!data.settings) data.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 };
-    return data.settings;
+    const d = getData();
+    if (!d.settings) d.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep' };
+    return d.settings;
 }
 
 function saveSettings(settings) {
-    const data = getData();
-    data.settings = settings;
+    const d = getData();
+    d.settings = settings;
     saveLocal();
 }
 
 function loadSettings() {
-    const settings = getSettings();
+    const s = getSettings();
     document.body.className = '';
-    if (settings.theme && settings.theme !== 'default') document.body.classList.add('theme-' + settings.theme);
-    const sizeMap = { small: '13px', medium: '16px', large: '19px', xlarge: '22px' };
-    document.body.style.fontSize = sizeMap[settings.fontSize] || '16px';
-    document.getElementById('soundAlerts').checked = settings.soundAlerts !== false;
-    document.getElementById('popupAlerts').checked = settings.popupAlerts !== false;
-    document.getElementById('alertSound').value = settings.alertSound || 'beep';
-    document.getElementById('barcodeSize').value = settings.barcodeSize || 100;
-    document.getElementById('barcodeSizeLabel').textContent = (settings.barcodeSize || 100) + '%';
+    if (s.theme && s.theme !== 'default') document.body.classList.add('theme-' + s.theme);
+    const sz = { small: '13px', medium: '16px', large: '19px', xlarge: '22px' };
+    document.body.style.fontSize = sz[s.fontSize] || '16px';
+    document.getElementById('soundAlerts').checked = s.soundAlerts !== false;
+    document.getElementById('popupAlerts').checked = s.popupAlerts !== false;
+    document.getElementById('alertSound').value = s.alertSound || 'beep';
 }
 
 function changeTheme(theme) {
     document.body.className = '';
     if (theme !== 'default') document.body.classList.add('theme-' + theme);
-    const settings = getSettings();
-    settings.theme = theme;
-    saveSettings(settings);
+    const s = getSettings();
+    s.theme = theme;
+    saveSettings(s);
     showToast('✅ تم تغيير السمة');
 }
 
 function changeFontSize(size) {
-    const sizeMap = { small: '13px', medium: '16px', large: '19px', xlarge: '22px' };
-    document.body.style.fontSize = sizeMap[size] || '16px';
-    const settings = getSettings();
-    settings.fontSize = size;
-    saveSettings(settings);
+    const sz = { small: '13px', medium: '16px', large: '19px', xlarge: '22px' };
+    document.body.style.fontSize = sz[size] || '16px';
+    const s = getSettings();
+    s.fontSize = size;
+    saveSettings(s);
     showToast('✅ تم تغيير حجم الخط');
 }
 
 function resetAppSettings() {
     if (!confirm('إعادة ضبط الإعدادات؟')) return;
-    const data = getData();
-    data.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 };
+    const d = getData();
+    d.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep' };
     saveLocal();
     loadSettings();
     showToast('✅ تم إعادة الضبط');
 }
 
-function setBarcodeLibrary(type) {
-    const settings = getSettings();
-    settings.barcodeLibrary = type;
-    saveSettings(settings);
-    showToast('✅ تم تغيير نوع الباركود');
-}
-
-function updateBarcodeSizeLabel() {
-    const size = document.getElementById('barcodeSize').value;
-    document.getElementById('barcodeSizeLabel').textContent = size + '%';
-    const settings = getSettings();
-    settings.barcodeSize = parseInt(size);
-    saveSettings(settings);
-}
-
 // ============================================================
-// 17. لوحة التحكم
+// 20. لوحة التحكم
 // ============================================================
 function updateAdminPanel() {
     const users = Object.keys(appData.users || {});
     document.getElementById('adminTotalUsers').textContent = users.length;
     const now = new Date();
-    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-    let onlineCount = 0;
-    users.forEach(uid => { const user = appData.users[uid]; if (user && user.lastLogin && new Date(user.lastLogin) > fiveMinutesAgo) onlineCount++; });
-    document.getElementById('adminOnlineUsers').textContent = onlineCount;
+    const fiveAgo = new Date(now.getTime() - 5 * 60 * 1000);
+    let online = 0;
+    users.forEach(uid => { const u = appData.users[uid]; if (u && u.lastLogin && new Date(u.lastLogin) > fiveAgo) online++; });
+    document.getElementById('adminOnlineUsers').textContent = online;
     const today = new Date().toISOString().slice(0, 10);
-    const todayVisits = (appData.activityLog || []).filter(log => log.action === 'دخول' && log.time && log.time.slice(0, 10) === today);
-    document.getElementById('adminTodayVisits').textContent = todayVisits.length;
-    let tableHtml = '';
-    let counter = 0;
+    const visits = (appData.activityLog || []).filter(l => l.action === 'دخول' && l.time && l.time.slice(0, 10) === today);
+    document.getElementById('adminTodayVisits').textContent = visits.length;
+    let table = '', c = 0;
     users.forEach(uid => {
-        const user = appData.users[uid];
-        if (!user) return;
-        counter++;
-        const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'لم يسجل بعد';
-        const country = user.lastLocation?.country || 'غير معروف';
-        const ip = user.lastLocation?.ip || 'غير معروف';
-        const isOnline = user.lastLogin && new Date(user.lastLogin) > new Date(Date.now() - 5 * 60 * 1000);
-        tableHtml += `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">${counter}</td><td style="padding:8px;"><strong>${user.displayName || 'غير معروف'}</strong></td><td style="padding:8px;">${user.fullName || ''}</td><td style="padding:8px;">${user.phone || ''}</td><td style="padding:8px;font-size:12px;">${lastLogin}</td><td style="padding:8px;">${country}</td><td style="padding:8px;font-size:11px;color:#999;">${ip}</td><td style="padding:8px;"><span style="background:${isOnline ? '#00B894' : '#999'};color:white;padding:2px 10px;border-radius:12px;font-size:11px;">${isOnline ? '🟢 متصل' : '🔴 غير متصل'}</span></td></tr>`;
+        const u = appData.users[uid];
+        if (!u) return;
+        c++;
+        const last = u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'لم يسجل';
+        const country = u.lastLocation?.country || 'غير معروف';
+        const ip = u.lastLocation?.ip || 'غير معروف';
+        const isOnline = u.lastLogin && new Date(u.lastLogin) > new Date(Date.now() - 5 * 60 * 1000);
+        table += `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">${c}</td><td style="padding:8px;"><strong>${u.displayName || 'غير معروف'}</strong></td><td style="padding:8px;">${u.fullName || ''}</td><td style="padding:8px;">${u.phone || ''}</td><td style="padding:8px;font-size:12px;">${last}</td><td style="padding:8px;">${country}</td><td style="padding:8px;font-size:11px;color:#999;">${ip}</td><td style="padding:8px;"><span style="background:${isOnline ? '#00B894' : '#999'};color:white;padding:2px 10px;border-radius:12px;font-size:11px;">${isOnline ? '🟢 متصل' : '🔴 غير متصل'}</span></td></tr>`;
     });
-    document.getElementById('adminUsersTable').innerHTML = tableHtml || '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">لا يوجد مستخدمين</td></tr>';
-    let logHtml = (appData.activityLog || []).slice().reverse().slice(0, 50).map(log => {
-        const time = log.time ? new Date(log.time).toLocaleString() : '';
-        const icon = log.action === 'دخول' ? '🟢' : log.action === 'خروج' ? '🔴' : '📝';
-        return `<div class="list-item"><span>${icon} ${log.username || 'مستخدم'} - ${log.action || ''}</span><span style="font-size:11px;color:#999;">${time} ${log.country ? '| ' + log.country : ''} ${log.ip && log.ip !== 'غير معروف' ? '| IP: ' + log.ip : ''}</span></div>`;
+    document.getElementById('adminUsersTable').innerHTML = table || '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">لا يوجد مستخدمين</td></tr>';
+    let logHtml = (appData.activityLog || []).slice().reverse().slice(0, 50).map(l => {
+        const time = l.time ? new Date(l.time).toLocaleString() : '';
+        const icon = l.action === 'دخول' ? '🟢' : l.action === 'خروج' ? '🔴' : '📝';
+        return `<div class="list-item"><span>${icon} ${l.username || 'مستخدم'} - ${l.action}</span><span style="font-size:11px;color:#999;">${time} ${l.country ? '| ' + l.country : ''} ${l.ip && l.ip !== 'غير معروف' ? '| IP: ' + l.ip : ''}</span></div>`;
     }).join('');
     document.getElementById('adminActivityLog').innerHTML = logHtml || '<div style="text-align:center;color:#999;padding:10px;">لا يوجد سجل نشاط</div>';
 }
 
 // ============================================================
-// 18. لوحة الأدمن (5 ضغطات)
+// 21. لوحة الأدمن (5 ضغطات)
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     const logo = document.getElementById('brandLogo');
@@ -1586,10 +1356,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('adminPinSection').style.display = 'block';
                 document.getElementById('adminContent').style.display = 'none';
                 document.getElementById('adminPinInput').value = '';
-                const data = getData();
-                if (data.profile) {
-                    document.getElementById('adminShopName').value = data.profile.shopName || '';
-                    document.getElementById('adminBranch').value = data.profile.branch || '';
+                const d = getData();
+                if (d.profile) {
+                    document.getElementById('adminShopName').value = d.profile.shopName || '';
+                    document.getElementById('adminBranch').value = d.profile.branch || '';
                 }
                 showToast('🔐 أدخل الرقم السري');
             }
@@ -1617,21 +1387,21 @@ function closeAdminPanel() {
 }
 
 function changeAdminPassword() {
-    const newPass = document.getElementById('adminNewPassword').value.trim();
-    if (!newPass || newPass.length < 4) return showToast('⚠️ 4 أحرف على الأقل');
-    appData.adminPin = newPass;
+    const np = document.getElementById('adminNewPassword').value.trim();
+    if (!np || np.length < 4) return showToast('⚠️ 4 أحرف');
+    appData.adminPin = np;
     saveLocal();
     document.getElementById('adminNewPassword').value = '';
     showToast('✅ تم تغيير الرقم السري');
 }
 
 function exportData() {
-    const data = getData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const d = getData();
+    const blob = new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'backup_' + new Date().toISOString().slice(0,10) + '.json';
+    a.download = 'backup_' + new Date().toISOString().slice(0, 10) + '.json';
     a.click();
     URL.revokeObjectURL(url);
     showToast('📤 تم التصدير');
@@ -1644,8 +1414,8 @@ function importData(event) {
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            const userData = getData();
-            Object.assign(userData, data);
+            const ud = getData();
+            Object.assign(ud, data);
             saveLocal();
             updateUI();
             showToast('✅ تم الاستيراد');
@@ -1659,21 +1429,21 @@ function importData(event) {
 
 function clearAllData() {
     if (!confirm('⚠️ مسح كل البيانات؟')) return;
-    const data = getData();
-    data.sales = [];
-    data.purchases = [];
-    data.products = [];
-    data.clients = [];
-    data.treasury = 0;
-    data.treasuryLog = [];
-    data.expenses = [];
-    data.collections = [];
-    data.supplierPayments = [];
-    data.warehouse = [];
-    data.saleCounter = 0;
-    data.purchaseCounter = 0;
-    data.returnSaleCounter = 0;
-    data.returnPurchaseCounter = 0;
+    const d = getData();
+    d.sales = [];
+    d.purchases = [];
+    d.products = [];
+    d.clients = [];
+    d.treasury = 0;
+    d.treasuryLog = [];
+    d.expenses = [];
+    d.collections = [];
+    d.supplierPayments = [];
+    d.warehouse = [];
+    d.saleCounter = 0;
+    d.purchaseCounter = 0;
+    d.returnSaleCounter = 0;
+    d.returnPurchaseCounter = 0;
     saveLocal();
     updateUI();
     showToast('🗑️ تم المسح');
@@ -1681,7 +1451,7 @@ function clearAllData() {
 }
 
 // ============================================================
-// 19. الإشعارات
+// 22. Toast
 // ============================================================
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -1693,17 +1463,14 @@ function showToast(msg) {
 }
 
 // ============================================================
-// 20. بدء التشغيل
+// 23. بدء التشغيل
 // ============================================================
 initFirebase();
 loadLocal();
-
 if (!appData.users) appData.users = {};
 if (!appData.activityLog) appData.activityLog = [];
-
 if (!autoLogin()) {
     document.getElementById('authContainer').style.display = 'flex';
     document.getElementById('appContainer').style.display = 'none';
 }
-
-console.log('✅ نظام راشد V31 - النسخة الكاملة مع المرتجعات');
+console.log('✅ نظام راشد V31 - ERP متكامل يعمل');
