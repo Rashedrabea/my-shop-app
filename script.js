@@ -1,994 +1,364 @@
-// ============================================================
-// نظام راشد V31 - النسخة الكاملة
-// مع لوحة تحكم متكاملة + رسوم بيانية محسنة
-// ============================================================
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>نظام راشد V31</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+</head>
+<body>
 
-// ============================================================
-// 1. إعدادات Firebase
-// ============================================================
-const firebaseConfig = {
-    apiKey: "AIzaSyCQVcCAkZpeL9F9KADI5PtVanwTwO3SH5Y",
-    authDomain: "smart-task-manager-d2a71.firebaseapp.com",
-    databaseURL: "https://smart-task-manager-d2a71-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "smart-task-manager-d2a71",
-    storageBucket: "smart-task-manager-d2a71.firebasestorage.app",
-    messagingSenderId: "669004983540",
-    appId: "1:669004983540:web:285edca38108f02f1e82a1"
-};
-
-// ============================================================
-// 2. المتغيرات العامة
-// ============================================================
-let appData = { users: {}, currentUser: null, adminPin: '1234', activityLog: [] };
-let chartInstances = {};
-let clickCount = 0;
-let clickTimer = null;
-let firebaseApp = null;
-let firebaseAuth = null;
-let firebaseDb = null;
-
-// ============================================================
-// 3. تهيئة Firebase
-// ============================================================
-function initFirebase() {
-    try {
-        if (!firebaseApp) {
-            firebaseApp = firebase.initializeApp(firebaseConfig);
-            firebaseAuth = firebase.auth(firebaseApp);
-            firebaseDb = firebase.database(firebaseApp);
-        }
-    } catch(e) {
-        console.warn('Firebase error:', e);
-    }
-    return { app: firebaseApp, auth: firebaseAuth, db: firebaseDb };
-}
-
-// ============================================================
-// 4. إدارة البيانات
-// ============================================================
-function loadLocal() {
-    try {
-        const raw = localStorage.getItem('RashedV31');
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            appData = parsed;
-            if (!appData.activityLog) appData.activityLog = [];
-        }
-    } catch(e) {}
-}
-
-function saveLocal() {
-    try {
-        localStorage.setItem('RashedV31', JSON.stringify(appData));
-        syncCloud();
-    } catch(e) {}
-}
-
-function getData() {
-    if (!appData.currentUser || !appData.users[appData.currentUser]) {
-        return {
-            sales: [], purchases: [], products: [], clients: [],
-            treasury: 0, treasuryLog: [], expenses: [],
-            collections: [], supplierPayments: [],
-            saleCounter: 0, purchaseCounter: 0,
-            profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
-            settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
-        };
-    }
-    return appData.users[appData.currentUser].data || {};
-}
-
-function syncCloud() {
-    if (!appData.currentUser || !appData.users[appData.currentUser]) return;
-    try {
-        const { db } = initFirebase();
-        db.ref('users/' + appData.currentUser + '/data').set(appData.users[appData.currentUser].data);
-    } catch(e) {}
-}
-
-// ============================================================
-// 5. جلب بيانات المستخدم (الدولة، IP، المتصفح)
-// ============================================================
-async function getUserLocation() {
-    try {
-        const response = await fetch('https://ipapi.co/json/');
-        const data = await response.json();
-        return {
-            ip: data.ip || 'غير معروف',
-            country: data.country_name || 'غير معروف',
-            city: data.city || 'غير معروف',
-            region: data.region || 'غير معروف',
-            browser: navigator.userAgent || 'غير معروف'
-        };
-    } catch(e) {
-        return {
-            ip: 'غير معروف',
-            country: 'غير معروف',
-            city: 'غير معروف',
-            region: 'غير معروف',
-            browser: navigator.userAgent || 'غير معروف'
-        };
-    }
-}
-
-// ============================================================
-// 6. الدخول والخروج (محدث)
-// ============================================================
-function toggleAuthMode() {
-    document.getElementById('loginForm').style.display = 
-        document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
-    document.getElementById('registerForm').style.display = 
-        document.getElementById('registerForm').style.display === 'none' ? 'block' : 'none';
-}
-
-async function handleLogin() {
-    const username = document.getElementById('loginUser').value.trim();
-    const pass = document.getElementById('loginPass').value.trim();
-    const email = username + '@rashed.com';
-    if (!username || !pass) return showToast('⚠️ أدخل البيانات');
-    try {
-        const { auth } = initFirebase();
-        await auth.signInWithEmailAndPassword(email, pass);
-        const user = auth.currentUser;
-        
-        // جلب معلومات الموقع
-        const location = await getUserLocation();
-        
-        appData.currentUser = user.uid;
-        if (!appData.users[user.uid]) {
-            appData.users[user.uid] = {
-                displayName: username,
-                fullName: username,
-                phone: '',
-                address: '',
-                data: {
-                    sales: [], purchases: [], products: [], clients: [],
-                    treasury: 0, treasuryLog: [], expenses: [],
-                    collections: [], supplierPayments: [],
-                    saleCounter: 0, purchaseCounter: 0,
-                    profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
-                    settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
-                }
-            };
-        }
-        
-        // تسجيل الدخول في السجل
-        appData.users[user.uid].lastLogin = new Date().toISOString();
-        appData.users[user.uid].lastLocation = location;
-        
-        // إضافة إلى سجل النشاط
-        appData.activityLog.push({
-            userId: user.uid,
-            username: username,
-            action: 'دخول',
-            time: new Date().toISOString(),
-            ip: location.ip,
-            country: location.country,
-            city: location.city,
-            browser: location.browser
-        });
-        
-        saveLocal();
-        enterApp();
-        showToast('✅ مرحباً ' + username);
-    } catch(error) {
-        if (error.code === 'auth/user-not-found') showToast('❌ المستخدم غير موجود');
-        else if (error.code === 'auth/wrong-password') showToast('❌ كلمة المرور خطأ');
-        else showToast('❌ ' + error.message);
-    }
-}
-
-async function handleRegister() {
-    const username = document.getElementById('regUser').value.trim();
-    const pass = document.getElementById('regPass').value.trim();
-    const confirm = document.getElementById('regPassConfirm').value.trim();
-    const fullName = document.getElementById('regFullName').value.trim();
-    const phone = document.getElementById('regPhone').value.trim();
-    const address = document.getElementById('regAddress').value.trim();
-    const email = username + '@rashed.com';
-    
-    if (!username || username.length < 3) return showToast('⚠️ 3 أحرف على الأقل');
-    if (pass.length < 6) return showToast('⚠️ 6 أحرف على الأقل');
-    if (pass !== confirm) return showToast('⚠️ غير متطابقة');
-    if (!fullName) return showToast('⚠️ أدخل الاسم الكامل');
-    
-    try {
-        const { auth, db } = initFirebase();
-        const result = await auth.createUserWithEmailAndPassword(email, pass);
-        const user = result.user;
-        
-        // جلب معلومات الموقع
-        const location = await getUserLocation();
-        
-        await db.ref('users/' + user.uid + '/data').set({
-            sales: [], purchases: [], products: [], clients: [],
-            treasury: 0, treasuryLog: [], expenses: [],
-            collections: [], supplierPayments: [],
-            saleCounter: 0, purchaseCounter: 0,
-            profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
-            settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
-        });
-        
-        appData.currentUser = user.uid;
-        appData.users[user.uid] = {
-            displayName: username,
-            fullName: fullName,
-            phone: phone,
-            address: address,
-            lastLogin: new Date().toISOString(),
-            lastLocation: location,
-            data: {
-                sales: [], purchases: [], products: [], clients: [],
-                treasury: 0, treasuryLog: [], expenses: [],
-                collections: [], supplierPayments: [],
-                saleCounter: 0, purchaseCounter: 0,
-                profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
-                settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
-            }
-        };
-        
-        // تسجيل في سجل النشاط
-        appData.activityLog.push({
-            userId: user.uid,
-            username: username,
-            action: 'تسجيل حساب جديد',
-            time: new Date().toISOString(),
-            ip: location.ip,
-            country: location.country,
-            city: location.city,
-            browser: location.browser
-        });
-        
-        saveLocal();
-        enterApp();
-        showToast('✅ تم إنشاء الحساب');
-    } catch(error) {
-        if (error.code === 'auth/email-already-in-use') showToast('⚠️ الاسم مستخدم');
-        else showToast('❌ ' + error.message);
-    }
-}
-
-function logout() {
-    if (confirm('تسجيل الخروج؟')) {
-        const { auth } = initFirebase();
-        const username = appData.users[appData.currentUser]?.displayName || 'مستخدم';
-        
-        // تسجيل الخروج في السجل
-        appData.activityLog.push({
-            userId: appData.currentUser,
-            username: username,
-            action: 'خروج',
-            time: new Date().toISOString()
-        });
-        saveLocal();
-        
-        auth.signOut().then(() => {
-            appData.currentUser = null;
-            saveLocal();
-            location.reload();
-        });
-    }
-}
-
-function enterApp() {
-    document.getElementById('authContainer').style.display = 'none';
-    document.getElementById('appContainer').style.display = 'block';
-    const displayName = appData.users[appData.currentUser]?.fullName || 
-                       appData.users[appData.currentUser]?.displayName || 'مستخدم';
-    document.getElementById('userDisplay').textContent = displayName;
-    loadSettings();
-    updateUI();
-    updateAdminPanel();
-    switchPage('dashboard');
-}
-
-function autoLogin() {
-    if (appData.currentUser && appData.users[appData.currentUser]) {
-        enterApp();
-        return true;
-    }
-    return false;
-}
-
-// ============================================================
-// 7. التنقل بين الصفحات
-// ============================================================
-function switchPage(page) {
-    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-    const target = document.getElementById('page-' + page);
-    if (target) target.classList.add('active');
-    if (page === 'dashboard') drawCharts();
-    if (page === 'reports') updateReportSelects();
-    if (page === 'settings') {
-        loadSettings();
-        const data = getData();
-        document.getElementById('settingsUser').textContent = 
-            appData.users[appData.currentUser]?.fullName || 
-            appData.users[appData.currentUser]?.displayName || 'مستخدم';
-        document.getElementById('settingsProducts').textContent = data.products.length;
-        document.getElementById('settingsClients').textContent = data.clients.length;
-    }
-    if (page === 'admin') updateAdminPanel();
-}
-
-// ============================================================
-// 8. لوحة التحكم (Admin Panel)
-// ============================================================
-function updateAdminPanel() {
-    const users = Object.keys(appData.users);
-    document.getElementById('adminTotalUsers').textContent = users.length;
-    
-    // حساب المتصلين الآن (آخر 5 دقائق)
-    const now = new Date();
-    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-    let onlineCount = 0;
-    users.forEach(uid => {
-        const user = appData.users[uid];
-        if (user.lastLogin) {
-            const lastLogin = new Date(user.lastLogin);
-            if (lastLogin > fiveMinutesAgo) onlineCount++;
-        }
-    });
-    document.getElementById('adminOnlineUsers').textContent = onlineCount;
-    
-    // زيارات اليوم
-    const today = new Date().toISOString().slice(0, 10);
-    const todayVisits = appData.activityLog.filter(log => 
-        log.action === 'دخول' && log.time && log.time.slice(0, 10) === today
-    );
-    document.getElementById('adminTodayVisits').textContent = todayVisits.length;
-    
-    // جدول المستخدمين
-    let tableHtml = '';
-    let counter = 0;
-    users.forEach(uid => {
-        const user = appData.users[uid];
-        counter++;
-        const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'لم يسجل بعد';
-        const country = user.lastLocation?.country || 'غير معروف';
-        const ip = user.lastLocation?.ip || 'غير معروف';
-        const isOnline = user.lastLogin && new Date(user.lastLogin) > new Date(Date.now() - 5 * 60 * 1000);
-        
-        tableHtml += `
-            <tr style="border-bottom:1px solid #eee;">
-                <td style="padding:8px;">${counter}</td>
-                <td style="padding:8px;"><strong>${user.displayName || 'غير معروف'}</strong></td>
-                <td style="padding:8px;">${user.fullName || ''}</td>
-                <td style="padding:8px;">${user.phone || ''}</td>
-                <td style="padding:8px;font-size:12px;">${lastLogin}</td>
-                <td style="padding:8px;">${country}</td>
-                <td style="padding:8px;font-size:11px;color:#999;">${ip}</td>
-                <td style="padding:8px;">
-                    <span style="background:${isOnline ? '#00B894' : '#999'};color:white;padding:2px 10px;border-radius:12px;font-size:11px;">
-                        ${isOnline ? '🟢 متصل' : '🔴 غير متصل'}
-                    </span>
-                </td>
-            </tr>
-        `;
-    });
-    document.getElementById('adminUsersTable').innerHTML = tableHtml || 
-        '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">لا يوجد مستخدمين</td></tr>';
-    
-    // سجل النشاط
-    let logHtml = appData.activityLog.slice().reverse().slice(0, 50).map(log => {
-        const time = log.time ? new Date(log.time).toLocaleString() : '';
-        const icon = log.action === 'دخول' ? '🟢' : log.action === 'خروج' ? '🔴' : '📝';
-        return `
-            <div class="list-item">
-                <span>${icon} ${log.username} - ${log.action}</span>
-                <span style="font-size:11px;color:#999;">
-                    ${time} ${log.country ? '| ' + log.country : ''}
-                    ${log.ip && log.ip !== 'غير معروف' ? '| IP: ' + log.ip : ''}
-                </span>
+    <!-- شاشة الدخول -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-box">
+            <h2>نظام راشد V31</h2>
+            <div id="loginForm">
+                <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
+                <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
+                <button class="btn-auth" onclick="handleLogin()">دخول</button>
+                <button class="btn-auth btn-green" onclick="toggleAuthMode()">إنشاء حساب</button>
             </div>
-        `;
-    }).join('');
-    document.getElementById('adminActivityLog').innerHTML = logHtml || 
-        '<div style="text-align:center;color:#999;padding:10px;">لا يوجد سجل نشاط</div>';
-}
+            <div id="registerForm" style="display:none;">
+                <input type="text" id="regUser" placeholder="اسم المستخدم">
+                <input type="password" id="regPass" placeholder="كلمة المرور">
+                <input type="password" id="regPassConfirm" placeholder="تأكيد">
+                <input type="text" id="regFullName" placeholder="الاسم الكامل">
+                <input type="text" id="regPhone" placeholder="رقم الهاتف">
+                <input type="text" id="regAddress" placeholder="العنوان">
+                <button class="btn-auth btn-green" onclick="handleRegister()">إنشاء</button>
+                <button class="btn-auth btn-back" onclick="toggleAuthMode()">عودة</button>
+            </div>
+        </div>
+    </div>
 
-// ============================================================
-// 9. تحديث القوائم والعرض
-// ============================================================
-function updateSelects() {
-    const data = getData();
-    document.querySelectorAll('#saleProduct, #purchaseProduct, #returnProduct, #returnPurchaseProduct').forEach(sel => {
-        if (sel) {
-            sel.innerHTML = '<option value="">اختر المنتج</option>';
-            data.products.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name} (${p.qty})</option>`);
-        }
-    });
-}
+    <!-- التطبيق -->
+    <div id="appContainer" style="display:none;">
+        <div class="app-wrapper">
 
-function updateReportSelects() {
-    const data = getData();
-    const select = document.getElementById('statementClientSelect');
-    if (select) {
-        select.innerHTML = '<option value="">-- اختر --</option>';
-        data.clients.forEach(c => select.innerHTML += `<option value="${c.name}">${c.name}</option>`);
-    }
-}
+            <!-- الشريط الجانبي -->
+            <div class="sidebar">
+                <div class="sidebar-brand">📊 راشد V31</div>
+                <button class="nav-btn" onclick="switchPage('dashboard')"><i class="fas fa-home"></i> الرئيسية</button>
+                <button class="nav-btn" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i> المبيعات</button>
+                <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck"></i> المشتريات</button>
+                <button class="nav-btn" onclick="switchPage('products')"><i class="fas fa-warehouse"></i> المخزون</button>
+                <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> جهات الاتصال</button>
+                <button class="nav-btn" onclick="switchPage('treasury')"><i class="fas fa-coins"></i> الخزنة</button>
+                <button class="nav-btn" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i> التقارير</button>
+                <button class="nav-btn" onclick="switchPage('settings')"><i class="fas fa-cog"></i> الإعدادات</button>
+                <button class="nav-btn" onclick="switchPage('admin')" style="background:rgba(225,112,85,0.3);color:#E17055;"><i class="fas fa-user-shield"></i> لوحة التحكم</button>
+                <button class="nav-btn logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+            </div>
 
-function updateUI() {
-    if (!appData.currentUser) return;
-    const data = getData();
-    updateSelects();
+            <div class="main-content">
+                <div class="top-bar">
+                    <div class="brand" id="brandLogo" style="cursor:pointer;">نظام راشد <span class="version">V31</span></div>
+                    <div class="user-info">👤 <span id="userDisplay">admin</span></div>
+                </div>
 
-    document.getElementById('clientList').innerHTML = data.clients.map(c => `
-        <div class="list-item"><div><strong>${c.name}</strong><br><small>📞 ${c.phone || ''}</small></div><div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.type}</span></div></div>
-    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد جهات اتصال</div>';
+                <!-- الرئيسية -->
+                <div id="page-dashboard" class="page active">
+                    <div class="dashboard-grid">
+                        <div class="dash-card card-sales" onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
+                        <div class="dash-card card-purchases" onclick="switchPage('purchases')"><i class="fas fa-truck"></i><span>مشتريات</span></div>
+                        <div class="dash-card card-products" onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></div>
+                        <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
+                        <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
+                        <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
+                        <div class="dash-card card-settings" onclick="switchPage('settings')" style="background:#6C5CE7;color:white;"><i class="fas fa-cog"></i><span>الإعدادات</span></div>
+                        <div class="dash-card card-admin" onclick="switchPage('admin')" style="background:#E17055;color:white;"><i class="fas fa-user-shield"></i><span>لوحة التحكم</span></div>
+                    </div>
+                    <div class="charts-container">
+                        <div class="chart-wrapper"><h4>📈 حركة المبيعات</h4><canvas id="salesChart"></canvas></div>
+                        <div class="chart-wrapper"><h4>💰 رصيد الخزنة</h4><canvas id="treasuryChart"></canvas></div>
+                    </div>
+                    <button onclick="showAIReport()" style="width:100%;padding:15px;background:linear-gradient(135deg,#2E4057,#00B894);color:white;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:15px;">🤖 تحليل الذكاء الاصطناعي</button>
+                </div>
 
-    document.getElementById('productList').innerHTML = data.products.map(p => `
-        <div class="list-item"><div><strong>${p.name}</strong><br><small>${p.desc || ''}</small></div><div><span style="font-weight:bold;">${p.sell} ج.م (${p.qty})</span></div></div>
-    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد منتجات</div>';
+                <!-- المبيعات (نفسها) -->
+                <div id="page-sales" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>🛒 المبيعات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div style="display:flex;gap:8px;margin-bottom:10px;">
+                            <input type="text" id="manualBarcode" placeholder="🔍 باركود أو اسم" style="flex:1;padding:10px;border:2px solid #eee;border-radius:8px;">
+                            <button onclick="searchByBarcode()" style="padding:10px 20px;background:#2E4057;color:white;border:none;border-radius:8px;cursor:pointer;">بحث</button>
+                        </div>
+                        <div style="display:flex;gap:10px;margin-bottom:10px;">
+                            <button onclick="switchSalesMode('add')" id="saleModeAdd" class="btn-toggle active">بيع</button>
+                            <button onclick="switchSalesMode('return')" id="saleModeReturn" class="btn-toggle">مرتجع</button>
+                        </div>
+                        <div id="saleAddFields">
+                            <div class="form-group"><label>العميل</label><input type="text" id="saleClient"></div>
+                            <div class="form-group"><label>المنتج</label><select id="saleProduct"><option>اختر</option></select></div>
+                            <div class="form-group"><label>الكمية</label><input type="number" id="saleQty" value="1"></div>
+                            <div class="form-group"><label>السعر</label><input type="number" id="salePrice"></div>
+                            <div class="form-group"><label>نوع الدفع</label><select id="saleType"><option value="cash">كاش</option><option value="credit">آجل</option></select></div>
+                            <button class="btn-main" onclick="addSale()">تسجيل البيع</button>
+                        </div>
+                        <div id="saleReturnFields" style="display:none;">
+                            <div class="form-group"><label>العميل</label><input type="text" id="returnClient"></div>
+                            <div class="form-group"><label>المنتج</label><select id="returnProduct"><option>اختر</option></select></div>
+                            <div class="form-group"><label>الكمية</label><input type="number" id="returnQty" value="1"></div>
+                            <div class="form-group"><label>السعر</label><input type="number" id="returnPrice"></div>
+                            <button class="btn-main" onclick="addSaleReturn()" style="background:#E17055;">تسجيل المرتجع</button>
+                        </div>
+                        <div id="saleList" class="list-view"></div>
+                    </div>
+                </div>
 
-    document.getElementById('treasuryDisplay').textContent = data.treasury;
+                <!-- المشتريات (نفسها) -->
+                <div id="page-purchases" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>🚚 المشتريات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div style="display:flex;gap:10px;margin-bottom:10px;">
+                            <button onclick="switchPurchaseMode('add')" id="purchaseModeAdd" class="btn-toggle active">شراء</button>
+                            <button onclick="switchPurchaseMode('return')" id="purchaseModeReturn" class="btn-toggle">مرتجع</button>
+                        </div>
+                        <div id="purchaseAddFields">
+                            <div class="form-group"><label>المورد</label><input type="text" id="purchaseSupplier"></div>
+                            <div class="form-group"><label>المنتج</label><select id="purchaseProduct"><option>اختر</option></select></div>
+                            <div class="form-group"><label>الكمية</label><input type="number" id="purchaseQty" value="1"></div>
+                            <div class="form-group"><label>السعر</label><input type="number" id="purchasePrice"></div>
+                            <div class="form-group"><label>نوع الدفع</label><select id="purchaseType"><option value="cash">كاش</option><option value="credit">آجل</option></select></div>
+                            <button class="btn-main" onclick="addPurchase()">تسجيل الشراء</button>
+                        </div>
+                        <div id="purchaseReturnFields" style="display:none;">
+                            <div class="form-group"><label>المورد</label><input type="text" id="returnSupplier"></div>
+                            <div class="form-group"><label>المنتج</label><select id="returnPurchaseProduct"><option>اختر</option></select></div>
+                            <div class="form-group"><label>الكمية</label><input type="number" id="returnPurchaseQty" value="1"></div>
+                            <div class="form-group"><label>السعر</label><input type="number" id="returnPurchasePrice"></div>
+                            <button class="btn-main" onclick="addPurchaseReturn()" style="background:#E17055;">تسجيل المرتجع</button>
+                        </div>
+                        <div id="purchaseList" class="list-view"></div>
+                    </div>
+                </div>
 
-    let logHtml = data.treasuryLog.slice().reverse().map(t => `
-        <div class="list-item"><span>${t.desc}</span><span style="font-weight:bold;color:${t.amount > 0 ? '#00B894' : '#E17055'};">${t.amount} ج.م</span></div>
-    `).join('');
-    logHtml += data.expenses.slice().reverse().map(e => `
-        <div class="list-item" style="color:#E17055;"><span>💸 ${e.desc}</span><span style="font-weight:bold;">-${e.amount} ج.م</span></div>
-    `).join('');
-    logHtml += data.collections.slice().reverse().map(c => `
-        <div class="list-item" style="color:#00B894;"><span>💰 تحصيل من ${c.client}</span><span style="font-weight:bold;">+${c.amount} ج.م</span></div>
-    `).join('');
-    logHtml += data.supplierPayments.slice().reverse().map(p => `
-        <div class="list-item" style="color:#E17055;"><span>💸 سداد - ${p.supplier}</span><span style="font-weight:bold;">-${p.amount} ج.م</span></div>
-    `).join('');
-    document.getElementById('treasuryLog').innerHTML = logHtml || '<div style="text-align:center;color:#999;padding:10px;">لا توجد حركات</div>';
+                <!-- المخزون -->
+                <div id="page-products" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>📦 المخزون</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
+                        <div class="form-group"><label>الوصف</label><input type="text" id="prodDesc"></div>
+                        <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
+                        <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
+                        <div class="form-group"><label>سعر البيع</label><input type="number" id="prodSell"></div>
+                        <button class="btn-main" onclick="addProduct()">إضافة منتج</button>
+                        <div id="productList" class="list-view"></div>
+                    </div>
+                </div>
 
-    document.getElementById('saleList').innerHTML = data.sales.slice().reverse().map(s => `
-        <div class="list-item"><span>${s.client} - ${s.product}</span><div><span style="font-weight:bold;">${s.total} ج.م</span></div></div>
-    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد مبيعات</div>';
+                <!-- جهات الاتصال -->
+                <div id="page-clients" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>👤 جهات الاتصال</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
+                        <div class="form-group"><label>الهاتف</label><input type="text" id="contactPhone"></div>
+                        <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress"></div>
+                        <div class="form-group"><label>النوع</label><select id="contactType"><option value="عميل">عميل</option><option value="مورد">مورد</option><option value="كلاهما">كلاهما</option></select></div>
+                        <button class="btn-main" onclick="addContact()">إضافة</button>
+                        <div id="clientList" class="list-view"></div>
+                    </div>
+                </div>
 
-    document.getElementById('purchaseList').innerHTML = data.purchases.slice().reverse().map(p => `
-        <div class="list-item"><span>${p.supplier} - ${p.product}</span><div><span style="font-weight:bold;">${p.total} ج.م</span></div></div>
-    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد مشتريات</div>';
-}
+                <!-- الخزنة -->
+                <div id="page-treasury" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>💰 الخزنة</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div class="treasury-balance">الرصيد: <span id="treasuryDisplay">0</span> ج.م</div>
+                        <div class="treasury-section">
+                            <h3 class="section-title-green">💰 تحصيل دين</h3>
+                            <div class="form-group"><label>العميل</label><input type="text" id="collectClient"></div>
+                            <div style="display:flex;gap:10px;"><div style="flex:1;"><label>المبلغ</label><input type="number" id="collectAmount"></div><button onclick="collectDebt()" class="btn-green">تحصيل</button></div>
+                        </div>
+                        <div class="treasury-section">
+                            <h3 class="section-title-red">💸 سداد مورد</h3>
+                            <div class="form-group"><label>المورد</label><input type="text" id="paySupplier"></div>
+                            <div style="display:flex;gap:10px;"><div style="flex:1;"><label>المبلغ</label><input type="number" id="payAmount"></div><button onclick="paySupplier()" class="btn-red">سداد</button></div>
+                        </div>
+                        <div class="treasury-section">
+                            <h3 class="section-title-blue">🏦 الخزنة</h3>
+                            <div style="display:flex;gap:10px;"><div style="flex:1;"><label>المبلغ</label><input type="number" id="treasuryAmount"></div><button onclick="addToTreasury()" class="btn-green">إيداع</button><button onclick="withdrawTreasury()" class="btn-red">سحب</button></div>
+                        </div>
+                        <div class="treasury-section">
+                            <h3 class="section-title-red">💸 مصروف</h3>
+                            <div style="display:flex;gap:10px;"><div style="flex:2;"><label>البيان</label><input type="text" id="expenseDesc"></div><div style="flex:1;"><label>المبلغ</label><input type="number" id="expenseAmount"></div></div>
+                            <button onclick="addExpense()" class="btn-red" style="width:100%;">تسجيل</button>
+                        </div>
+                        <div id="treasuryLog" class="list-view"></div>
+                    </div>
+                </div>
 
-// ============================================================
-// 10. العمليات الأساسية (كلها تعمل)
-// ============================================================
+                <!-- التقارير -->
+                <div id="page-reports" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>📊 التقارير</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                            <button onclick="showReport('income')" class="btn-main" style="background:#00B894;">📈 الدخل</button>
+                            <button onclick="showReport('daily')" class="btn-main" style="background:#E17055;">📅 اليوم</button>
+                            <button onclick="showReport('trial')" class="btn-main" style="background:#FDCB6E;color:#333;">📋 ميزان المراجعة</button>
+                            <button onclick="showReport('statement')" class="btn-main" style="background:#2E4057;">📋 كشف حساب</button>
+                            <button onclick="printAllInvoices()" class="btn-main" style="background:#333;">🖨️ طباعة</button>
+                        </div>
+                        <div id="statementClientField" style="display:none;margin-top:10px;">
+                            <select id="statementClientSelect" onchange="showReport('statement')" style="width:100%;padding:10px;border:2px solid #eee;border-radius:8px;"><option>اختر</option></select>
+                        </div>
+                        <div class="report-box" id="reportContent">اختر تقريراً</div>
+                    </div>
+                </div>
 
-// ----- 10.1 جهات الاتصال -----
-function addContact() {
-    const data = getData();
-    const name = document.getElementById('contactName').value.trim();
-    const phone = document.getElementById('contactPhone').value.trim();
-    const address = document.getElementById('contactAddress').value.trim();
-    const type = document.getElementById('contactType').value;
-    if (!name) return showToast('⚠️ أدخل الاسم');
-    data.clients.push({ id: Date.now().toString(), name, phone, address, type });
-    saveLocal();
-    document.getElementById('contactName').value = '';
-    document.getElementById('contactPhone').value = '';
-    document.getElementById('contactAddress').value = '';
-    updateUI();
-    showToast('✅ تم إضافة جهة الاتصال');
-}
+                <!-- الإعدادات -->
+                <div id="page-settings" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header"><h2>⚙️ الإعدادات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        <div class="settings-section">
+                            <h3 class="section-title-blue">🎨 المظهر</h3>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                                <button onclick="changeTheme('default')" class="btn-theme" style="background:#F4F6F9;color:#333;border:2px solid #ddd;">افتراضي</button>
+                                <button onclick="changeTheme('dark')" class="btn-theme" style="background:#1a1a2e;color:white;">داكن</button>
+                                <button onclick="changeTheme('blue')" class="btn-theme" style="background:#0c2461;color:white;">أزرق</button>
+                                <button onclick="changeTheme('green')" class="btn-theme" style="background:#0a3d2e;color:white;">أخضر</button>
+                                <button onclick="changeTheme('purple')" class="btn-theme" style="background:#2c1a4d;color:white;">بنفسجي</button>
+                            </div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button onclick="changeFontSize('small')" class="btn-sm">صغير</button>
+                                <button onclick="changeFontSize('medium')" class="btn-sm" style="background:#2E4057;color:white;">وسط</button>
+                                <button onclick="changeFontSize('large')" class="btn-sm">كبير</button>
+                                <button onclick="changeFontSize('xlarge')" class="btn-sm">كبير جداً</button>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3 class="section-title-green">🔔 التنبيهات</h3>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">
+                                <label>صوتية</label>
+                                <label class="switch"><input type="checkbox" id="soundAlerts" checked><span class="slider round"></span></label>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+                                <label>منبثقة</label>
+                                <label class="switch"><input type="checkbox" id="popupAlerts" checked><span class="slider round"></span></label>
+                            </div>
+                            <div class="form-group" style="margin-top:10px;">
+                                <label>صوت</label>
+                                <select id="alertSound" style="width:100%;padding:10px;border:2px solid #eee;border-radius:8px;">
+                                    <option value="beep">🔔 بيب</option>
+                                    <option value="bell">🔔 جرس</option>
+                                    <option value="notification">📱 إشعار</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3 class="section-title-red">🖨️ الطباعة</h3>
+                            <div class="form-group">
+                                <label>نوع الطابعة</label>
+                                <select id="printerSettings" style="width:100%;padding:10px;border:2px solid #eee;border-radius:8px;">
+                                    <option value="thermal">حرارية 80mm</option>
+                                    <option value="thermal-58">حرارية 58mm</option>
+                                    <option value="a4">A4</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3 class="section-title-blue">📊 الباركود</h3>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button onclick="setBarcodeLibrary('barcode')" class="btn-sm" style="background:#2E4057;color:white;">باركود</button>
+                                <button onclick="setBarcodeLibrary('qr')" class="btn-sm">QR</button>
+                                <button onclick="setBarcodeLibrary('both')" class="btn-sm">كلاهما</button>
+                            </div>
+                            <div style="margin-top:10px;">
+                                <label>الحجم: <span id="barcodeSizeLabel">100%</span></label>
+                                <input type="range" id="barcodeSize" min="50" max="200" value="100" style="width:100%;" oninput="updateBarcodeSizeLabel()">
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <h3 class="section-title-blue">ℹ️ معلومات</h3>
+                            <div style="background:#f0f2f5;padding:15px;border-radius:8px;color:#333;">
+                                <p><strong>📌 الإصدار:</strong> V31</p>
+                                <p><strong>👨‍💻 المطور:</strong> نظام راشد</p>
+                                <p><strong>☁️ السحابة:</strong> <span id="cloudStatus" style="color:#00B894;">🟢 متصل</span></p>
+                                <p><strong>👤 المستخدم:</strong> <span id="settingsUser">admin</span></p>
+                                <p><strong>📦 المنتجات:</strong> <span id="settingsProducts">0</span></p>
+                                <p><strong>📋 العملاء:</strong> <span id="settingsClients">0</span></p>
+                            </div>
+                            <button onclick="resetAppSettings()" class="btn-red" style="width:100%;margin-top:10px;">🔄 إعادة ضبط</button>
+                        </div>
+                    </div>
+                </div>
 
-// ----- 10.2 المنتجات -----
-function addProduct() {
-    const data = getData();
-    const name = document.getElementById('prodName').value.trim();
-    const desc = document.getElementById('prodDesc').value.trim();
-    const qty = parseInt(document.getElementById('prodQty').value) || 0;
-    const buy = parseFloat(document.getElementById('prodBuy').value) || 0;
-    const sell = parseFloat(document.getElementById('prodSell').value) || 0;
-    if (!name || qty <= 0) return showToast('⚠️ أدخل الاسم والكمية');
-    const barcode = Math.floor(10000000 + Math.random() * 90000000).toString();
-    data.products.push({ id: Date.now().toString(), name, desc, qty, buy, sell, barcode });
-    saveLocal();
-    document.getElementById('prodName').value = '';
-    document.getElementById('prodDesc').value = '';
-    document.getElementById('prodQty').value = '';
-    document.getElementById('prodBuy').value = '';
-    document.getElementById('prodSell').value = '';
-    updateUI();
-    showToast('✅ تم إضافة المنتج - الباركود: ' + barcode);
-}
+                <!-- ============================================================ -->
+                <!-- لوحة التحكم (صفحة جديدة) -->
+                <!-- ============================================================ -->
+                <div id="page-admin" class="page">
+                    <div class="modal-box">
+                        <div class="modal-header">
+                            <h2>🛡️ لوحة تحكم المدير</h2>
+                            <button class="modal-close" onclick="switchPage('dashboard')">&times;</button>
+                        </div>
 
-// ----- 10.3 البحث بالباركود -----
-function searchByBarcode() {
-    const input = document.getElementById('manualBarcode').value.trim();
-    if (!input) return showToast('⚠️ أدخل الباركود أو الاسم');
-    const data = getData();
-    let product = data.products.find(p => p.barcode === input);
-    if (!product) product = data.products.find(p => p.name.toLowerCase().includes(input.toLowerCase()));
-    if (product) {
-        document.getElementById('saleProduct').value = product.id;
-        showToast('✅ تم العثور على: ' + product.name);
-    } else {
-        showToast('⚠️ المنتج غير موجود');
-    }
-}
+                        <!-- إحصائيات سريعة -->
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:15px;">
+                            <div style="background:#2E4057;color:white;padding:15px;border-radius:10px;text-align:center;">
+                                <div style="font-size:24px;font-weight:bold;" id="adminTotalUsers">0</div>
+                                <div style="font-size:12px;">إجمالي المستخدمين</div>
+                            </div>
+                            <div style="background:#00B894;color:white;padding:15px;border-radius:10px;text-align:center;">
+                                <div style="font-size:24px;font-weight:bold;" id="adminOnlineUsers">0</div>
+                                <div style="font-size:12px;">متصلون الآن</div>
+                            </div>
+                            <div style="background:#E17055;color:white;padding:15px;border-radius:10px;text-align:center;">
+                                <div style="font-size:24px;font-weight:bold;" id="adminTodayVisits">0</div>
+                                <div style="font-size:12px;">زيارات اليوم</div>
+                            </div>
+                        </div>
 
-// ----- 10.4 المبيعات -----
-function addSale() {
-    const data = getData();
-    const client = document.getElementById('saleClient').value.trim();
-    const productId = document.getElementById('saleProduct').value;
-    const qty = parseInt(document.getElementById('saleQty').value) || 0;
-    const price = parseFloat(document.getElementById('salePrice').value) || 0;
-    const type = document.getElementById('saleType').value;
-    if (!client || !productId || qty <= 0) return showToast('⚠️ أكمل البيانات');
-    if (price <= 0) return showToast('⚠️ السعر أكبر من 0');
-    const prod = data.products.find(p => p.id === productId);
-    if (!prod || prod.qty < qty) return showToast('⚠️ الكمية غير متوفرة');
-    prod.qty -= qty;
-    const total = qty * price;
-    data.saleCounter = (data.saleCounter || 0) + 1;
-    const invNum = 'INV-' + String(data.saleCounter).padStart(4, '0');
-    data.sales.push({ id: invNum, client, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString() });
-    if (type === 'cash') { data.treasury += total; data.treasuryLog.push({ desc: 'بيع كاش - ' + client + ' (' + invNum + ')', amount: total }); }
-    saveLocal();
-    document.getElementById('saleClient').value = '';
-    document.getElementById('saleQty').value = '1';
-    document.getElementById('salePrice').value = '';
-    updateUI();
-    showToast('✅ بيع بقيمة ' + total + ' ج.م - ' + invNum);
-}
+                        <!-- جدول المستخدمين -->
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                                <thead>
+                                    <tr style="background:#2E4057;color:white;">
+                                        <th style="padding:8px;text-align:right;">#</th>
+                                        <th style="padding:8px;text-align:right;">اسم المستخدم</th>
+                                        <th style="padding:8px;text-align:right;">الاسم الكامل</th>
+                                        <th style="padding:8px;text-align:right;">الهاتف</th>
+                                        <th style="padding:8px;text-align:right;">آخر دخول</th>
+                                        <th style="padding:8px;text-align:right;">الدولة</th>
+                                        <th style="padding:8px;text-align:right;">IP</th>
+                                        <th style="padding:8px;text-align:right;">الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminUsersTable">
+                                    <tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">لا يوجد مستخدمين</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
 
-// ----- 10.5 المشتريات -----
-function addPurchase() {
-    const data = getData();
-    const supplier = document.getElementById('purchaseSupplier').value.trim();
-    const productId = document.getElementById('purchaseProduct').value;
-    const qty = parseInt(document.getElementById('purchaseQty').value) || 0;
-    const price = parseFloat(document.getElementById('purchasePrice').value) || 0;
-    const type = document.getElementById('purchaseType').value;
-    if (!supplier || !productId || qty <= 0) return showToast('⚠️ أكمل البيانات');
-    if (price <= 0) return showToast('⚠️ السعر أكبر من 0');
-    const prod = data.products.find(p => p.id === productId);
-    if (!prod) return showToast('⚠️ المنتج غير موجود');
-    prod.qty += qty;
-    const total = qty * price;
-    data.purchaseCounter = (data.purchaseCounter || 0) + 1;
-    const purNum = 'PUR-' + String(data.purchaseCounter).padStart(4, '0');
-    data.purchases.push({ id: purNum, supplier, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString() });
-    data.treasury -= total;
-    data.treasuryLog.push({ desc: 'شراء من ' + supplier + ' (' + purNum + ')', amount: -total });
-    saveLocal();
-    document.getElementById('purchaseSupplier').value = '';
-    document.getElementById('purchaseQty').value = '1';
-    document.getElementById('purchasePrice').value = '';
-    updateUI();
-    showToast('✅ شراء بقيمة ' + total + ' ج.م - ' + purNum);
-}
+                        <!-- سجل الدخول والخروج -->
+                        <div style="margin-top:15px;">
+                            <h3 style="color:#2E4057;border-bottom:2px solid #2E4057;padding-bottom:8px;">📋 سجل النشاط</h3>
+                            <div id="adminActivityLog" class="list-view" style="max-height:200px;"></div>
+                        </div>
+                    </div>
+                </div>
 
-// ----- 10.6 مرتجعات المبيعات -----
-function switchSalesMode(mode) {
-    document.getElementById('saleAddFields').style.display = mode === 'add' ? 'block' : 'none';
-    document.getElementById('saleReturnFields').style.display = mode === 'return' ? 'block' : 'none';
-    document.getElementById('saleModeAdd').classList.toggle('active', mode === 'add');
-    document.getElementById('saleModeReturn').classList.toggle('active', mode === 'return');
-}
+            </div>
+        </div>
 
-function addSaleReturn() {
-    const data = getData();
-    const client = document.getElementById('returnClient').value.trim();
-    const productId = document.getElementById('returnProduct').value;
-    const qty = parseInt(document.getElementById('returnQty').value) || 0;
-    const price = parseFloat(document.getElementById('returnPrice').value) || 0;
-    if (!client || !productId || qty <= 0) return showToast('⚠️ أكمل البيانات');
-    const prod = data.products.find(p => p.id === productId);
-    if (!prod) return showToast('⚠️ المنتج غير موجود');
-    prod.qty += qty;
-    const total = qty * price;
-    data.sales.push({ id: 'RET-' + Date.now(), client, product: prod.name, qty, price, total, type: 'return', date: new Date().toLocaleDateString() });
-    data.treasury -= total;
-    data.treasuryLog.push({ desc: 'مرتجع بيع - ' + client, amount: -total });
-    saveLocal();
-    document.getElementById('returnClient').value = '';
-    document.getElementById('returnQty').value = '1';
-    document.getElementById('returnPrice').value = '';
-    updateUI();
-    showToast('✅ مرتجع بقيمة ' + total + ' ج.م');
-}
+        <!-- الشريط السفلي -->
+        <div class="bottom-nav">
+            <button onclick="switchPage('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
+            <button onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
+            <button onclick="switchPage('purchases')"><i class="fas fa-truck"></i><span>مشتريات</span></button>
+            <button onclick="switchPage('products')"><i class="fas fa-warehouse"></i><span>المخزون</span></button>
+            <button onclick="switchPage('settings')"><i class="fas fa-cog"></i><span>إعدادات</span></button>
+            <button onclick="switchPage('admin')" style="color:#E17055;"><i class="fas fa-user-shield"></i><span>التحكم</span></button>
+            <button onclick="logout()" style="color:#E17055;"><i class="fas fa-sign-out-alt"></i><span>خروج</span></button>
+        </div>
+    </div>
 
-// ----- 10.7 مرتجعات المشتريات -----
-function switchPurchaseMode(mode) {
-    document.getElementById('purchaseAddFields').style.display = mode === 'add' ? 'block' : 'none';
-    document.getElementById('purchaseReturnFields').style.display = mode === 'return' ? 'block' : 'none';
-    document.getElementById('purchaseModeAdd').classList.toggle('active', mode === 'add');
-    document.getElementById('purchaseModeReturn').classList.toggle('active', mode === 'return');
-}
-
-function addPurchaseReturn() {
-    const data = getData();
-    const supplier = document.getElementById('returnSupplier').value.trim();
-    const productId = document.getElementById('returnPurchaseProduct').value;
-    const qty = parseInt(document.getElementById('returnPurchaseQty').value) || 0;
-    const price = parseFloat(document.getElementById('returnPurchasePrice').value) || 0;
-    if (!supplier || !productId || qty <= 0) return showToast('⚠️ أكمل البيانات');
-    const prod = data.products.find(p => p.id === productId);
-    if (!prod || prod.qty < qty) return showToast('⚠️ الكمية غير متوفرة');
-    prod.qty -= qty;
-    const total = qty * price;
-    data.purchases.push({ id: 'PRET-' + Date.now(), supplier, product: prod.name, qty, price, total, type: 'return', date: new Date().toLocaleDateString() });
-    data.treasury += total;
-    data.treasuryLog.push({ desc: 'مرتجع شراء - ' + supplier, amount: total });
-    saveLocal();
-    document.getElementById('returnSupplier').value = '';
-    document.getElementById('returnPurchaseQty').value = '1';
-    document.getElementById('returnPurchasePrice').value = '';
-    updateUI();
-    showToast('✅ مرتجع شراء بقيمة ' + total + ' ج.م');
-}
-
-// ----- 10.8 الخزنة -----
-function collectDebt() {
-    const data = getData();
-    const client = document.getElementById('collectClient').value.trim();
-    const amount = parseFloat(document.getElementById('collectAmount').value);
-    if (!client || !amount || amount <= 0) return showToast('⚠️ أدخل البيانات');
-    data.treasury += amount;
-    data.collections.push({ id: Date.now().toString(), client, amount });
-    data.treasuryLog.push({ desc: 'تحصيل من ' + client, amount: amount });
-    saveLocal();
-    document.getElementById('collectClient').value = '';
-    document.getElementById('collectAmount').value = '';
-    updateUI();
-    showToast('✅ تم تحصيل ' + amount + ' ج.م');
-}
-
-function paySupplier() {
-    const data = getData();
-    const supplier = document.getElementById('paySupplier').value.trim();
-    const amount = parseFloat(document.getElementById('payAmount').value);
-    if (!supplier || !amount || amount <= 0) return showToast('⚠️ أدخل البيانات');
-    if (data.treasury < amount) return showToast('⚠️ الرصيد غير كافي');
-    data.treasury -= amount;
-    data.supplierPayments.push({ id: Date.now().toString(), supplier, amount });
-    data.treasuryLog.push({ desc: 'سداد مورد - ' + supplier, amount: -amount });
-    saveLocal();
-    document.getElementById('paySupplier').value = '';
-    document.getElementById('payAmount').value = '';
-    updateUI();
-    showToast('✅ تم سداد ' + amount + ' ج.م');
-}
-
-function addToTreasury() {
-    const data = getData();
-    const amount = parseFloat(document.getElementById('treasuryAmount').value);
-    if (!amount || amount <= 0) return showToast('⚠️ أدخل مبلغ صحيح');
-    data.treasury += amount;
-    data.treasuryLog.push({ desc: 'إيداع في الخزنة', amount: amount });
-    saveLocal();
-    document.getElementById('treasuryAmount').value = '';
-    updateUI();
-    showToast('✅ تم إيداع ' + amount + ' ج.م');
-}
-
-function withdrawTreasury() {
-    const data = getData();
-    const amount = parseFloat(document.getElementById('treasuryAmount').value);
-    if (!amount || amount <= 0) return showToast('⚠️ أدخل مبلغ صحيح');
-    if (data.treasury < amount) return showToast('⚠️ الرصيد غير كافي');
-    data.treasury -= amount;
-    data.treasuryLog.push({ desc: 'سحب من الخزنة', amount: -amount });
-    saveLocal();
-    document.getElementById('treasuryAmount').value = '';
-    updateUI();
-    showToast('✅ تم سحب ' + amount + ' ج.م');
-}
-
-function addExpense() {
-    const data = getData();
-    const desc = document.getElementById('expenseDesc').value.trim();
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
-    if (!desc || !amount || amount <= 0) return showToast('⚠️ أدخل البيانات');
-    if (data.treasury < amount) return showToast('⚠️ الرصيد غير كافي');
-    data.treasury -= amount;
-    data.expenses.push({ id: Date.now().toString(), desc, amount, date: new Date().toLocaleDateString() });
-    data.treasuryLog.push({ desc: 'مصروف: ' + desc, amount: -amount });
-    saveLocal();
-    document.getElementById('expenseDesc').value = '';
-    document.getElementById('expenseAmount').value = '';
-    updateUI();
-    showToast('✅ تم تسجيل مصروف ' + amount + ' ج.م');
-}
-
-// ============================================================
-// 11. التقارير (محسنة)
-// ============================================================
-function drawCharts() {
-    const data = getData();
-    const salesTotal = data.sales.reduce((s, i) => s + i.total, 0);
-    const expensesTotal = data.expenses.reduce((s, i) => s + i.amount, 0);
-    const treasury = data.treasury;
-    const collectionsTotal = data.collections.reduce((s, i) => s + i.amount, 0);
-    const purchasesTotal = data.purchases.reduce((s, i) => s + i.total, 0);
-    
-    // رسم بياني 1 - المبيعات والمصروفات والتحصيل
-    if (chartInstances.sales) chartInstances.sales.destroy();
-    chartInstances.sales = new Chart(document.getElementById('salesChart'), {
-        type: 'bar',
-        data: {
-            labels: ['المبيعات', 'المشتريات', 'المصروفات', 'التحصيل'],
-            datasets: [{
-                label: 'الحركة المالية (ج.م)',
-                data: [salesTotal, purchasesTotal, expensesTotal, collectionsTotal],
-                backgroundColor: ['#2E4057', '#E17055', '#FDCB6E', '#00B894'],
-                borderColor: ['#1a2a3a', '#c0392b', '#f39c12', '#00a87a'],
-                borderWidth: 2,
-                borderRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.y + ' ج.م';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { callback: function(value) { return value + ' ج.م'; } }
-                }
-            }
-        }
-    });
-    
-    // رسم بياني 2 - توزيع الخزنة (دائري)
-    if (chartInstances.treasury) chartInstances.treasury.destroy();
-    chartInstances.treasury = new Chart(document.getElementById('treasuryChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['الخزنة', 'المصروفات', 'المشتريات'],
-            datasets: [{
-                data: [treasury, expensesTotal, purchasesTotal],
-                backgroundColor: ['#2E4057', '#E17055', '#FDCB6E'],
-                borderWidth: 3,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { 
-                    position: 'bottom',
-                    labels: { 
-                        padding: 15,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
-                            return context.label + ': ' + context.parsed + ' ج.م (' + percentage + '%)';
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-function showReport(type) {
-    const data = getData();
-    const totalSales = data.sales.reduce((s, i) => s + i.total, 0);
-    const totalPurchases = data.purchases.reduce((s, i) => s + i.total, 0);
-    const totalExpenses = data.expenses.reduce((s, i) => s + i.amount, 0);
-    const totalCollections = data.collections.reduce((s, i) => s + i.amount, 0);
-    const totalSupplierPayments = data.supplierPayments.reduce((s, i) => s + i.amount, 0);
-    const profit = totalSales - totalPurchases - totalExpenses;
-    let html = '';
-    if (type === 'income') {
-        html = `<div style="background:#252538;border-radius:12px;padding:15px;color:white;">
-            <div style="display:flex;justify-content:space-between;border-bottom:1px solid #444;padding:8px 0;"><span>📈 قائمة الدخل</span><span>المبلغ</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>الإيرادات</span><span style="color:#00B894;">${totalSales} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>التكاليف</span><span style="color:#E17055;">${totalPurchases} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>المصروفات</span><span style="color:#E17055;">${totalExpenses} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>التحصيل</span><span style="color:#00B894;">${totalCollections} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>سداد الموردين</span><span style="color:#E17055;">${totalSupplierPayments} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding-top:10px;margin-top:10px;border-top:2px solid #00B894;"><span style="font-weight:bold;">صافي الربح</span><span style="color:${profit >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${profit} ج.م</span></div>
-        </div>`;
-    } else if (type === 'daily') {
-        const today = new Date().toLocaleDateString();
-        const todaySales = data.sales.filter(s => s.date === today).reduce((s, i) => s + i.total, 0);
-        const todayPurchases = data.purchases.filter(p => p.date === today).reduce((s, i) => s + i.total, 0);
-        const todayExpenses = data.expenses.filter(e => e.date === today).reduce((s, i) => s + i.amount, 0);
-        const todayProfit = todaySales - todayPurchases - todayExpenses;
-        html = `<div style="background:#252538;border-radius:12px;padding:15px;color:white;">
-            <div style="text-align:center;border-bottom:1px solid #444;padding-bottom:10px;margin-bottom:10px;"><span style="font-size:16px;font-weight:bold;">📅 تقرير اليوم</span><br><span style="color:#aaa;font-size:12px;">${today}</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>مبيعات اليوم</span><span style="color:#00B894;">${todaySales} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>مشتريات اليوم</span><span style="color:#E17055;">${todayPurchases} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>مصروفات اليوم</span><span style="color:#E17055;">${todayExpenses} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding-top:10px;margin-top:10px;border-top:2px solid #00B894;"><span style="font-weight:bold;">صافي ربح اليوم</span><span style="color:${todayProfit >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${todayProfit} ج.م</span></div>
-        </div>`;
-    } else if (type === 'trial') {
-        const totalAssets = data.treasury;
-        const totalLiabilities = data.sales.filter(s => s.type === 'credit').reduce((s, i) => s + i.total, 0);
-        const equity = totalAssets - totalLiabilities;
-        html = `<div style="background:#252538;border-radius:12px;padding:15px;color:white;">
-            <div style="text-align:center;border-bottom:1px solid #444;padding-bottom:10px;margin-bottom:10px;"><span style="font-size:16px;font-weight:bold;">📋 ميزان المراجعة</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>الأصول (الخزنة)</span><span style="color:#00B894;">${totalAssets} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #333;"><span>الخصوم (الآجل)</span><span style="color:#E17055;">${totalLiabilities} ج.م</span></div>
-            <div style="display:flex;justify-content:space-between;padding-top:10px;margin-top:10px;border-top:2px solid #00B894;"><span>حقوق الملكية</span><span style="color:${equity >= 0 ? '#00B894' : '#E17055'};font-weight:bold;">${equity} ج.م</span></div>
-        </div>`;
-    } else if (type === 'statement') {
-        const clientName = document.getElementById('statementClientSelect').value;
-        if (!clientName) {
-            document.getElementById('statementClientField').style.display = 'block';
-            html = '<div style="color:#aaa;text-align:center;padding:20px;">اختر جهة الاتصال</div>';
-        } else {
-            document.getElementById('statementClientField').style.display = 'block';
-            const clientSales = data.sales.filter(s => s.client === clientName);
-            const clientCollections = data.collections.filter(c => c.client === clientName);
-            let balance = 0;
-            let rows = '';
-            clientSales.forEach(s => { balance += s.total; rows += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:13px;"><span style="color:#aaa;">${s.date}</span><span>بيع - ${s.product}</span><span style="color:#E17055;">${s.total} ج.م</span><span>${balance} ج.م</span></div>`; });
-            clientCollections.forEach(c => { balance -= c.amount; rows += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333;font-size:13px;"><span style="color:#aaa;">${new Date(c.id).toLocaleDateString()}</span><span>تحصيل</span><span style="color:#00B894;">${c.amount} ج.م</span><span>${balance} ج.م</span></div>`; });
-            html = `<div style="background:#252538;border-radius:12px;padding:15px;color:white;">
-                <div style="text-align:center;border-bottom:1px solid #444;padding-bottom:10px;margin-bottom:10px;"><span style="font-size:16px;font-weight:bold;">📋 كشف حساب ${clientName}</span></div>
-                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:2px solid #00B894;font-weight:bold;"><span>التاريخ</span><span>البيان</span><span>المبلغ</span><span>الرصيد</span></div>
-                ${rows || '<div style="text-align:center;padding:20px;color:#aaa;">لا توجد معاملات</div>'}
-                <div style="display:flex;justify-content:space-between;padding-top:10px;margin-top:10px;border-top:2px solid #00B894;font-weight:bold;"><span>الرصيد النهائي</span><span style="color:${balance > 0 ? '#E17055' : '#00B894'};">${balance} ج.م</span></div>
-            </div>`;
-        }
-    }
-    document.getElementById('reportContent').innerHTML = html;
-}
-
-function printAllInvoices() {
-    const data = getData();
-    if (data.sales.length === 0) return showToast('⚠️ لا توجد فواتير');
-    showToast('🖨️ جاري الطباعة...');
-    let printContent = '<div style="direction:rtl;padding:20px;font-family:Arial;">';
-    printContent += '<h2 style="text-align:center;">جميع الفواتير</h2>';
-    data.sales.forEach(s => {
-        printContent += `<div style="border:1px solid #ddd;padding:10px;margin:10px 0;border-radius:8px;">
-            <p><strong>الفاتورة:</strong> ${s.id} | <strong>العميل:</strong> ${s.client} | <strong>المنتج:</strong> ${s.product}</p>
-            <p><strong>الكمية:</strong> ${s.qty} | <strong>السعر:</strong> ${s.price} | <strong>الإجمالي:</strong> ${s.total} ج.م</p>
-            <p><strong>التاريخ:</strong> ${s.date}</p>
-        </div>`;
-    });
-    printContent += '</div>';
-    const win = window.open('', '_blank');
-    win.document.write('<html><head><meta charset="UTF-8"><title>طباعة الفواتير</title><style>body{font-family:Arial;}</style></head><body>' + printContent + '</body></html>');
-    win.document.close();
-    win.print();
-}
-
-function showAIReport() {
-    const data = getData();
-    const totalSales = data.sales.reduce((s, i) => s + i.total, 0);
-    const totalPurchases = data.purchases.reduce((s, i) => s + i.total, 0);
-    const totalExpenses = data.expenses.reduce((s, i) => s + i.amount, 0);
-    const profit = totalSales - totalPurchases - totalExpenses;
-    const totalProducts = data.products.length;
-    const totalClients = data.clients.length;
-    
-    let report = '🤖 تحليل الذكاء الاصطناعي\n\n';
-    report += '📊 إجمالي المبيعات: ' + totalSales + ' ج.م\n';
-    report += '📉 إجمالي المشتريات: ' + totalPurchases + ' ج.م\n';
-    report += '💸 إجمالي المصروفات: ' + totalExpenses + ' ج.م\n';
-    report += '💰 صافي الربح: ' + profit + ' ج.م\n\n';
-    report += '📦 عدد المنتجات: ' + totalProducts + '\n';
-    report += '👤 عدد العملاء: ' + totalClients + '\n\n';
-    
-    if (profit > 0) {
-        report += '✅ عملك يحقق أرباحاً. استمر في تطوير مبيعاتك.\n';
-        if (totalExpenses > (totalSales * 0.3)) {
-            report += '⚠️ نصيحة: مصروفاتك تمثل ' + ((totalExpenses/totalSales)*100).toFixed(1) + '% من مبيعاتك. حاول تقليل المصروفات.\n';
-        }
-    } else {
-        report += '⚠️ عملك يحقق خسائر. راجع المصروفات واستراتيجية التسعير.\n';
-    }
-    
-    if (totalProducts === 0) {
-        report += '📦 تنبيه: لم تضف أي منتجات بعد. ابدأ بإضافة منتجات.\n';
-    }
-    
-    alert(report);
-}
-
-// ============================================================
-// 12. الإعدادات
-// ============================================================
-function getSettings() {
-    const data = getData();
-    if (!data.settings) {
-        data.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 };
-    }
-    return data.settings;
-}
-
-function saveSettings(settings) {
-    const data = getData();
-    data.settings = settings;
-    saveLocal();
-}
-
-function loadSettings() {
-    const settings = getSettings();
-    document.body.className = '';
-    if (settings.theme && settings.theme !== 'default') document.body.classList.add('theme-' + settings.theme);
-    const sizeMap = { small: '13px', medium: '16px', large: '19px', xlarge: '22px' };
-    document.body.style.fontSize = sizeMap[settings.fontSize] || '16px';
-    document.getElementById('soundAlerts').checked = settings.soundAlerts !== false;
-    document.getElementById('popupAlerts').checked = settings.popupAlerts !== false;
-    document.getElementById('alertSound').value = settings.alertSound || 'beep';
-    document.getElementById('printerSettings').value = settings.printer || 'thermal';
-    document.getElementById('barcodeSize').value = settings.barcodeSize || 100;
-    document.getElementById('barcodeSizeLabel').textContent = (settings.barcodeSize || 100) + '%';
-}
-
-function changeTheme(theme) {
-    document.body.className = '';
-    if (theme !== 'default') document.body.classList.add('theme-' + theme);
-    const settings = getSettings();
-    settings.theme = theme;
-    saveSettings(settings);
-    showToast('✅ تم تغيير السمة');
-}
-
-function changeFontSize(size) {
-    const sizeMap = { small: '13px', medium: '16px', large: '19px', xlarge: '22px' };
-    document.body.style.fontSize = sizeMap[size] || '16px';
-    const settings = getSettings();
-    settings.fontSize = size;
-    saveSettings(settings);
-    showToast('✅ تم تغيير حجم الخط');
-}
-
-function resetAppSettings() {
-    if (!confirm('إعادة ضبط الإعدادات؟')) return;
-    const data = getData();
-    data.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 };
-    saveLocal();
-    loadSettings();
-    showToast('✅ تم إعادة الضبط');
-}
-
-function setBarcodeLibrary(type) {
-    const settings = getSettings();
-    settings.barcodeLibrary = type;
-    saveSettings(settings);
-    showToast('✅ تم تغيير نوع الباركود');
-}
-
-function updateBarcodeSizeLabel() {
-    const size = document.getElementById('barcodeSize').value;
-    document.getElementById('barcodeSizeLabel').textContent = size + '%';
-    const settings = getSettings();
-    settings.barcodeSize = parseInt(size);
-    saveSettings(settings);
-}
-
-// ============================================================
-// 13. الإشعارات
-// ============================================================
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// ============================================================
-// 14. بدء التشغيل
-// ============================================================
-initFirebase();
-loadLocal();
-if (!appData.users || Object.keys(appData.users).length === 0) appData.users = {};
-if (!appData.activityLog) appData.activityLog = [];
-if (!autoLogin()) {
-    document.getElementById('authContainer').style.display = 'flex';
-    document.getElementById('appContainer').style.display = 'none';
-}
-console.log('✅ نظام راشد V31 - النسخة الكاملة مع لوحة التحكم');
+    <div id="toast" class="toast"></div>
+    <script src="script.js"></script>
+</body>
+</html>
