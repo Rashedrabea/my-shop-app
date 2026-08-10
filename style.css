@@ -337,3 +337,65 @@ body.theme-purple .settings-section div[style*="background:#f0f2f5"] { backgroun
 .settings-section div[style*="background:#f0f2f5"] span {
     color: #333 !important;
 }
+
+
+/* ============================================================
+   لوحة التحكم
+   ============================================================ */
+.card-admin i { color: #fff; }
+
+#adminUsersTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+#adminUsersTable th {
+    background: #2E4057;
+    color: white;
+    padding: 10px 8px;
+    text-align: right;
+    font-weight: bold;
+}
+
+#adminUsersTable td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+#adminUsersTable tr:hover {
+    background: #f8f9fa;
+}
+
+/* تنسيقات الجداول في الوضع الداكن */
+body.theme-dark #adminUsersTable td {
+    border-color: #444;
+    color: #eee;
+}
+body.theme-dark #adminUsersTable tr:hover {
+    background: #1a1a2e;
+}
+body.theme-dark .settings-section div[style*="background:#f0f2f5"] {
+    background: #1a1a2e !important;
+    color: #eee !important;
+}
+body.theme-dark .settings-section div[style*="background:#f0f2f5"] p,
+body.theme-dark .settings-section div[style*="background:#f0f2f5"] strong,
+body.theme-dark .settings-section div[style*="background:#f0f2f5"] span {
+    color: #eee !important;
+}
+
+/* تحسين عرض الجداول في الموبايل */
+@media (max-width: 768px) {
+    #adminUsersTable {
+        font-size: 11px;
+    }
+    #adminUsersTable th,
+    #adminUsersTable td {
+        padding: 5px 4px;
+    }
+    #adminUsersTable td:nth-child(6),
+    #adminUsersTable td:nth-child(7) {
+        display: none;
+    }
+}
