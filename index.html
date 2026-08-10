@@ -90,13 +90,18 @@
             </div>
 
             <!-- ============================================================ -->
-            <!-- صفحة المبيعات - فاتورة احترافية -->
+            <!-- صفحة المبيعات -->
             <!-- ============================================================ -->
             <div id="page-sales" class="page">
                 <div class="modal-box">
                     <div class="modal-header">
-                        <h2>🛒 فاتورة بيع</h2>
+                        <h2>🛒 المبيعات</h2>
                         <button class="modal-close" onclick="switchPage('dashboard')">&times;</button>
+                    </div>
+                    
+                    <div style="display:flex;gap:10px;margin-bottom:10px;">
+                        <button onclick="switchSalesMode('add')" id="saleModeAdd" class="btn-toggle active">📝 بيع</button>
+                        <button onclick="switchSalesMode('return')" id="saleModeReturn" class="btn-toggle" style="background:#E17055;color:white;">↩️ مرتجع بيع</button>
                     </div>
                     
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:15px;">
@@ -184,8 +189,13 @@
             <div id="page-purchases" class="page">
                 <div class="modal-box">
                     <div class="modal-header">
-                        <h2>🚚 فاتورة شراء</h2>
+                        <h2>🚚 المشتريات</h2>
                         <button class="modal-close" onclick="switchPage('dashboard')">&times;</button>
+                    </div>
+                    
+                    <div style="display:flex;gap:10px;margin-bottom:10px;">
+                        <button onclick="switchPurchaseMode('add')" id="purchaseModeAdd" class="btn-toggle active">📝 شراء</button>
+                        <button onclick="switchPurchaseMode('return')" id="purchaseModeReturn" class="btn-toggle" style="background:#E17055;color:white;">↩️ مرتجع شراء</button>
                     </div>
                     
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:15px;">
