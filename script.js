@@ -29,8 +29,12 @@ let firebaseDb = null;
 // متغيرات الفواتير
 let saleItems = [];
 let saleTotal = 0;
+let returnSaleItems = [];
+let returnSaleTotal = 0;
 let purchaseItems = [];
 let purchaseTotal = 0;
+let returnPurchaseItems = [];
+let returnPurchaseTotal = 0;
 
 // ============================================================
 // 3. تهيئة Firebase
@@ -78,6 +82,7 @@ function getData() {
             collections: [], supplierPayments: [],
             warehouse: [],
             saleCounter: 0, purchaseCounter: 0,
+            returnSaleCounter: 0, returnPurchaseCounter: 0,
             profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
             settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
         };
@@ -96,6 +101,8 @@ function getData() {
     if (!data.warehouse) data.warehouse = [];
     if (data.saleCounter === undefined) data.saleCounter = 0;
     if (data.purchaseCounter === undefined) data.purchaseCounter = 0;
+    if (data.returnSaleCounter === undefined) data.returnSaleCounter = 0;
+    if (data.returnPurchaseCounter === undefined) data.returnPurchaseCounter = 0;
     if (!data.profile) data.profile = { shopName: 'نظام راشد', branch: 'رئيسي' };
     if (!data.settings) data.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 };
     return data;
@@ -158,6 +165,7 @@ async function handleLogin() {
                     collections: [], supplierPayments: [],
                     warehouse: [],
                     saleCounter: 0, purchaseCounter: 0,
+                    returnSaleCounter: 0, returnPurchaseCounter: 0,
                     profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
                     settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
                 }
@@ -203,6 +211,7 @@ async function handleRegister() {
             collections: [], supplierPayments: [],
             warehouse: [],
             saleCounter: 0, purchaseCounter: 0,
+            returnSaleCounter: 0, returnPurchaseCounter: 0,
             profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
             settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
         });
@@ -221,6 +230,7 @@ async function handleRegister() {
                 collections: [], supplierPayments: [],
                 warehouse: [],
                 saleCounter: 0, purchaseCounter: 0,
+                returnSaleCounter: 0, returnPurchaseCounter: 0,
                 profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
                 settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
             }
@@ -270,8 +280,21 @@ function switchPage(page) {
     if (target) target.classList.add('active');
     if (page === 'dashboard') drawCharts();
     if (page === 'reports') updateReportSelects();
-    if (page === 'sales') initSaleInvoice();
-    if (page === 'purchases') initPurchaseInvoice();
+    if (page === 'sales') { 
+        // التحقق من الوضع الحالي
+        if (document.getElementById('saleModeReturn').classList.contains('active')) {
+            initReturnSale();
+        } else {
+            initSaleInvoice();
+        }
+    }
+    if (page === 'purchases') {
+        if (document.getElementById('purchaseModeReturn').classList.contains('active')) {
+            initReturnPurchase();
+        } else {
+            initPurchaseInvoice();
+        }
+    }
     if (page === 'settings') {
         loadSettings();
         const data = getData();
@@ -284,7 +307,7 @@ function switchPage(page) {
 }
 
 // ============================================================
-// 8. فاتورة المبيعات
+// 8. فاتورة المبيعات - بيع
 // ============================================================
 function initSaleInvoice() {
     const data = getData();
@@ -392,7 +415,7 @@ function saveSaleInvoice() {
         if (product) product.qty -= item.qty;
     });
     
-    const invoice = { id: invNum, client, date, type, items: JSON.parse(JSON.stringify(saleItems)), total: saleTotal, paid, balance: saleTotal - paid };
+    const invoice = { id: invNum, client, date, type, items: JSON.parse(JSON.stringify(saleItems)), total: saleTotal, paid, balance: saleTotal - paid, isReturn: false };
     if (!data.sales) data.sales = [];
     data.sales.push(invoice);
     
@@ -464,7 +487,207 @@ function printSaleInvoice(invoiceId) {
 }
 
 // ============================================================
-// 9. فاتورة المشتريات
+// 9. فاتورة المبيعات - مرتجع بيع
+// ============================================================
+function initReturnSale() {
+    const data = getData();
+    const today = new Date().toLocaleDateString('ar-EG');
+    document.getElementById('saleInvoiceDate').value = today;
+    data.returnSaleCounter = (data.returnSaleCounter || 0) + 1;
+    const invNum = 'RET-INV-' + String(data.returnSaleCounter).padStart(4, '0');
+    document.getElementById('saleInvoiceNumber').value = invNum;
+    returnSaleItems = [];
+    returnSaleTotal = 0;
+    updateReturnSaleUI();
+    saveLocal();
+}
+
+function searchProductForReturnSale() {
+    const input = document.getElementById('saleProductSearch').value.trim();
+    if (!input) return;
+    const data = getData();
+    let product = data.products.find(p => p.barcode === input);
+    if (!product) product = data.products.find(p => p.name && p.name.toLowerCase().includes(input.toLowerCase()));
+    if (product) {
+        document.getElementById('salePrice').value = product.sell || 0;
+        document.getElementById('saleQty').value = 1;
+        document.getElementById('saleProductSearch').value = product.name;
+        showToast('✅ تم العثور على: ' + product.name);
+    }
+}
+
+function addProductToReturnSale() {
+    const name = document.getElementById('saleProductSearch').value.trim();
+    const qty = parseInt(document.getElementById('saleQty').value) || 1;
+    const price = parseFloat(document.getElementById('salePrice').value) || 0;
+    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل اسم المنتج وسعر صحيح');
+    const data = getData();
+    const product = data.products.find(p => p.name === name);
+    if (!product) return showToast('⚠️ المنتج غير موجود في المخزون');
+    const total = qty * price;
+    returnSaleItems.push({ name, qty, price, total });
+    returnSaleTotal += total;
+    updateReturnSaleUI();
+    document.getElementById('saleProductSearch').value = '';
+    document.getElementById('saleQty').value = 1;
+    document.getElementById('salePrice').value = '';
+    showToast('✅ تم إضافة ' + name + ' للمرتجع');
+}
+
+function updateReturnSaleUI() {
+    const list = document.getElementById('saleItemsList');
+    if (!list) return;
+    if (returnSaleItems.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">أضف منتجات للمرتجع</div>';
+        document.getElementById('saleTotalDisplay').textContent = '0 ج.م';
+        updateReturnSaleBalance();
+        return;
+    }
+    let html = '';
+    returnSaleItems.forEach((item, index) => {
+        html += `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;align-items:center;background:#fff5f5;">
+            <span>${item.name}</span>
+            <span style="text-align:center;">${item.qty}</span>
+            <span style="text-align:center;">${item.price} ج.م</span>
+            <span style="text-align:center;font-weight:bold;color:#E17055;">${item.total} ج.م</span>
+            <span style="text-align:center;"><button onclick="removeReturnSaleItem(${index})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
+        </div>`;
+    });
+    list.innerHTML = html;
+    document.getElementById('saleTotalDisplay').textContent = returnSaleTotal + ' ج.م';
+    updateReturnSaleBalance();
+}
+
+function removeReturnSaleItem(index) {
+    returnSaleTotal -= returnSaleItems[index].total;
+    returnSaleItems.splice(index, 1);
+    updateReturnSaleUI();
+    showToast('🗑️ تم حذف المنتج');
+}
+
+function updateReturnSaleBalance() {
+    const paid = parseFloat(document.getElementById('salePaid').value) || 0;
+    const balance = returnSaleTotal - paid;
+    const el = document.getElementById('saleBalanceDisplay');
+    el.textContent = balance + ' ج.م';
+    el.style.color = balance > 0 ? '#E17055' : '#00B894';
+}
+
+function saveReturnSaleInvoice() {
+    const client = document.getElementById('saleClient').value.trim();
+    const invNum = document.getElementById('saleInvoiceNumber').value;
+    const date = document.getElementById('saleInvoiceDate').value;
+    const type = document.getElementById('saleType').value;
+    const paid = parseFloat(document.getElementById('salePaid').value) || 0;
+    if (!client) return showToast('⚠️ أدخل اسم العميل');
+    if (returnSaleItems.length === 0) return showToast('⚠️ أضف منتجات للمرتجع');
+    
+    const data = getData();
+    returnSaleItems.forEach(item => {
+        let product = data.products.find(p => p.name === item.name);
+        if (product) {
+            product.qty = (product.qty || 0) + item.qty;
+        } else {
+            data.products.push({ id: Date.now().toString(), name: item.name, desc: 'تم إضافته من مرتجع', qty: item.qty, buy: item.price * 0.8, sell: item.price, barcode: Math.floor(10000000 + Math.random() * 90000000).toString() });
+        }
+    });
+    
+    const invoice = { id: invNum, client, date, type, items: JSON.parse(JSON.stringify(returnSaleItems)), total: returnSaleTotal, paid, balance: returnSaleTotal - paid, isReturn: true };
+    if (!data.sales) data.sales = [];
+    data.sales.push(invoice);
+    
+    if (type === 'cash') {
+        data.treasury = (data.treasury || 0) - paid;
+        data.treasuryLog.push({ desc: 'مرتجع بيع كاش - ' + client + ' (' + invNum + ')', amount: -paid });
+    }
+    
+    saveLocal();
+    showToast('✅ تم حفظ مرتجع البيع ' + invNum + ' بقيمة ' + returnSaleTotal + ' ج.م');
+    printReturnSaleInvoice(invNum);
+    clearReturnSaleInvoice();
+    updateUI();
+}
+
+function clearReturnSaleInvoice() {
+    returnSaleItems = [];
+    returnSaleTotal = 0;
+    document.getElementById('saleClient').value = '';
+    document.getElementById('salePaid').value = 0;
+    updateReturnSaleUI();
+    document.getElementById('saleProductSearch').value = '';
+    document.getElementById('saleQty').value = 1;
+    document.getElementById('salePrice').value = '';
+    initReturnSale();
+}
+
+function printReturnSaleInvoice(invoiceId) {
+    const data = getData();
+    const invoice = data.sales.find(s => s.id === invoiceId);
+    if (!invoice) return showToast('⚠️ الفاتورة غير موجودة');
+    const profile = data.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
+    let itemsHtml = '';
+    invoice.items.forEach(item => {
+        itemsHtml += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;color:#E17055;">${item.total} ج.م</td></tr>`;
+    });
+    let printContent = `<div style="direction:rtl;font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:2px solid #E17055;border-radius:10px;">
+        <div style="text-align:center;border-bottom:2px solid #E17055;padding-bottom:15px;margin-bottom:20px;">
+            <h2 style="margin:0;color:#E17055;">${profile.shopName}</h2>
+            <p style="font-size:12px;color:#666;margin:2px 0;">${profile.branch || ''}</p>
+            <p style="font-size:14px;font-weight:bold;color:#E17055;margin:5px 0;">📝 مرتجع بيع</p>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:15px;">
+            <div><strong>رقم المرتجع:</strong> ${invoice.id}<br><strong>التاريخ:</strong> ${invoice.date}</div>
+            <div style="text-align:left;"><strong>العميل:</strong> ${invoice.client}<br><strong>نوع الدفع:</strong> ${invoice.type === 'cash' ? 'كاش' : 'آجل'}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:15px;">
+            <thead><tr style="background:#E17055;color:white;"><th style="padding:8px;text-align:right;border:1px solid #E17055;">المنتج</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">الكمية</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">السعر</th><th style="padding:8px;text-align:left;border:1px solid #E17055;">الإجمالي</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+            <tfoot>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">إجمالي المرتجع</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:16px;">${invoice.total} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع (مسترد)</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${invoice.paid || 0} ج.م</td></tr>
+                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(invoice.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${invoice.balance || 0} ج.م</td></tr>
+            </tfoot>
+        </table>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا - ${profile.shopName}</div>
+    </div>`;
+    const win = window.open('', '_blank');
+    if (win) {
+        win.document.write(`<html><head><meta charset="UTF-8"><title>مرتجع ${invoice.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${printContent}</body></html>`);
+        win.document.close();
+        win.focus();
+        setTimeout(() => { win.print(); }, 500);
+    }
+}
+
+function switchSalesMode(mode) {
+    const addFields = document.getElementById('saleAddFields');
+    const returnFields = document.getElementById('saleReturnFields');
+    const addBtn = document.getElementById('saleModeAdd');
+    const returnBtn = document.getElementById('saleModeReturn');
+    
+    if (mode === 'add') {
+        if (addFields) addFields.style.display = 'block';
+        if (returnFields) returnFields.style.display = 'none';
+        if (addBtn) addBtn.classList.add('active');
+        if (returnBtn) returnBtn.classList.remove('active');
+        document.getElementById('saleProductSearch').placeholder = '🔍 اكتب اسم أو باركود';
+        document.getElementById('saleInvoiceNumber').style.borderColor = '#2E4057';
+        document.querySelector('.modal-box').style.borderColor = '#eee';
+        initSaleInvoice();
+    } else {
+        if (addFields) addFields.style.display = 'none';
+        if (returnFields) returnFields.style.display = 'block';
+        if (addBtn) addBtn.classList.remove('active');
+        if (returnBtn) returnBtn.classList.add('active');
+        document.getElementById('saleProductSearch').placeholder = '🔍 اكتب اسم المنتج للمرتجع';
+        document.getElementById('saleInvoiceNumber').style.borderColor = '#E17055';
+        document.querySelector('.modal-box').style.borderColor = '#E17055';
+        initReturnSale();
+    }
+}
+
+// ============================================================
+// 10. فاتورة المشتريات - شراء
 // ============================================================
 function initPurchaseInvoice() {
     const data = getData();
@@ -565,7 +788,7 @@ function savePurchaseInvoice() {
         }
     });
     
-    const invoice = { id: invNum, supplier, date, type, items: JSON.parse(JSON.stringify(purchaseItems)), total: purchaseTotal, paid, balance: purchaseTotal - paid };
+    const invoice = { id: invNum, supplier, date, type, items: JSON.parse(JSON.stringify(purchaseItems)), total: purchaseTotal, paid, balance: purchaseTotal - paid, isReturn: false };
     if (!data.purchases) data.purchases = [];
     data.purchases.push(invoice);
     
@@ -633,7 +856,208 @@ function printPurchaseInvoice(invoiceId) {
 }
 
 // ============================================================
-// 10. المخازن
+// 11. فاتورة المشتريات - مرتجع شراء
+// ============================================================
+function initReturnPurchase() {
+    const data = getData();
+    const today = new Date().toLocaleDateString('ar-EG');
+    document.getElementById('purchaseInvoiceDate').value = today;
+    data.returnPurchaseCounter = (data.returnPurchaseCounter || 0) + 1;
+    const purNum = 'RET-PUR-' + String(data.returnPurchaseCounter).padStart(4, '0');
+    document.getElementById('purchaseInvoiceNumber').value = purNum;
+    returnPurchaseItems = [];
+    returnPurchaseTotal = 0;
+    updateReturnPurchaseUI();
+    saveLocal();
+}
+
+function searchProductForReturnPurchase() {
+    const input = document.getElementById('purchaseProductSearch').value.trim();
+    if (!input) return;
+    const data = getData();
+    let product = data.products.find(p => p.name && p.name.toLowerCase().includes(input.toLowerCase()));
+    if (product) {
+        document.getElementById('purchasePrice').value = product.buy || 0;
+        document.getElementById('purchaseQty').value = 1;
+        document.getElementById('purchaseProductSearch').value = product.name;
+        showToast('✅ تم العثور على: ' + product.name);
+    }
+}
+
+function addProductToReturnPurchase() {
+    const name = document.getElementById('purchaseProductSearch').value.trim();
+    const qty = parseInt(document.getElementById('purchaseQty').value) || 1;
+    const price = parseFloat(document.getElementById('purchasePrice').value) || 0;
+    if (!name || price <= 0 || qty <= 0) return showToast('⚠️ أدخل اسم المنتج وسعر صحيح');
+    const data = getData();
+    const product = data.products.find(p => p.name === name);
+    if (!product) return showToast('⚠️ المنتج غير موجود');
+    if ((product.qty || 0) < qty) return showToast('⚠️ الكمية غير متوفرة للمرتجع');
+    const total = qty * price;
+    returnPurchaseItems.push({ name, qty, price, total });
+    returnPurchaseTotal += total;
+    updateReturnPurchaseUI();
+    document.getElementById('purchaseProductSearch').value = '';
+    document.getElementById('purchaseQty').value = 1;
+    document.getElementById('purchasePrice').value = '';
+    showToast('✅ تم إضافة ' + name + ' للمرتجع');
+}
+
+function updateReturnPurchaseUI() {
+    const list = document.getElementById('purchaseItemsList');
+    if (!list) return;
+    if (returnPurchaseItems.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:13px;">أضف منتجات للمرتجع</div>';
+        document.getElementById('purchaseTotalDisplay').textContent = '0 ج.م';
+        updateReturnPurchaseBalance();
+        return;
+    }
+    let html = '';
+    returnPurchaseItems.forEach((item, index) => {
+        html += `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:6px 10px;border-bottom:1px solid #eee;font-size:13px;align-items:center;background:#fff5f5;">
+            <span>${item.name}</span>
+            <span style="text-align:center;">${item.qty}</span>
+            <span style="text-align:center;">${item.price} ج.م</span>
+            <span style="text-align:center;font-weight:bold;color:#E17055;">${item.total} ج.م</span>
+            <span style="text-align:center;"><button onclick="removeReturnPurchaseItem(${index})" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;">✕</button></span>
+        </div>`;
+    });
+    list.innerHTML = html;
+    document.getElementById('purchaseTotalDisplay').textContent = returnPurchaseTotal + ' ج.م';
+    updateReturnPurchaseBalance();
+}
+
+function removeReturnPurchaseItem(index) {
+    returnPurchaseTotal -= returnPurchaseItems[index].total;
+    returnPurchaseItems.splice(index, 1);
+    updateReturnPurchaseUI();
+    showToast('🗑️ تم حذف المنتج');
+}
+
+function updateReturnPurchaseBalance() {
+    const paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
+    const balance = returnPurchaseTotal - paid;
+    const el = document.getElementById('purchaseBalanceDisplay');
+    el.textContent = balance + ' ج.م';
+    el.style.color = balance > 0 ? '#E17055' : '#00B894';
+}
+
+function saveReturnPurchaseInvoice() {
+    const supplier = document.getElementById('purchaseSupplier').value.trim();
+    const invNum = document.getElementById('purchaseInvoiceNumber').value;
+    const date = document.getElementById('purchaseInvoiceDate').value;
+    const type = document.getElementById('purchaseType').value;
+    const paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
+    if (!supplier) return showToast('⚠️ أدخل اسم المورد');
+    if (returnPurchaseItems.length === 0) return showToast('⚠️ أضف منتجات للمرتجع');
+    
+    const data = getData();
+    returnPurchaseItems.forEach(item => {
+        const product = data.products.find(p => p.name === item.name);
+        if (product) {
+            if ((product.qty || 0) < item.qty) {
+                return showToast(`⚠️ الكمية غير متوفرة لـ ${item.name}`);
+            }
+            product.qty = (product.qty || 0) - item.qty;
+        }
+    });
+    
+    const invoice = { id: invNum, supplier, date, type, items: JSON.parse(JSON.stringify(returnPurchaseItems)), total: returnPurchaseTotal, paid, balance: returnPurchaseTotal - paid, isReturn: true };
+    if (!data.purchases) data.purchases = [];
+    data.purchases.push(invoice);
+    
+    if (type === 'cash') {
+        data.treasury = (data.treasury || 0) + paid;
+        data.treasuryLog.push({ desc: 'مرتجع شراء كاش - ' + supplier + ' (' + invNum + ')', amount: paid });
+    }
+    
+    saveLocal();
+    showToast('✅ تم حفظ مرتجع الشراء ' + invNum + ' بقيمة ' + returnPurchaseTotal + ' ج.م');
+    printReturnPurchaseInvoice(invNum);
+    clearReturnPurchaseInvoice();
+    updateUI();
+}
+
+function clearReturnPurchaseInvoice() {
+    returnPurchaseItems = [];
+    returnPurchaseTotal = 0;
+    document.getElementById('purchaseSupplier').value = '';
+    document.getElementById('purchasePaid').value = 0;
+    updateReturnPurchaseUI();
+    document.getElementById('purchaseProductSearch').value = '';
+    document.getElementById('purchaseQty').value = 1;
+    document.getElementById('purchasePrice').value = '';
+    initReturnPurchase();
+}
+
+function printReturnPurchaseInvoice(invoiceId) {
+    const data = getData();
+    const invoice = data.purchases.find(p => p.id === invoiceId);
+    if (!invoice) return showToast('⚠️ الفاتورة غير موجودة');
+    const profile = data.profile || { shopName: 'نظام راشد', branch: 'رئيسي' };
+    let itemsHtml = '';
+    invoice.items.forEach(item => {
+        itemsHtml += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;color:#E17055;">${item.total} ج.م</td></tr>`;
+    });
+    let printContent = `<div style="direction:rtl;font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto;background:white;color:#333;border:2px solid #E17055;border-radius:10px;">
+        <div style="text-align:center;border-bottom:2px solid #E17055;padding-bottom:15px;margin-bottom:20px;">
+            <h2 style="margin:0;color:#E17055;">${profile.shopName}</h2>
+            <p style="font-size:12px;color:#666;margin:2px 0;">${profile.branch || ''}</p>
+            <p style="font-size:14px;font-weight:bold;color:#E17055;margin:5px 0;">📝 مرتجع شراء</p>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:15px;">
+            <div><strong>رقم المرتجع:</strong> ${invoice.id}<br><strong>التاريخ:</strong> ${invoice.date}</div>
+            <div style="text-align:left;"><strong>المورد:</strong> ${invoice.supplier}<br><strong>نوع الدفع:</strong> ${invoice.type === 'cash' ? 'كاش' : 'آجل'}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:15px;">
+            <thead><tr style="background:#E17055;color:white;"><th style="padding:8px;text-align:right;border:1px solid #E17055;">المنتج</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">الكمية</th><th style="padding:8px;text-align:center;border:1px solid #E17055;">السعر</th><th style="padding:8px;text-align:left;border:1px solid #E17055;">الإجمالي</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+            <tfoot>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">إجمالي المرتجع</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:16px;">${invoice.total} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع (مسترد)</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${invoice.paid || 0} ج.م</td></tr>
+                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(invoice.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${invoice.balance || 0} ج.م</td></tr>
+            </tfoot>
+        </table>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا - ${profile.shopName}</div>
+    </div>`;
+    const win = window.open('', '_blank');
+    if (win) {
+        win.document.write(`<html><head><meta charset="UTF-8"><title>مرتجع ${invoice.id}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}}</style></head><body>${printContent}</body></html>`);
+        win.document.close();
+        win.focus();
+        setTimeout(() => { win.print(); }, 500);
+    }
+}
+
+function switchPurchaseMode(mode) {
+    const addFields = document.getElementById('purchaseAddFields');
+    const returnFields = document.getElementById('purchaseReturnFields');
+    const addBtn = document.getElementById('purchaseModeAdd');
+    const returnBtn = document.getElementById('purchaseModeReturn');
+    
+    if (mode === 'add') {
+        if (addFields) addFields.style.display = 'block';
+        if (returnFields) returnFields.style.display = 'none';
+        if (addBtn) addBtn.classList.add('active');
+        if (returnBtn) returnBtn.classList.remove('active');
+        document.getElementById('purchaseProductSearch').placeholder = '🔍 اكتب اسم المنتج';
+        document.getElementById('purchaseInvoiceNumber').style.borderColor = '#E17055';
+        document.querySelector('.modal-box').style.borderColor = '#eee';
+        initPurchaseInvoice();
+    } else {
+        if (addFields) addFields.style.display = 'none';
+        if (returnFields) returnFields.style.display = 'block';
+        if (addBtn) addBtn.classList.remove('active');
+        if (returnBtn) returnBtn.classList.add('active');
+        document.getElementById('purchaseProductSearch').placeholder = '🔍 اكتب اسم المنتج للمرتجع';
+        document.getElementById('purchaseInvoiceNumber').style.borderColor = '#E17055';
+        document.querySelector('.modal-box').style.borderColor = '#E17055';
+        initReturnPurchase();
+    }
+}
+
+// ============================================================
+// 12. المخازن
 // ============================================================
 function showWarehouseForm(type) {
     const form = document.getElementById('warehouseForm');
@@ -711,7 +1135,7 @@ function showWarehouseReport() {
 }
 
 // ============================================================
-// 11. المنتجات
+// 13. المنتجات وجهات الاتصال والخزنة
 // ============================================================
 function addProduct() {
     const data = getData();
@@ -733,9 +1157,6 @@ function addProduct() {
     showToast('✅ تم إضافة المنتج - الباركود: ' + barcode);
 }
 
-// ============================================================
-// 12. جهات الاتصال
-// ============================================================
 function addContact() {
     const data = getData();
     const name = document.getElementById('contactName').value.trim();
@@ -752,9 +1173,6 @@ function addContact() {
     showToast('✅ تم إضافة جهة الاتصال');
 }
 
-// ============================================================
-// 13. الخزنة
-// ============================================================
 function collectDebt() {
     const data = getData();
     const client = document.getElementById('collectClient').value.trim();
@@ -1020,16 +1438,16 @@ function updateUI() {
     document.getElementById('treasuryLog').innerHTML = logHtml || '<div style="text-align:center;color:#999;padding:10px;">لا توجد حركات</div>';
     
     document.getElementById('saleList').innerHTML = (data.sales || []).slice().reverse().map(s => `
-        <div class="list-item" style="flex-wrap:wrap;gap:5px;">
-            <div><strong>${s.id}</strong> - ${s.client || ''}<small style="color:#999;display:block;font-size:11px;">${s.date || ''} | ${s.items ? s.items.length : 0} منتج</small></div>
-            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:#2E4057;">${s.total || 0} ج.م</span><button onclick="printSaleInvoice('${s.id}')" style="background:#2E4057;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
+        <div class="list-item" style="flex-wrap:wrap;gap:5px;${s.isReturn ? 'background:#fff5f5;border-right:3px solid #E17055;' : ''}">
+            <div><strong>${s.id}</strong> ${s.isReturn ? '↩️' : ''} - ${s.client || ''}<small style="color:#999;display:block;font-size:11px;">${s.date || ''} | ${s.items ? s.items.length : 0} منتج</small></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:${s.isReturn ? '#E17055' : '#2E4057'};">${s.total || 0} ج.م</span><button onclick="${s.isReturn ? 'printReturnSaleInvoice' : 'printSaleInvoice'}('${s.id}')" style="background:${s.isReturn ? '#E17055' : '#2E4057'};color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
         </div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد فواتير</div>';
     
     document.getElementById('purchaseList').innerHTML = (data.purchases || []).slice().reverse().map(p => `
-        <div class="list-item" style="flex-wrap:wrap;gap:5px;">
-            <div><strong>${p.id}</strong> - ${p.supplier || ''}<small style="color:#999;display:block;font-size:11px;">${p.date || ''} | ${p.items ? p.items.length : 0} منتج</small></div>
-            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:#E17055;">${p.total || 0} ج.م</span><button onclick="printPurchaseInvoice('${p.id}')" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
+        <div class="list-item" style="flex-wrap:wrap;gap:5px;${p.isReturn ? 'background:#fff5f5;border-right:3px solid #E17055;' : ''}">
+            <div><strong>${p.id}</strong> ${p.isReturn ? '↩️' : ''} - ${p.supplier || ''}<small style="color:#999;display:block;font-size:11px;">${p.date || ''} | ${p.items ? p.items.length : 0} منتج</small></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:${p.isReturn ? '#E17055' : '#E17055'};">${p.total || 0} ج.م</span><button onclick="${p.isReturn ? 'printReturnPurchaseInvoice' : 'printPurchaseInvoice'}('${p.id}')" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
         </div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد فواتير شراء</div>';
     
@@ -1254,6 +1672,8 @@ function clearAllData() {
     data.warehouse = [];
     data.saleCounter = 0;
     data.purchaseCounter = 0;
+    data.returnSaleCounter = 0;
+    data.returnPurchaseCounter = 0;
     saveLocal();
     updateUI();
     showToast('🗑️ تم المسح');
@@ -1286,4 +1706,4 @@ if (!autoLogin()) {
     document.getElementById('appContainer').style.display = 'none';
 }
 
-console.log('✅ نظام راشد V31 - النسخة الكاملة');
+console.log('✅ نظام راشد V31 - النسخة الكاملة مع المرتجعات');
