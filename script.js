@@ -1,9 +1,9 @@
 // ============================================
-// نظام راشد V31 - النسخة المبسطة
+// نظام راشد V31 - النسخة النهائية
 // ============================================
 
 // ============================================
-// إعدادات Firebase
+// Firebase
 // ============================================
 const firebaseConfig = {
     apiKey: "AIzaSyCQVcCAkZpeL9F9KADI5PtVanwTwO3SH5Y",
@@ -16,7 +16,7 @@ const firebaseConfig = {
 };
 
 // ============================================
-// المتغيرات العامة
+// المتغيرات
 // ============================================
 let appData = { users: {}, currentUser: null, adminPin: '1234' };
 let chartInstances = {};
@@ -37,13 +37,13 @@ function initFirebase() {
             firebaseDb = firebase.database(firebaseApp);
         }
     } catch(e) {
-        console.warn('Firebase init error:', e);
+        console.warn('Firebase:', e);
     }
     return { app: firebaseApp, auth: firebaseAuth, db: firebaseDb };
 }
 
 // ============================================
-// تحميل وحفظ البيانات
+// البيانات
 // ============================================
 function loadLocal() {
     try {
@@ -76,37 +76,16 @@ function getData() {
     return appData.users[appData.currentUser].data || {};
 }
 
-// ============================================
-// السحابة
-// ============================================
 function syncCloud() {
     if (!appData.currentUser || !appData.users[appData.currentUser]) return;
     try {
         const { db } = initFirebase();
-        const uid = appData.currentUser;
-        db.ref('users/' + uid + '/data').set(appData.users[uid].data);
-    } catch(e) {}
-}
-
-function loadFromCloud() {
-    if (!appData.currentUser) return;
-    try {
-        const { db } = initFirebase();
-        const uid = appData.currentUser;
-        db.ref('users/' + uid + '/data').once('value').then(snapshot => {
-            const data = snapshot.val();
-            if (data) {
-                appData.users[uid].data = data;
-                localStorage.setItem('RashedV31', JSON.stringify(appData));
-                updateUI();
-                showToast('☁️ تم تحديث البيانات');
-            }
-        });
+        db.ref('users/' + appData.currentUser + '/data').set(appData.users[appData.currentUser].data);
     } catch(e) {}
 }
 
 // ============================================
-// الدخول والخروج
+// الدخول
 // ============================================
 function toggleAuthMode() {
     document.getElementById('loginForm').style.display = document.getElementById('loginForm').style.display === 'none' ? 'block' : 'none';
@@ -118,7 +97,7 @@ async function handleLogin() {
     const pass = document.getElementById('loginPass').value.trim();
     const email = username + '@rashed.com';
 
-    if (!username || !pass) return showToast('⚠️ أدخل اسم المستخدم وكلمة المرور');
+    if (!username || !pass) return showToast('⚠️ أدخل البيانات');
 
     try {
         const { auth } = initFirebase();
@@ -143,13 +122,9 @@ async function handleLogin() {
         enterApp();
         showToast('✅ مرحباً ' + username);
     } catch(error) {
-        if (error.code === 'auth/user-not-found') {
-            showToast('❌ اسم المستخدم غير موجود');
-        } else if (error.code === 'auth/wrong-password') {
-            showToast('❌ كلمة المرور خطأ');
-        } else {
-            showToast('❌ خطأ: ' + error.message);
-        }
+        if (error.code === 'auth/user-not-found') showToast('❌ المستخدم غير موجود');
+        else if (error.code === 'auth/wrong-password') showToast('❌ كلمة المرور خطأ');
+        else showToast('❌ ' + error.message);
     }
 }
 
@@ -159,8 +134,8 @@ async function handleRegister() {
     const confirm = document.getElementById('regPassConfirm').value.trim();
     const email = username + '@rashed.com';
 
-    if (!username || username.length < 3) return showToast('⚠️ الاسم 3 أحرف على الأقل');
-    if (pass.length < 6) return showToast('⚠️ كلمة المرور 6 أحرف على الأقل');
+    if (!username || username.length < 3) return showToast('⚠️ الاسم 3 أحرف');
+    if (pass.length < 6) return showToast('⚠️ كلمة المرور 6 أحرف');
     if (pass !== confirm) return showToast('⚠️ كلمة المرور غير متطابقة');
 
     try {
@@ -193,16 +168,13 @@ async function handleRegister() {
         enterApp();
         showToast('✅ تم إنشاء الحساب');
     } catch(error) {
-        if (error.code === 'auth/email-already-in-use') {
-            showToast('⚠️ هذا الاسم مستخدم بالفعل');
-        } else {
-            showToast('❌ خطأ: ' + error.message);
-        }
+        if (error.code === 'auth/email-already-in-use') showToast('⚠️ الاسم مستخدم');
+        else showToast('❌ ' + error.message);
     }
 }
 
 function logout() {
-    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+    if (confirm('تسجيل الخروج؟')) {
         const { auth } = initFirebase();
         auth.signOut().then(() => {
             appData.currentUser = null;
@@ -216,7 +188,7 @@ function enterApp() {
     document.getElementById('authContainer').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
     document.getElementById('userDisplay').textContent = appData.users[appData.currentUser]?.displayName || 'مستخدم';
-    loadFromCloud();
+    loadSettings();
     updateUI();
     switchPage('dashboard');
 }
@@ -230,12 +202,12 @@ function autoLogin() {
 }
 
 // ============================================
-// لوحة تحكم الأدمن
+// لوحة الأدمن
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
     const logo = document.getElementById('brandLogo');
     if (logo) {
-        logo.addEventListener('click', function(e) {
+        logo.addEventListener('click', function() {
             clickCount++;
             clearTimeout(clickTimer);
             clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
@@ -264,7 +236,7 @@ function unlockAdminPanel() {
     if (pin === appData.adminPin) {
         document.getElementById('adminPinSection').style.display = 'none';
         document.getElementById('adminContent').style.display = 'block';
-        showToast('✅ تم فتح لوحة التحكم');
+        showToast('✅ تم فتح اللوحة');
     } else {
         showToast('❌ الرقم السري خطأ');
         document.getElementById('adminPinInput').value = '';
@@ -290,10 +262,10 @@ function exportData() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = 'backup_' + new Date().toISOString().slice(0,10) + '.json';
     a.click();
     URL.revokeObjectURL(url);
-    showToast('📤 تم تصدير البيانات');
+    showToast('📤 تم التصدير');
 }
 
 function importData(event) {
@@ -307,7 +279,7 @@ function importData(event) {
             Object.assign(userData, data);
             saveLocal();
             updateUI();
-            showToast('✅ تم استيراد البيانات');
+            showToast('✅ تم الاستيراد');
         } catch(err) {
             showToast('❌ ملف غير صالح');
         }
@@ -317,7 +289,7 @@ function importData(event) {
 }
 
 function clearAllData() {
-    if (!confirm('⚠️ هل أنت متأكد من مسح كل البيانات؟')) return;
+    if (!confirm('⚠️ مسح كل البيانات؟')) return;
     const data = getData();
     data.sales = [];
     data.purchases = [];
@@ -332,7 +304,7 @@ function clearAllData() {
     data.purchaseCounter = 0;
     saveLocal();
     updateUI();
-    showToast('🗑️ تم مسح البيانات');
+    showToast('🗑️ تم المسح');
     closeAdminPanel();
 }
 
@@ -344,17 +316,17 @@ function switchPage(page) {
     const target = document.getElementById('page-' + page);
     if (target) target.classList.add('active');
 
-    document.querySelectorAll('.bottom-nav button').forEach(btn => btn.style.color = '#777');
-    const activeBtn = document.querySelector(`.bottom-nav button[onclick*="switchPage('${page}')"]`);
-    if (activeBtn) activeBtn.style.color = 'var(--primary)';
-
-    document.querySelectorAll('.sidebar .nav-btn').forEach(btn => btn.style.background = 'rgba(255,255,255,0.05)');
-    const activeSideBtn = document.querySelector(`.sidebar .nav-btn[onclick*="switchPage('${page}')"]`);
-    if (activeSideBtn) activeSideBtn.style.background = 'rgba(255,255,255,0.2)';
-
     if (page === 'dashboard') drawCharts();
     if (page === 'reports') updateReportSelects();
     if (page === 'settings') loadSettings();
+    
+    // تحديث معلومات التطبيق في الإعدادات
+    if (page === 'settings') {
+        const data = getData();
+        document.getElementById('settingsUser').textContent = appData.users[appData.currentUser]?.displayName || 'مستخدم';
+        document.getElementById('settingsProducts').textContent = data.products.length;
+        document.getElementById('settingsClients').textContent = data.clients.length;
+    }
 }
 
 // ============================================
@@ -385,26 +357,26 @@ function updateUI() {
     updateSelects();
 
     document.getElementById('clientList').innerHTML = data.clients.map(c => `
-        <div class="list-item"><div><strong>${c.name}</strong><br><small>📞 ${c.phone || 'N/A'}</small></div><div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.type}</span></div></div>
+        <div class="list-item"><div><strong>${c.name}</strong><br><small>📞 ${c.phone || ''}</small></div><div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.type}</span></div></div>
     `).join('');
 
     document.getElementById('productList').innerHTML = data.products.map(p => `
-        <div class="list-item"><div><strong>${p.name}</strong><br><small>${p.desc || ''}</small></div><div style="text-align:left;"><span style="font-weight:bold;">${p.sell} ج.م (${p.qty})</span></div></div>
+        <div class="list-item"><div><strong>${p.name}</strong><br><small>${p.desc || ''}</small></div><div><span style="font-weight:bold;">${p.sell} ج.م (${p.qty})</span></div></div>
     `).join('');
 
     document.getElementById('treasuryDisplay').textContent = data.treasury;
 
     let logHtml = data.treasuryLog.slice().reverse().map(t => `
-        <div class="list-item"><span>${t.desc}</span><span style="font-weight:bold;color:${t.amount > 0 ? 'var(--secondary)' : 'var(--danger)'};">${t.amount} ج.م</span></div>
+        <div class="list-item"><span>${t.desc}</span><span style="font-weight:bold;color:${t.amount > 0 ? '#00B894' : '#E17055'};">${t.amount} ج.م</span></div>
     `).join('');
     logHtml += data.expenses.slice().reverse().map(e => `
-        <div class="list-item" style="color:var(--danger);"><span>💸 ${e.desc}</span><span style="font-weight:bold;">-${e.amount} ج.م</span></div>
+        <div class="list-item" style="color:#E17055;"><span>💸 ${e.desc}</span><span style="font-weight:bold;">-${e.amount} ج.م</span></div>
     `).join('');
     logHtml += data.collections.slice().reverse().map(c => `
-        <div class="list-item" style="color:var(--secondary);"><span>💰 تحصيل من ${c.client}</span><span style="font-weight:bold;">+${c.amount} ج.م</span></div>
+        <div class="list-item" style="color:#00B894;"><span>💰 تحصيل من ${c.client}</span><span style="font-weight:bold;">+${c.amount} ج.م</span></div>
     `).join('');
     logHtml += data.supplierPayments.slice().reverse().map(p => `
-        <div class="list-item" style="color:var(--danger);"><span>💸 سداد مورد - ${p.supplier}</span><span style="font-weight:bold;">-${p.amount} ج.م</span></div>
+        <div class="list-item" style="color:#E17055;"><span>💸 سداد - ${p.supplier}</span><span style="font-weight:bold;">-${p.amount} ج.م</span></div>
     `).join('');
     document.getElementById('treasuryLog').innerHTML = logHtml || '<div style="text-align:center;color:#777;padding:10px;">لا توجد حركات</div>';
 
@@ -417,7 +389,7 @@ function updateUI() {
 }
 
 // ============================================
-// عمليات إضافة البيانات
+// العمليات
 // ============================================
 function addContact() {
     const data = getData();
@@ -432,7 +404,7 @@ function addContact() {
     document.getElementById('contactPhone').value = '';
     document.getElementById('contactAddress').value = '';
     updateUI();
-    showToast('تم إضافة جهة الاتصال');
+    showToast('✅ تم الإضافة');
 }
 
 function addProduct() {
@@ -450,18 +422,18 @@ function addProduct() {
     document.getElementById('prodDesc').value = '';
     document.getElementById('prodQty').value = '';
     updateUI();
-    showToast(`تم إضافة المنتج. الباركود: ${barcode}`);
+    showToast('✅ تم إضافة المنتج - الباركود: ' + barcode);
 }
 
 function searchByBarcode() {
     const input = document.getElementById('manualBarcode').value.trim();
-    if (!input) return showToast('أدخل الباركود أو اسم المنتج');
+    if (!input) return showToast('أدخل الباركود');
     const data = getData();
     let product = data.products.find(p => p.barcode === input);
     if (!product) product = data.products.find(p => p.name.toLowerCase().includes(input.toLowerCase()));
     if (product) {
         document.getElementById('saleProduct').value = product.id;
-        showToast(`✅ تم العثور على: ${product.name}`);
+        showToast('✅ تم العثور على: ' + product.name);
     } else {
         showToast('⚠️ المنتج غير موجود');
     }
@@ -475,18 +447,18 @@ function addSale() {
     const price = parseFloat(document.getElementById('salePrice').value) || 0;
     const type = document.getElementById('saleType').value;
     if (!client || !productId || qty <= 0) return showToast('أكمل البيانات');
-    if (price <= 0) return showToast('سعر البيع أكبر من 0');
+    if (price <= 0) return showToast('السعر أكبر من 0');
     const prod = data.products.find(p => p.id === productId);
     if (!prod || prod.qty < qty) return showToast('الكمية غير متوفرة');
     prod.qty -= qty;
     const total = qty * price;
     data.saleCounter = (data.saleCounter || 0) + 1;
-    const invNum = `INV-${String(data.saleCounter).padStart(4, '0')}`;
+    const invNum = 'INV-' + String(data.saleCounter).padStart(4, '0');
     data.sales.push({ id: invNum, client, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString() });
-    if (type === 'cash') { data.treasury += total; data.treasuryLog.push({ desc: `بيع كاش - ${client} (${invNum})`, amount: total }); }
+    if (type === 'cash') { data.treasury += total; data.treasuryLog.push({ desc: 'بيع كاش - ' + client + ' (' + invNum + ')', amount: total }); }
     saveLocal();
     updateUI();
-    showToast(`بيع بقيمة ${total} ج.م - ${invNum}`);
+    showToast('✅ بيع بقيمة ' + total + ' ج.م - ' + invNum);
 }
 
 function addPurchase() {
@@ -497,19 +469,19 @@ function addPurchase() {
     const price = parseFloat(document.getElementById('purchasePrice').value) || 0;
     const type = document.getElementById('purchaseType').value;
     if (!supplier || !productId || qty <= 0) return showToast('أكمل البيانات');
-    if (price <= 0) return showToast('سعر الشراء أكبر من 0');
+    if (price <= 0) return showToast('السعر أكبر من 0');
     const prod = data.products.find(p => p.id === productId);
     if (!prod) return showToast('المنتج غير موجود');
     prod.qty += qty;
     const total = qty * price;
     data.purchaseCounter = (data.purchaseCounter || 0) + 1;
-    const purNum = `PUR-${String(data.purchaseCounter).padStart(4, '0')}`;
+    const purNum = 'PUR-' + String(data.purchaseCounter).padStart(4, '0');
     data.purchases.push({ id: purNum, supplier, product: prod.name, qty, price, total, type, date: new Date().toLocaleDateString() });
     data.treasury -= total;
-    data.treasuryLog.push({ desc: `شراء من ${supplier} (${purNum})`, amount: -total });
+    data.treasuryLog.push({ desc: 'شراء من ' + supplier + ' (' + purNum + ')', amount: -total });
     saveLocal();
     updateUI();
-    showToast(`شراء بقيمة ${total} ج.م - ${purNum}`);
+    showToast('✅ شراء بقيمة ' + total + ' ج.م - ' + purNum);
 }
 
 // ============================================
@@ -535,17 +507,17 @@ function addSaleReturn() {
     const productId = document.getElementById('returnProduct').value;
     const qty = parseInt(document.getElementById('returnQty').value) || 0;
     const price = parseFloat(document.getElementById('returnPrice').value) || 0;
-    const type = document.getElementById('returnSaleType').value;
     if (!client || !productId || qty <= 0) return showToast('أكمل البيانات');
     const prod = data.products.find(p => p.id === productId);
     if (!prod) return showToast('المنتج غير موجود');
     prod.qty += qty;
     const total = qty * price;
-    data.sales.push({ id: `RET-${Date.now()}`, client, product: prod.name, qty, price, total, type: 'return', date: new Date().toLocaleDateString() });
-    if (type === 'cash') { data.treasury -= total; data.treasuryLog.push({ desc: `مرتجع بيع - ${client}`, amount: -total }); }
+    data.sales.push({ id: 'RET-' + Date.now(), client, product: prod.name, qty, price, total, type: 'return', date: new Date().toLocaleDateString() });
+    data.treasury -= total;
+    data.treasuryLog.push({ desc: 'مرتجع بيع - ' + client, amount: -total });
     saveLocal();
     updateUI();
-    showToast(`تم تسجيل مرتجع بقيمة ${total} ج.م`);
+    showToast('✅ مرتجع بقيمة ' + total + ' ج.م');
 }
 
 function addPurchaseReturn() {
@@ -554,17 +526,17 @@ function addPurchaseReturn() {
     const productId = document.getElementById('returnPurchaseProduct').value;
     const qty = parseInt(document.getElementById('returnPurchaseQty').value) || 0;
     const price = parseFloat(document.getElementById('returnPurchasePrice').value) || 0;
-    const type = document.getElementById('returnPurchaseType').value;
     if (!supplier || !productId || qty <= 0) return showToast('أكمل البيانات');
     const prod = data.products.find(p => p.id === productId);
     if (!prod || prod.qty < qty) return showToast('الكمية غير متوفرة');
     prod.qty -= qty;
     const total = qty * price;
-    data.purchases.push({ id: `PRET-${Date.now()}`, supplier, product: prod.name, qty, price, total, type: 'return', date: new Date().toLocaleDateString() });
-    if (type === 'cash') { data.treasury += total; data.treasuryLog.push({ desc: `مرتجع شراء - ${supplier}`, amount: total }); }
+    data.purchases.push({ id: 'PRET-' + Date.now(), supplier, product: prod.name, qty, price, total, type: 'return', date: new Date().toLocaleDateString() });
+    data.treasury += total;
+    data.treasuryLog.push({ desc: 'مرتجع شراء - ' + supplier, amount: total });
     saveLocal();
     updateUI();
-    showToast(`تم تسجيل مرتجع شراء بقيمة ${total} ج.م`);
+    showToast('✅ مرتجع شراء بقيمة ' + total + ' ج.م');
 }
 
 // ============================================
@@ -574,33 +546,31 @@ function collectDebt() {
     const data = getData();
     const client = document.getElementById('collectClient').value.trim();
     const amount = parseFloat(document.getElementById('collectAmount').value);
-    if (!client || !amount || amount <= 0) return showToast('أدخل العميل والمبلغ');
-    if (!data.clients.find(c => c.name === client)) return showToast('العميل غير موجود');
+    if (!client || !amount || amount <= 0) return showToast('أدخل البيانات');
     data.treasury += amount;
     data.collections.push({ id: Date.now().toString(), client, amount });
-    data.treasuryLog.push({ desc: `تحصيل من ${client}`, amount: amount });
+    data.treasuryLog.push({ desc: 'تحصيل من ' + client, amount: amount });
     saveLocal();
     document.getElementById('collectClient').value = '';
     document.getElementById('collectAmount').value = '';
     updateUI();
-    showToast(`تم تحصيل ${amount} ج.م`);
+    showToast('✅ تم تحصيل ' + amount + ' ج.م');
 }
 
 function paySupplier() {
     const data = getData();
     const supplier = document.getElementById('paySupplier').value.trim();
     const amount = parseFloat(document.getElementById('payAmount').value);
-    if (!supplier || !amount || amount <= 0) return showToast('أدخل المورد والمبلغ');
-    if (!data.clients.find(c => c.name === supplier)) return showToast('المورد غير موجود');
+    if (!supplier || !amount || amount <= 0) return showToast('أدخل البيانات');
     if (data.treasury < amount) return showToast('الرصيد غير كافي');
     data.treasury -= amount;
     data.supplierPayments.push({ id: Date.now().toString(), supplier, amount });
-    data.treasuryLog.push({ desc: `سداد مورد - ${supplier}`, amount: -amount });
+    data.treasuryLog.push({ desc: 'سداد مورد - ' + supplier, amount: -amount });
     saveLocal();
     document.getElementById('paySupplier').value = '';
     document.getElementById('payAmount').value = '';
     updateUI();
-    showToast(`تم سداد ${amount} ج.م`);
+    showToast('✅ تم سداد ' + amount + ' ج.م');
 }
 
 function addToTreasury() {
@@ -612,7 +582,7 @@ function addToTreasury() {
     saveLocal();
     document.getElementById('treasuryAmount').value = '';
     updateUI();
-    showToast(`تم إيداع ${amount} ج.م`);
+    showToast('✅ تم إيداع ' + amount + ' ج.م');
 }
 
 function withdrawTreasury() {
@@ -625,23 +595,23 @@ function withdrawTreasury() {
     saveLocal();
     document.getElementById('treasuryAmount').value = '';
     updateUI();
-    showToast(`تم سحب ${amount} ج.م`);
+    showToast('✅ تم سحب ' + amount + ' ج.م');
 }
 
 function addExpense() {
     const data = getData();
     const desc = document.getElementById('expenseDesc').value.trim();
     const amount = parseFloat(document.getElementById('expenseAmount').value);
-    if (!desc || !amount || amount <= 0) return showToast('أدخل البيان والمبلغ');
+    if (!desc || !amount || amount <= 0) return showToast('أدخل البيانات');
     if (data.treasury < amount) return showToast('الرصيد غير كافي');
     data.treasury -= amount;
     data.expenses.push({ id: Date.now().toString(), desc, amount, date: new Date().toLocaleDateString() });
-    data.treasuryLog.push({ desc: `مصروف: ${desc}`, amount: -amount });
+    data.treasuryLog.push({ desc: 'مصروف: ' + desc, amount: -amount });
     saveLocal();
     document.getElementById('expenseDesc').value = '';
     document.getElementById('expenseAmount').value = '';
     updateUI();
-    showToast(`تم تسجيل مصروف ${amount} ج.م`);
+    showToast('✅ تم تسجيل مصروف ' + amount + ' ج.م');
 }
 
 // ============================================
@@ -722,7 +692,7 @@ function showReport(type) {
         const clientName = document.getElementById('statementClientSelect').value;
         if (!clientName) {
             document.getElementById('statementClientField').style.display = 'block';
-            html = `<div style="color:#aaa;text-align:center;padding:20px;">اختر جهة الاتصال</div>`;
+            html = '<div style="color:#aaa;text-align:center;padding:20px;">اختر جهة الاتصال</div>';
         } else {
             document.getElementById('statementClientField').style.display = 'block';
             const clientSales = data.sales.filter(s => s.client === clientName);
@@ -742,22 +712,19 @@ function showReport(type) {
     document.getElementById('reportContent').innerHTML = html;
 }
 
-// ============================================
-// الذكاء الاصطناعي
-// ============================================
 function showAIReport() {
     const data = getData();
     const totalSales = data.sales.reduce((s, i) => s + i.total, 0);
     const totalPurchases = data.purchases.reduce((s, i) => s + i.total, 0);
     const totalExpenses = data.expenses.reduce((s, i) => s + i.amount, 0);
     const profit = totalSales - totalPurchases - totalExpenses;
-    let report = `🤖 تحليل الذكاء الاصطناعي\n\n`;
-    report += `📊 إجمالي المبيعات: ${totalSales} ج.م\n`;
-    report += `📉 إجمالي المشتريات: ${totalPurchases} ج.م\n`;
-    report += `💸 إجمالي المصروفات: ${totalExpenses} ج.م\n`;
-    report += `💰 صافي الربح: ${profit} ج.م\n\n`;
-    if (profit > 0) report += `✅ عملك يحقق أرباحاً.\n`;
-    else report += `⚠️ عملك يحقق خسائر. راجع المصروفات.\n`;
+    let report = '🤖 تحليل الذكاء الاصطناعي\n\n';
+    report += '📊 إجمالي المبيعات: ' + totalSales + ' ج.م\n';
+    report += '📉 إجمالي المشتريات: ' + totalPurchases + ' ج.م\n';
+    report += '💸 إجمالي المصروفات: ' + totalExpenses + ' ج.م\n';
+    report += '💰 صافي الربح: ' + profit + ' ج.م\n\n';
+    if (profit > 0) report += '✅ عملك يحقق أرباحاً.\n';
+    else report += '⚠️ عملك يحقق خسائر. راجع المصروفات.\n';
     alert(report);
 }
 
@@ -780,20 +747,35 @@ function saveSettings(settings) {
 
 function loadSettings() {
     const settings = getSettings();
-    if (settings.theme && settings.theme !== 'default') document.body.className = 'theme-' + settings.theme;
-    else document.body.className = '';
+    
+    // السمات
+    document.body.className = '';
+    if (settings.theme && settings.theme !== 'default') {
+        document.body.classList.add('theme-' + settings.theme);
+    }
+    
+    // حجم الخط
     const sizeMap = { small: '13px', medium: '16px', large: '19px', xlarge: '22px' };
     document.body.style.fontSize = sizeMap[settings.fontSize] || '16px';
+    
+    // التنبيهات
     document.getElementById('soundAlerts').checked = settings.soundAlerts !== false;
     document.getElementById('popupAlerts').checked = settings.popupAlerts !== false;
     document.getElementById('alertSound').value = settings.alertSound || 'beep';
+    
+    // الطابعة
     document.getElementById('printerSettings').value = settings.printer || 'thermal';
+    
+    // الباركود
     document.getElementById('barcodeSize').value = settings.barcodeSize || 100;
     document.getElementById('barcodeSizeLabel').textContent = (settings.barcodeSize || 100) + '%';
 }
 
 function changeTheme(theme) {
-    document.body.className = theme !== 'default' ? 'theme-' + theme : '';
+    document.body.className = '';
+    if (theme !== 'default') {
+        document.body.classList.add('theme-' + theme);
+    }
     const settings = getSettings();
     settings.theme = theme;
     saveSettings(settings);
@@ -815,7 +797,7 @@ function resetAppSettings() {
     data.settings = { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 };
     saveLocal();
     loadSettings();
-    showToast('✅ تم إعادة ضبط الإعدادات');
+    showToast('✅ تم إعادة الضبط');
 }
 
 function setBarcodeLibrary(type) {
@@ -831,12 +813,6 @@ function updateBarcodeSizeLabel() {
     const settings = getSettings();
     settings.barcodeSize = parseInt(size);
     saveSettings(settings);
-}
-
-function printAllInvoices() {
-    const data = getData();
-    if (data.sales.length === 0) return showToast('لا توجد فواتير');
-    showToast('🖨️ جاري الطباعة...');
 }
 
 // ============================================
@@ -856,7 +832,6 @@ function showToast(msg) {
 initFirebase();
 loadLocal();
 
-// مستخدم افتراضي للتجربة
 if (!appData.users || Object.keys(appData.users).length === 0) {
     appData.users = {};
 }
