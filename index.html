@@ -8,13 +8,11 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <!-- Firebase - إصدار مستقر -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -23,8 +21,8 @@
         <div class="auth-box">
             <h2>نظام راشد V31</h2>
             <div id="loginForm">
-                <input type="text" id="loginUser" placeholder="اسم المستخدم">
-                <input type="password" id="loginPass" placeholder="كلمة المرور">
+                <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
+                <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
                 <button class="btn-auth" onclick="handleLogin()">دخول</button>
                 <button class="btn-auth btn-green" onclick="toggleAuthMode()">إنشاء حساب جديد</button>
             </div>
@@ -84,11 +82,9 @@
                         </div>
                     </div>
 
-                    <div style="margin-top:15px;">
-                        <button onclick="showAIReport()" style="width:100%; padding:15px; background:linear-gradient(135deg, #2E4057, #00B894); color:white; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer;">
-                            🤖 تحليل الذكاء الاصطناعي للبيانات المالية
-                        </button>
-                    </div>
+                    <button onclick="showAIReport()" style="width:100%; padding:15px; background:linear-gradient(135deg, #2E4057, #00B894); color:white; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; margin-top:15px;">
+                        🤖 تحليل الذكاء الاصطناعي للبيانات المالية
+                    </button>
                 </div>
 
                 <!-- صفحة المبيعات -->
@@ -247,65 +243,41 @@
                     </div>
                 </div>
 
-                <!-- ============================================ -->
-                <!-- صفحة الإعدادات (جديدة) -->
-                <!-- ============================================ -->
+                <!-- صفحة الإعدادات -->
                 <div id="page-settings" class="page">
                     <div class="modal-box">
-                        <div class="modal-header">
-                            <h2>⚙️ الإعدادات</h2>
-                            <button class="modal-close" onclick="switchPage('dashboard')">&times;</button>
-                        </div>
-
-                        <!-- قسم المظهر -->
+                        <div class="modal-header"><h2>⚙️ الإعدادات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                        
                         <div class="settings-section">
                             <h3 class="section-title-blue">🎨 المظهر</h3>
-                            
-                            <div class="form-group">
-                                <label>الخلفية</label>
-                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                    <button onclick="changeTheme('default')" class="btn-theme" style="background:#F4F6F9; color:#333; border:2px solid #ddd;">افتراضي</button>
-                                    <button onclick="changeTheme('dark')" class="btn-theme" style="background:#1a1a2e; color:white; border:2px solid #333;">داكن</button>
-                                    <button onclick="changeTheme('blue')" class="btn-theme" style="background:#0c2461; color:white; border:2px solid #0c2461;">أزرق</button>
-                                    <button onclick="changeTheme('green')" class="btn-theme" style="background:#0a3d2e; color:white; border:2px solid #0a3d2e;">أخضر</button>
-                                    <button onclick="changeTheme('purple')" class="btn-theme" style="background:#2c1a4d; color:white; border:2px solid #2c1a4d;">بنفسجي</button>
-                                </div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                                <button onclick="changeTheme('default')" class="btn-theme" style="background:#F4F6F9; color:#333; border:2px solid #ddd;">افتراضي</button>
+                                <button onclick="changeTheme('dark')" class="btn-theme" style="background:#1a1a2e; color:white; border:2px solid #333;">داكن</button>
+                                <button onclick="changeTheme('blue')" class="btn-theme" style="background:#0c2461; color:white; border:2px solid #0c2461;">أزرق</button>
+                                <button onclick="changeTheme('green')" class="btn-theme" style="background:#0a3d2e; color:white; border:2px solid #0a3d2e;">أخضر</button>
+                                <button onclick="changeTheme('purple')" class="btn-theme" style="background:#2c1a4d; color:white; border:2px solid #2c1a4d;">بنفسجي</button>
                             </div>
-
-                            <div class="form-group">
-                                <label>حجم الخط</label>
-                                <div style="display:flex; gap:10px; align-items:center;">
-                                    <button onclick="changeFontSize('small')" class="btn-sm">صغير</button>
-                                    <button onclick="changeFontSize('medium')" class="btn-sm" style="background:var(--primary); color:white;">وسط</button>
-                                    <button onclick="changeFontSize('large')" class="btn-sm">كبير</button>
-                                    <button onclick="changeFontSize('xlarge')" class="btn-sm">كبير جداً</button>
-                                </div>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <button onclick="changeFontSize('small')" class="btn-sm">صغير</button>
+                                <button onclick="changeFontSize('medium')" class="btn-sm" style="background:var(--primary); color:white;">وسط</button>
+                                <button onclick="changeFontSize('large')" class="btn-sm">كبير</button>
+                                <button onclick="changeFontSize('xlarge')" class="btn-sm">كبير جداً</button>
                             </div>
                         </div>
 
-                        <!-- قسم التنبيهات -->
                         <div class="settings-section">
                             <h3 class="section-title-green">🔔 التنبيهات</h3>
-                            
-                            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
-                                <label style="margin:0;">تفعيل التنبيهات الصوتية</label>
-                                <label class="switch">
-                                    <input type="checkbox" id="soundAlerts" checked onchange="toggleSoundAlerts()">
-                                    <span class="slider round"></span>
-                                </label>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee;">
+                                <label>تفعيل التنبيهات الصوتية</label>
+                                <label class="switch"><input type="checkbox" id="soundAlerts" checked><span class="slider round"></span></label>
                             </div>
-
-                            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
-                                <label style="margin:0;">تفعيل التنبيهات المنبثقة</label>
-                                <label class="switch">
-                                    <input type="checkbox" id="popupAlerts" checked onchange="togglePopupAlerts()">
-                                    <span class="slider round"></span>
-                                </label>
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0;">
+                                <label>تفعيل التنبيهات المنبثقة</label>
+                                <label class="switch"><input type="checkbox" id="popupAlerts" checked><span class="slider round"></span></label>
                             </div>
-
-                            <div class="form-group">
-                                <label>اختيار صوت التنبيه</label>
-                                <select id="alertSound" onchange="changeAlertSound()">
+                            <div class="form-group" style="margin-top:10px;">
+                                <label>صوت التنبيه</label>
+                                <select id="alertSound">
                                     <option value="beep">🔔 بيب</option>
                                     <option value="bell">🔔 جرس</option>
                                     <option value="notification">📱 إشعار</option>
@@ -314,57 +286,43 @@
                             </div>
                         </div>
 
-                        <!-- قسم الطباعة والباركود -->
                         <div class="settings-section">
                             <h3 class="section-title-red">🖨️ الطباعة والباركود</h3>
-                            
                             <div class="form-group">
                                 <label>إعدادات الطابعة</label>
-                                <div style="display:flex; gap:10px;">
-                                    <select id="printerSettings" style="flex:1;">
-                                        <option value="thermal">طابعة حرارية (80mm)</option>
-                                        <option value="thermal-58">طابعة حرارية (58mm)</option>
-                                        <option value="a4">طابعة A4</option>
-                                        <option value="label">طابعة لاصقات</option>
-                                    </select>
-                                    <button onclick="savePrinterSettings()" class="btn-main" style="width:auto; padding:10px 20px;">حفظ</button>
-                                </div>
+                                <select id="printerSettings">
+                                    <option value="thermal">طابعة حرارية (80mm)</option>
+                                    <option value="thermal-58">طابعة حرارية (58mm)</option>
+                                    <option value="a4">طابعة A4</option>
+                                </select>
                             </div>
-
                             <div class="form-group">
-                                <label>مكتبة الباركود</label>
-                                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                    <button onclick="setBarcodeLibrary('barcode')" class="btn-sm" style="background:var(--primary); color:white;">📊 باركود عادي</button>
-                                    <button onclick="setBarcodeLibrary('qr')" class="btn-sm">📱 QR Code</button>
+                                <label>نوع الباركود</label>
+                                <div style="display:flex; gap:10px;">
+                                    <button onclick="setBarcodeLibrary('barcode')" class="btn-sm" style="background:var(--primary); color:white;">📊 باركود</button>
+                                    <button onclick="setBarcodeLibrary('qr')" class="btn-sm">📱 QR</button>
                                     <button onclick="setBarcodeLibrary('both')" class="btn-sm">كلاهما</button>
                                 </div>
-                                <span id="barcodeLibraryStatus" style="font-size:12px; color:#777;">المكتبة الحالية: باركود عادي</span>
                             </div>
-
                             <div class="form-group">
                                 <label>حجم الباركود</label>
-                                <input type="range" id="barcodeSize" min="50" max="200" value="100" onchange="updateBarcodeSize()">
+                                <input type="range" id="barcodeSize" min="50" max="200" value="100" onchange="updateBarcodeSizeLabel()">
                                 <span id="barcodeSizeLabel">100%</span>
                             </div>
                         </div>
 
-                        <!-- قسم معلومات التطبيق -->
                         <div class="settings-section">
-                            <h3 class="section-title-blue">ℹ️ معلومات التطبيق</h3>
-                            <div style="background:#f8f9fa; padding:15px; border-radius:8px;">
-                                <p><strong>الإصدار:</strong> V31</p>
-                                <p><strong>المطور:</strong> نظام راشد</p>
-                                <p><strong>حالة السحابة:</strong> <span id="cloudStatus">🟢 متصل</span></p>
-                                <p><strong>عدد المستخدمين:</strong> <span id="userCount">1</span></p>
-                            </div>
-                            <button onclick="resetAppSettings()" class="btn-red" style="width:100%; margin-top:10px;">🔄 إعادة ضبط الإعدادات</button>
+                            <h3 class="section-title-blue">ℹ️ معلومات</h3>
+                            <p><strong>الإصدار:</strong> V31</p>
+                            <p><strong>المطور:</strong> نظام راشد</p>
+                            <button onclick="resetAppSettings()" class="btn-red" style="width:100%;">🔄 إعادة ضبط الإعدادات</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- الشريط السفلي للموبايل -->
+        <!-- الشريط السفلي -->
         <div class="bottom-nav">
             <button onclick="switchPage('dashboard')"><i class="fas fa-home"></i><span>الرئيسية</span></button>
             <button onclick="switchPage('sales')"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
@@ -376,50 +334,34 @@
         </div>
     </div>
 
-    <!-- لوحة تحكم الأدمن (مخفية) -->
+    <!-- لوحة تحكم الأدمن -->
     <div id="adminPanel" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:99999; justify-content:center; align-items:center;">
         <div class="auth-box" style="max-width:450px; background:white; border-radius:16px; padding:25px; max-height:90vh; overflow-y:auto;">
             <h3 style="margin-top:0; color:var(--primary);">🔐 لوحة تحكم الأدمن</h3>
-            
             <div id="adminPinSection">
-                <p style="color:#555; font-size:13px;">أدخل الرقم السري المكون من 4 أرقام</p>
+                <p style="color:#555; font-size:13px;">أدخل الرقم السري</p>
                 <div style="display:flex; gap:8px; justify-content:center; margin:15px 0;">
                     <input type="password" id="adminPinInput" maxlength="4" style="width:120px; padding:10px; text-align:center; font-size:20px; border:2px solid #ddd; border-radius:8px;">
                     <button onclick="unlockAdminPanel()" class="btn-main" style="width:auto; padding:10px 25px;">فتح</button>
                 </div>
-                <p style="font-size:12px; color:#999;">الرقم السري الافتراضي: <strong>1234</strong></p>
+                <p style="font-size:12px; color:#999;">الرقم السري: <strong>1234</strong></p>
             </div>
-
             <div id="adminContent" style="display:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:15px;">
                     <span style="font-weight:bold; color:var(--primary);">⚙️ الإعدادات المتقدمة</span>
                     <button onclick="closeAdminPanel()" style="background:none; border:none; font-size:24px; cursor:pointer; color:#999;">&times;</button>
                 </div>
-
-                <div class="form-group">
-                    <label>اسم الشركة</label>
-                    <input type="text" id="adminShopName" placeholder="اسم الشركة">
-                </div>
-                <div class="form-group">
-                    <label>الفرع</label>
-                    <input type="text" id="adminBranch" placeholder="الفرع">
-                </div>
-                <hr style="margin:15px 0; border-color:#eee;">
-
-                <div class="form-group">
-                    <label>تغيير كلمة مرور الأدمن</label>
-                    <input type="password" id="adminNewPassword" placeholder="كلمة المرور الجديدة">
-                </div>
-                <button onclick="changeAdminPassword()" class="btn-main" style="background:var(--secondary);">تحديث كلمة المرور</button>
-
-                <hr style="margin:15px 0; border-color:#eee;">
-
+                <div class="form-group"><label>اسم الشركة</label><input type="text" id="adminShopName" placeholder="اسم الشركة"></div>
+                <div class="form-group"><label>الفرع</label><input type="text" id="adminBranch" placeholder="الفرع"></div>
+                <hr>
+                <div class="form-group"><label>كلمة مرور الأدمن الجديدة</label><input type="password" id="adminNewPassword" placeholder="كلمة المرور الجديدة"></div>
+                <button onclick="changeAdminPassword()" class="btn-main" style="background:var(--secondary);">تحديث</button>
+                <hr>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button onclick="exportData()" class="btn-green" style="flex:1;">📤 تصدير البيانات</button>
-                    <button onclick="document.getElementById('importFile').click()" class="btn-main" style="flex:1; background:#6C5CE7;">📥 استيراد البيانات</button>
+                    <button onclick="exportData()" class="btn-green" style="flex:1;">📤 تصدير</button>
+                    <button onclick="document.getElementById('importFile').click()" class="btn-main" style="flex:1; background:#6C5CE7;">📥 استيراد</button>
                     <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
                 </div>
-
                 <button onclick="clearAllData()" class="btn-red" style="width:100%; margin-top:10px;">🗑️ مسح كل البيانات</button>
             </div>
         </div>
