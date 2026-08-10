@@ -1,6 +1,6 @@
 // ============================================================
 // نظام راشد V31 - النسخة الكاملة
-// جميع الدوال تعمل بشكل صحيح
+// مع لوحة تحكم متكاملة + رسوم بيانية محسنة
 // ============================================================
 
 // ============================================================
@@ -19,7 +19,7 @@ const firebaseConfig = {
 // ============================================================
 // 2. المتغيرات العامة
 // ============================================================
-let appData = { users: {}, currentUser: null, adminPin: '1234' };
+let appData = { users: {}, currentUser: null, adminPin: '1234', activityLog: [] };
 let chartInstances = {};
 let clickCount = 0;
 let clickTimer = null;
@@ -44,12 +44,16 @@ function initFirebase() {
 }
 
 // ============================================================
-// 4. إدارة البيانات (LocalStorage + Firebase)
+// 4. إدارة البيانات
 // ============================================================
 function loadLocal() {
     try {
         const raw = localStorage.getItem('RashedV31');
-        if (raw) appData = JSON.parse(raw);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            appData = parsed;
+            if (!appData.activityLog) appData.activityLog = [];
+        }
     } catch(e) {}
 }
 
@@ -83,7 +87,32 @@ function syncCloud() {
 }
 
 // ============================================================
-// 5. الدخول والخروج
+// 5. جلب بيانات المستخدم (الدولة، IP، المتصفح)
+// ============================================================
+async function getUserLocation() {
+    try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        return {
+            ip: data.ip || 'غير معروف',
+            country: data.country_name || 'غير معروف',
+            city: data.city || 'غير معروف',
+            region: data.region || 'غير معروف',
+            browser: navigator.userAgent || 'غير معروف'
+        };
+    } catch(e) {
+        return {
+            ip: 'غير معروف',
+            country: 'غير معروف',
+            city: 'غير معروف',
+            region: 'غير معروف',
+            browser: navigator.userAgent || 'غير معروف'
+        };
+    }
+}
+
+// ============================================================
+// 6. الدخول والخروج (محدث)
 // ============================================================
 function toggleAuthMode() {
     document.getElementById('loginForm').style.display = 
@@ -101,10 +130,17 @@ async function handleLogin() {
         const { auth } = initFirebase();
         await auth.signInWithEmailAndPassword(email, pass);
         const user = auth.currentUser;
+        
+        // جلب معلومات الموقع
+        const location = await getUserLocation();
+        
         appData.currentUser = user.uid;
         if (!appData.users[user.uid]) {
             appData.users[user.uid] = {
                 displayName: username,
+                fullName: username,
+                phone: '',
+                address: '',
                 data: {
                     sales: [], purchases: [], products: [], clients: [],
                     treasury: 0, treasuryLog: [], expenses: [],
@@ -115,6 +151,23 @@ async function handleLogin() {
                 }
             };
         }
+        
+        // تسجيل الدخول في السجل
+        appData.users[user.uid].lastLogin = new Date().toISOString();
+        appData.users[user.uid].lastLocation = location;
+        
+        // إضافة إلى سجل النشاط
+        appData.activityLog.push({
+            userId: user.uid,
+            username: username,
+            action: 'دخول',
+            time: new Date().toISOString(),
+            ip: location.ip,
+            country: location.country,
+            city: location.city,
+            browser: location.browser
+        });
+        
         saveLocal();
         enterApp();
         showToast('✅ مرحباً ' + username);
@@ -129,14 +182,24 @@ async function handleRegister() {
     const username = document.getElementById('regUser').value.trim();
     const pass = document.getElementById('regPass').value.trim();
     const confirm = document.getElementById('regPassConfirm').value.trim();
+    const fullName = document.getElementById('regFullName').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const address = document.getElementById('regAddress').value.trim();
     const email = username + '@rashed.com';
+    
     if (!username || username.length < 3) return showToast('⚠️ 3 أحرف على الأقل');
     if (pass.length < 6) return showToast('⚠️ 6 أحرف على الأقل');
     if (pass !== confirm) return showToast('⚠️ غير متطابقة');
+    if (!fullName) return showToast('⚠️ أدخل الاسم الكامل');
+    
     try {
         const { auth, db } = initFirebase();
         const result = await auth.createUserWithEmailAndPassword(email, pass);
         const user = result.user;
+        
+        // جلب معلومات الموقع
+        const location = await getUserLocation();
+        
         await db.ref('users/' + user.uid + '/data').set({
             sales: [], purchases: [], products: [], clients: [],
             treasury: 0, treasuryLog: [], expenses: [],
@@ -145,9 +208,15 @@ async function handleRegister() {
             profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
             settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
         });
+        
         appData.currentUser = user.uid;
         appData.users[user.uid] = {
             displayName: username,
+            fullName: fullName,
+            phone: phone,
+            address: address,
+            lastLogin: new Date().toISOString(),
+            lastLocation: location,
             data: {
                 sales: [], purchases: [], products: [], clients: [],
                 treasury: 0, treasuryLog: [], expenses: [],
@@ -157,6 +226,19 @@ async function handleRegister() {
                 settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep', printer: 'thermal', barcodeLibrary: 'barcode', barcodeSize: 100 }
             }
         };
+        
+        // تسجيل في سجل النشاط
+        appData.activityLog.push({
+            userId: user.uid,
+            username: username,
+            action: 'تسجيل حساب جديد',
+            time: new Date().toISOString(),
+            ip: location.ip,
+            country: location.country,
+            city: location.city,
+            browser: location.browser
+        });
+        
         saveLocal();
         enterApp();
         showToast('✅ تم إنشاء الحساب');
@@ -169,6 +251,17 @@ async function handleRegister() {
 function logout() {
     if (confirm('تسجيل الخروج؟')) {
         const { auth } = initFirebase();
+        const username = appData.users[appData.currentUser]?.displayName || 'مستخدم';
+        
+        // تسجيل الخروج في السجل
+        appData.activityLog.push({
+            userId: appData.currentUser,
+            username: username,
+            action: 'خروج',
+            time: new Date().toISOString()
+        });
+        saveLocal();
+        
         auth.signOut().then(() => {
             appData.currentUser = null;
             saveLocal();
@@ -180,9 +273,12 @@ function logout() {
 function enterApp() {
     document.getElementById('authContainer').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
-    document.getElementById('userDisplay').textContent = appData.users[appData.currentUser]?.displayName || 'مستخدم';
+    const displayName = appData.users[appData.currentUser]?.fullName || 
+                       appData.users[appData.currentUser]?.displayName || 'مستخدم';
+    document.getElementById('userDisplay').textContent = displayName;
     loadSettings();
     updateUI();
+    updateAdminPanel();
     switchPage('dashboard');
 }
 
@@ -195,7 +291,7 @@ function autoLogin() {
 }
 
 // ============================================================
-// 6. التنقل بين الصفحات
+// 7. التنقل بين الصفحات
 // ============================================================
 function switchPage(page) {
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
@@ -206,14 +302,93 @@ function switchPage(page) {
     if (page === 'settings') {
         loadSettings();
         const data = getData();
-        document.getElementById('settingsUser').textContent = appData.users[appData.currentUser]?.displayName || 'مستخدم';
+        document.getElementById('settingsUser').textContent = 
+            appData.users[appData.currentUser]?.fullName || 
+            appData.users[appData.currentUser]?.displayName || 'مستخدم';
         document.getElementById('settingsProducts').textContent = data.products.length;
         document.getElementById('settingsClients').textContent = data.clients.length;
     }
+    if (page === 'admin') updateAdminPanel();
 }
 
 // ============================================================
-// 7. تحديث القوائم والعرض
+// 8. لوحة التحكم (Admin Panel)
+// ============================================================
+function updateAdminPanel() {
+    const users = Object.keys(appData.users);
+    document.getElementById('adminTotalUsers').textContent = users.length;
+    
+    // حساب المتصلين الآن (آخر 5 دقائق)
+    const now = new Date();
+    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+    let onlineCount = 0;
+    users.forEach(uid => {
+        const user = appData.users[uid];
+        if (user.lastLogin) {
+            const lastLogin = new Date(user.lastLogin);
+            if (lastLogin > fiveMinutesAgo) onlineCount++;
+        }
+    });
+    document.getElementById('adminOnlineUsers').textContent = onlineCount;
+    
+    // زيارات اليوم
+    const today = new Date().toISOString().slice(0, 10);
+    const todayVisits = appData.activityLog.filter(log => 
+        log.action === 'دخول' && log.time && log.time.slice(0, 10) === today
+    );
+    document.getElementById('adminTodayVisits').textContent = todayVisits.length;
+    
+    // جدول المستخدمين
+    let tableHtml = '';
+    let counter = 0;
+    users.forEach(uid => {
+        const user = appData.users[uid];
+        counter++;
+        const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'لم يسجل بعد';
+        const country = user.lastLocation?.country || 'غير معروف';
+        const ip = user.lastLocation?.ip || 'غير معروف';
+        const isOnline = user.lastLogin && new Date(user.lastLogin) > new Date(Date.now() - 5 * 60 * 1000);
+        
+        tableHtml += `
+            <tr style="border-bottom:1px solid #eee;">
+                <td style="padding:8px;">${counter}</td>
+                <td style="padding:8px;"><strong>${user.displayName || 'غير معروف'}</strong></td>
+                <td style="padding:8px;">${user.fullName || ''}</td>
+                <td style="padding:8px;">${user.phone || ''}</td>
+                <td style="padding:8px;font-size:12px;">${lastLogin}</td>
+                <td style="padding:8px;">${country}</td>
+                <td style="padding:8px;font-size:11px;color:#999;">${ip}</td>
+                <td style="padding:8px;">
+                    <span style="background:${isOnline ? '#00B894' : '#999'};color:white;padding:2px 10px;border-radius:12px;font-size:11px;">
+                        ${isOnline ? '🟢 متصل' : '🔴 غير متصل'}
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+    document.getElementById('adminUsersTable').innerHTML = tableHtml || 
+        '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999;">لا يوجد مستخدمين</td></tr>';
+    
+    // سجل النشاط
+    let logHtml = appData.activityLog.slice().reverse().slice(0, 50).map(log => {
+        const time = log.time ? new Date(log.time).toLocaleString() : '';
+        const icon = log.action === 'دخول' ? '🟢' : log.action === 'خروج' ? '🔴' : '📝';
+        return `
+            <div class="list-item">
+                <span>${icon} ${log.username} - ${log.action}</span>
+                <span style="font-size:11px;color:#999;">
+                    ${time} ${log.country ? '| ' + log.country : ''}
+                    ${log.ip && log.ip !== 'غير معروف' ? '| IP: ' + log.ip : ''}
+                </span>
+            </div>
+        `;
+    }).join('');
+    document.getElementById('adminActivityLog').innerHTML = logHtml || 
+        '<div style="text-align:center;color:#999;padding:10px;">لا يوجد سجل نشاط</div>';
+}
+
+// ============================================================
+// 9. تحديث القوائم والعرض
 // ============================================================
 function updateSelects() {
     const data = getData();
@@ -239,20 +414,16 @@ function updateUI() {
     const data = getData();
     updateSelects();
 
-    // جهات الاتصال
     document.getElementById('clientList').innerHTML = data.clients.map(c => `
         <div class="list-item"><div><strong>${c.name}</strong><br><small>📞 ${c.phone || ''}</small></div><div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.type}</span></div></div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد جهات اتصال</div>';
 
-    // المنتجات
     document.getElementById('productList').innerHTML = data.products.map(p => `
         <div class="list-item"><div><strong>${p.name}</strong><br><small>${p.desc || ''}</small></div><div><span style="font-weight:bold;">${p.sell} ج.م (${p.qty})</span></div></div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد منتجات</div>';
 
-    // الخزنة
     document.getElementById('treasuryDisplay').textContent = data.treasury;
 
-    // سجل الخزنة
     let logHtml = data.treasuryLog.slice().reverse().map(t => `
         <div class="list-item"><span>${t.desc}</span><span style="font-weight:bold;color:${t.amount > 0 ? '#00B894' : '#E17055'};">${t.amount} ج.م</span></div>
     `).join('');
@@ -267,22 +438,20 @@ function updateUI() {
     `).join('');
     document.getElementById('treasuryLog').innerHTML = logHtml || '<div style="text-align:center;color:#999;padding:10px;">لا توجد حركات</div>';
 
-    // المبيعات
     document.getElementById('saleList').innerHTML = data.sales.slice().reverse().map(s => `
         <div class="list-item"><span>${s.client} - ${s.product}</span><div><span style="font-weight:bold;">${s.total} ج.م</span></div></div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد مبيعات</div>';
 
-    // المشتريات
     document.getElementById('purchaseList').innerHTML = data.purchases.slice().reverse().map(p => `
         <div class="list-item"><span>${p.supplier} - ${p.product}</span><div><span style="font-weight:bold;">${p.total} ج.م</span></div></div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد مشتريات</div>';
 }
 
 // ============================================================
-// 8. العمليات الأساسية (كلها تعمل)
+// 10. العمليات الأساسية (كلها تعمل)
 // ============================================================
 
-// ----- 8.1 جهات الاتصال -----
+// ----- 10.1 جهات الاتصال -----
 function addContact() {
     const data = getData();
     const name = document.getElementById('contactName').value.trim();
@@ -299,7 +468,7 @@ function addContact() {
     showToast('✅ تم إضافة جهة الاتصال');
 }
 
-// ----- 8.2 المنتجات (المخزون) -----
+// ----- 10.2 المنتجات -----
 function addProduct() {
     const data = getData();
     const name = document.getElementById('prodName').value.trim();
@@ -320,7 +489,7 @@ function addProduct() {
     showToast('✅ تم إضافة المنتج - الباركود: ' + barcode);
 }
 
-// ----- 8.3 البحث بالباركود -----
+// ----- 10.3 البحث بالباركود -----
 function searchByBarcode() {
     const input = document.getElementById('manualBarcode').value.trim();
     if (!input) return showToast('⚠️ أدخل الباركود أو الاسم');
@@ -335,7 +504,7 @@ function searchByBarcode() {
     }
 }
 
-// ----- 8.4 المبيعات -----
+// ----- 10.4 المبيعات -----
 function addSale() {
     const data = getData();
     const client = document.getElementById('saleClient').value.trim();
@@ -361,7 +530,7 @@ function addSale() {
     showToast('✅ بيع بقيمة ' + total + ' ج.م - ' + invNum);
 }
 
-// ----- 8.5 المشتريات -----
+// ----- 10.5 المشتريات -----
 function addPurchase() {
     const data = getData();
     const supplier = document.getElementById('purchaseSupplier').value.trim();
@@ -388,7 +557,7 @@ function addPurchase() {
     showToast('✅ شراء بقيمة ' + total + ' ج.م - ' + purNum);
 }
 
-// ----- 8.6 مرتجعات المبيعات -----
+// ----- 10.6 مرتجعات المبيعات -----
 function switchSalesMode(mode) {
     document.getElementById('saleAddFields').style.display = mode === 'add' ? 'block' : 'none';
     document.getElementById('saleReturnFields').style.display = mode === 'return' ? 'block' : 'none';
@@ -418,7 +587,7 @@ function addSaleReturn() {
     showToast('✅ مرتجع بقيمة ' + total + ' ج.م');
 }
 
-// ----- 8.7 مرتجعات المشتريات -----
+// ----- 10.7 مرتجعات المشتريات -----
 function switchPurchaseMode(mode) {
     document.getElementById('purchaseAddFields').style.display = mode === 'add' ? 'block' : 'none';
     document.getElementById('purchaseReturnFields').style.display = mode === 'return' ? 'block' : 'none';
@@ -448,7 +617,7 @@ function addPurchaseReturn() {
     showToast('✅ مرتجع شراء بقيمة ' + total + ' ج.م');
 }
 
-// ----- 8.8 الخزنة -----
+// ----- 10.8 الخزنة -----
 function collectDebt() {
     const data = getData();
     const client = document.getElementById('collectClient').value.trim();
@@ -522,7 +691,7 @@ function addExpense() {
 }
 
 // ============================================================
-// 9. التقارير
+// 11. التقارير (محسنة)
 // ============================================================
 function drawCharts() {
     const data = getData();
@@ -530,17 +699,81 @@ function drawCharts() {
     const expensesTotal = data.expenses.reduce((s, i) => s + i.amount, 0);
     const treasury = data.treasury;
     const collectionsTotal = data.collections.reduce((s, i) => s + i.amount, 0);
+    const purchasesTotal = data.purchases.reduce((s, i) => s + i.total, 0);
+    
+    // رسم بياني 1 - المبيعات والمصروفات والتحصيل
     if (chartInstances.sales) chartInstances.sales.destroy();
     chartInstances.sales = new Chart(document.getElementById('salesChart'), {
         type: 'bar',
-        data: { labels: ['مبيعات', 'مصروفات', 'تحصيل'], datasets: [{ label: 'الحركة المالية', data: [salesTotal, expensesTotal, collectionsTotal], backgroundColor: ['#00B894', '#E17055', '#FDCB6E'] }] },
-        options: { plugins: { legend: { display: false } } }
+        data: {
+            labels: ['المبيعات', 'المشتريات', 'المصروفات', 'التحصيل'],
+            datasets: [{
+                label: 'الحركة المالية (ج.م)',
+                data: [salesTotal, purchasesTotal, expensesTotal, collectionsTotal],
+                backgroundColor: ['#2E4057', '#E17055', '#FDCB6E', '#00B894'],
+                borderColor: ['#1a2a3a', '#c0392b', '#f39c12', '#00a87a'],
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y + ' ج.م';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: function(value) { return value + ' ج.م'; } }
+                }
+            }
+        }
     });
+    
+    // رسم بياني 2 - توزيع الخزنة (دائري)
     if (chartInstances.treasury) chartInstances.treasury.destroy();
     chartInstances.treasury = new Chart(document.getElementById('treasuryChart'), {
         type: 'doughnut',
-        data: { labels: ['الخزنة', 'مصروفات'], datasets: [{ label: 'توزيع الرصيد', data: [treasury, expensesTotal], backgroundColor: ['#2E4057', '#E17055'] }] },
-        options: { plugins: { legend: { display: true, position: 'bottom' } } }
+        data: {
+            labels: ['الخزنة', 'المصروفات', 'المشتريات'],
+            datasets: [{
+                data: [treasury, expensesTotal, purchasesTotal],
+                backgroundColor: ['#2E4057', '#E17055', '#FDCB6E'],
+                borderWidth: 3,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    position: 'bottom',
+                    labels: { 
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            return context.label + ': ' + context.parsed + ' ج.م (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
     });
 }
 
@@ -614,7 +847,6 @@ function printAllInvoices() {
     const data = getData();
     if (data.sales.length === 0) return showToast('⚠️ لا توجد فواتير');
     showToast('🖨️ جاري الطباعة...');
-    // محاكاة طباعة
     let printContent = '<div style="direction:rtl;padding:20px;font-family:Arial;">';
     printContent += '<h2 style="text-align:center;">جميع الفواتير</h2>';
     data.sales.forEach(s => {
@@ -637,18 +869,35 @@ function showAIReport() {
     const totalPurchases = data.purchases.reduce((s, i) => s + i.total, 0);
     const totalExpenses = data.expenses.reduce((s, i) => s + i.amount, 0);
     const profit = totalSales - totalPurchases - totalExpenses;
+    const totalProducts = data.products.length;
+    const totalClients = data.clients.length;
+    
     let report = '🤖 تحليل الذكاء الاصطناعي\n\n';
     report += '📊 إجمالي المبيعات: ' + totalSales + ' ج.م\n';
     report += '📉 إجمالي المشتريات: ' + totalPurchases + ' ج.م\n';
     report += '💸 إجمالي المصروفات: ' + totalExpenses + ' ج.م\n';
     report += '💰 صافي الربح: ' + profit + ' ج.م\n\n';
-    if (profit > 0) report += '✅ عملك يحقق أرباحاً.\n';
-    else report += '⚠️ عملك يحقق خسائر. راجع المصروفات.\n';
+    report += '📦 عدد المنتجات: ' + totalProducts + '\n';
+    report += '👤 عدد العملاء: ' + totalClients + '\n\n';
+    
+    if (profit > 0) {
+        report += '✅ عملك يحقق أرباحاً. استمر في تطوير مبيعاتك.\n';
+        if (totalExpenses > (totalSales * 0.3)) {
+            report += '⚠️ نصيحة: مصروفاتك تمثل ' + ((totalExpenses/totalSales)*100).toFixed(1) + '% من مبيعاتك. حاول تقليل المصروفات.\n';
+        }
+    } else {
+        report += '⚠️ عملك يحقق خسائر. راجع المصروفات واستراتيجية التسعير.\n';
+    }
+    
+    if (totalProducts === 0) {
+        report += '📦 تنبيه: لم تضف أي منتجات بعد. ابدأ بإضافة منتجات.\n';
+    }
+    
     alert(report);
 }
 
 // ============================================================
-// 10. الإعدادات
+// 12. الإعدادات
 // ============================================================
 function getSettings() {
     const data = getData();
@@ -721,114 +970,7 @@ function updateBarcodeSizeLabel() {
 }
 
 // ============================================================
-// 11. لوحة الأدمن
-// ============================================================
-document.addEventListener('DOMContentLoaded', function() {
-    const logo = document.getElementById('brandLogo');
-    if (logo) {
-        logo.addEventListener('click', function() {
-            clickCount++;
-            clearTimeout(clickTimer);
-            clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
-            if (clickCount >= 5) {
-                clickCount = 0;
-                document.getElementById('adminPanel').style.display = 'flex';
-                document.getElementById('adminPinSection').style.display = 'block';
-                document.getElementById('adminContent').style.display = 'none';
-                document.getElementById('adminPinInput').value = '';
-                const data = getData();
-                if (data.profile) {
-                    document.getElementById('adminShopName').value = data.profile.shopName || '';
-                    document.getElementById('adminBranch').value = data.profile.branch || '';
-                }
-                showToast('🔐 أدخل الرقم السري');
-            }
-        });
-    }
-    document.getElementById('adminPinInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') unlockAdminPanel();
-    });
-});
-
-function unlockAdminPanel() {
-    const pin = document.getElementById('adminPinInput').value;
-    if (pin === appData.adminPin) {
-        document.getElementById('adminPinSection').style.display = 'none';
-        document.getElementById('adminContent').style.display = 'block';
-        showToast('✅ تم فتح اللوحة');
-    } else {
-        showToast('❌ الرقم السري خطأ');
-        document.getElementById('adminPinInput').value = '';
-    }
-}
-
-function closeAdminPanel() {
-    document.getElementById('adminPanel').style.display = 'none';
-}
-
-function changeAdminPassword() {
-    const newPass = document.getElementById('adminNewPassword').value.trim();
-    if (!newPass || newPass.length < 4) return showToast('⚠️ 4 أحرف على الأقل');
-    appData.adminPin = newPass;
-    saveLocal();
-    document.getElementById('adminNewPassword').value = '';
-    showToast('✅ تم تغيير الرقم السري');
-}
-
-function exportData() {
-    const data = getData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'backup_' + new Date().toISOString().slice(0,10) + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('📤 تم التصدير');
-}
-
-function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            const userData = getData();
-            Object.assign(userData, data);
-            saveLocal();
-            updateUI();
-            showToast('✅ تم الاستيراد');
-        } catch(err) {
-            showToast('❌ ملف غير صالح');
-        }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-}
-
-function clearAllData() {
-    if (!confirm('⚠️ مسح كل البيانات؟')) return;
-    const data = getData();
-    data.sales = [];
-    data.purchases = [];
-    data.products = [];
-    data.clients = [];
-    data.treasury = 0;
-    data.treasuryLog = [];
-    data.expenses = [];
-    data.collections = [];
-    data.supplierPayments = [];
-    data.saleCounter = 0;
-    data.purchaseCounter = 0;
-    saveLocal();
-    updateUI();
-    showToast('🗑️ تم المسح');
-    closeAdminPanel();
-}
-
-// ============================================================
-// 12. الإشعارات
+// 13. الإشعارات
 // ============================================================
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -839,13 +981,14 @@ function showToast(msg) {
 }
 
 // ============================================================
-// 13. بدء التشغيل
+// 14. بدء التشغيل
 // ============================================================
 initFirebase();
 loadLocal();
 if (!appData.users || Object.keys(appData.users).length === 0) appData.users = {};
+if (!appData.activityLog) appData.activityLog = [];
 if (!autoLogin()) {
     document.getElementById('authContainer').style.display = 'flex';
     document.getElementById('appContainer').style.display = 'none';
 }
-console.log('✅ نظام راشد V31 - جميع الدوال تعمل');
+console.log('✅ نظام راشد V31 - النسخة الكاملة مع لوحة التحكم');
