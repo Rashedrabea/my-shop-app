@@ -182,13 +182,36 @@ body.theme-purple { --primary: #2c1a4d; --bg-color: #3d266b; --card-bg: #2c1a4d;
 body.theme-purple .modal-box { background: #2c1a4d; }
 body.theme-purple .top-bar { border-color: #a29bfe; }
 
-/* ===== الإعدادات ===== */
+/* ===== الإعدادات - معلومات التطبيق ===== */
 .settings-section {
-    background: var(--card-bg);
+    background: var(--card-bg, #ffffff);
     border: 1px solid #eee;
-    border-radius: var(--radius);
+    border-radius: 12px;
     padding: 15px;
     margin-bottom: 15px;
+}
+
+.settings-section .form-group {
+    margin-bottom: 10px;
+}
+
+.settings-section select,
+.settings-section input[type="text"],
+.settings-section input[type="number"],
+.settings-section input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    background: white;
+    color: #333;
+}
+
+.settings-section select:focus,
+.settings-section input:focus {
+    border-color: #2E4057;
 }
 
 .btn-theme {
@@ -209,6 +232,7 @@ body.theme-purple .top-bar { border-color: #a29bfe; }
     cursor: pointer;
     font-size: 13px;
     transition: 0.2s;
+    color: #333;
 }
 .btn-sm:hover { background: #f0f0f0; }
 
@@ -242,27 +266,74 @@ body.theme-purple .top-bar { border-color: #a29bfe; }
     transition: .4s;
     border-radius: 50%;
 }
-input:checked + .slider { background: var(--secondary); }
+input:checked + .slider { background: #00B894; }
 input:checked + .slider:before { transform: translateX(22px); }
 
 /* ===== السمات ===== */
-body.theme-dark { --bg-color: #1a1a2e; --card-bg: #16213e; --text-color: #eee; --border: #333; }
+body.theme-dark {
+    --bg-color: #1a1a2e;
+    --card-bg: #16213e;
+    --text-color: #eee;
+}
 body.theme-dark .modal-box { background: #16213e; border-color: #333; }
-body.theme-dark .list-item { border-color: #333; }
-body.theme-dark .form-group input, body.theme-dark .form-group select { background: #1a1a2e; color: white; border-color: #444; }
+body.theme-dark .list-item { border-color: #333; color: #eee; }
+body.theme-dark .form-group input,
+body.theme-dark .form-group select { background: #1a1a2e; color: white; border-color: #444; }
 body.theme-dark .top-bar { border-color: #00B894; }
 body.theme-dark .chart-wrapper { background: #16213e; border-color: #333; }
 body.theme-dark .treasury-section { background: #16213e; border-color: #333; }
 body.theme-dark .settings-section { background: #16213e; border-color: #333; }
+body.theme-dark .settings-section select,
+body.theme-dark .settings-section input { background: #1a1a2e; color: white; border-color: #444; }
+body.theme-dark .settings-section div[style*="background:#f0f2f5"] { background: #1a1a2e !important; color: #eee !important; }
 
-body.theme-blue { --primary: #0c2461; --bg-color: #1a2a6c; --card-bg: #16255e; --text-color: #eee; }
+body.theme-blue {
+    --primary: #0c2461;
+    --bg-color: #1a2a6c;
+    --card-bg: #16255e;
+    --text-color: #eee;
+}
 body.theme-blue .modal-box { background: #16255e; }
 body.theme-blue .top-bar { border-color: #6C5CE7; }
+body.theme-blue .settings-section { background: #16255e; border-color: #333; }
+body.theme-blue .settings-section div[style*="background:#f0f2f5"] { background: #1a2a6c !important; color: #eee !important; }
 
-body.theme-green { --primary: #0a3d2e; --secondary: #00b894; --bg-color: #0d4a3a; --card-bg: #0a3528; --text-color: #eee; }
+body.theme-green {
+    --primary: #0a3d2e;
+    --bg-color: #0d4a3a;
+    --card-bg: #0a3528;
+    --text-color: #eee;
+}
 body.theme-green .modal-box { background: #0a3528; }
 body.theme-green .top-bar { border-color: #00b894; }
+body.theme-green .settings-section { background: #0a3528; border-color: #333; }
+body.theme-green .settings-section div[style*="background:#f0f2f5"] { background: #0d4a3a !important; color: #eee !important; }
 
-body.theme-purple { --primary: #2c1a4d; --bg-color: #3d266b; --card-bg: #2c1a4d; --text-color: #eee; }
+body.theme-purple {
+    --primary: #2c1a4d;
+    --bg-color: #3d266b;
+    --card-bg: #2c1a4d;
+    --text-color: #eee;
+}
 body.theme-purple .modal-box { background: #2c1a4d; }
 body.theme-purple .top-bar { border-color: #a29bfe; }
+body.theme-purple .settings-section { background: #2c1a4d; border-color: #333; }
+body.theme-purple .settings-section div[style*="background:#f0f2f5"] { background: #3d266b !important; color: #eee !important; }
+
+/* ===== معلومات التطبيق - إصلاح البياض ===== */
+.settings-section div[style*="background:#f0f2f5"] {
+    background: #f0f2f5 !important;
+    padding: 15px;
+    border-radius: 8px;
+    color: #333 !important;
+}
+.settings-section div[style*="background:#f0f2f5"] p {
+    color: #333 !important;
+    margin: 5px 0;
+}
+.settings-section div[style*="background:#f0f2f5"] strong {
+    color: #2E4057 !important;
+}
+.settings-section div[style*="background:#f0f2f5"] span {
+    color: #333 !important;
+}
