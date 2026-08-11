@@ -1,5 +1,5 @@
 // ================================================================
-// 🔥 Firebase Config - الصيغة الصحيحة (compat mode)
+// 🔥 Firebase Config
 // ================================================================
 const firebaseConfig = {
     apiKey: "AIzaSyDZlzKX7urPYIiLI8dKjUmmMarS17sKseo",
@@ -20,7 +20,6 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const storage = firebase.storage();
 
-// تمكين الإتصال بدون إنترنت
 db.enablePersistence()
     .then(() => console.log('✅ Firebase persistence enabled'))
     .catch(err => console.log('⚠️ Persistence error:', err));
@@ -61,6 +60,34 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.add('dark-mode');
         document.getElementById('darkIcon').className = 'fas fa-sun';
     }
+
+    // ===== قائمة الموبايل =====
+    document.querySelector('.menu-toggle').addEventListener('click', function(e) {
+        e.stopPropagation();
+        document.querySelector('.sidebar').classList.toggle('open');
+    });
+
+    document.querySelectorAll('nav a').forEach(link => {
+        link.addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.remove('open');
+        });
+    });
+
+    document.addEventListener('click', function(e) {
+        const sidebar = document.querySelector('.sidebar');
+        const menuToggle = document.querySelector('.menu-toggle');
+        if (sidebar && sidebar.classList.contains('open') && 
+            !sidebar.contains(e.target) && 
+            menuToggle && !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            document.querySelector('.sidebar').classList.remove('open');
+        }
+    });
 });
 
 // ================================================================
@@ -116,12 +143,12 @@ async function loadAllData() {
         const companyDoc = await db.collection('company').doc('info').get();
         if (companyDoc.exists) {
             const data = companyDoc.data();
-            document.getElementById('companyName').value = data.name || '';
-            document.getElementById('companyReg').value = data.reg || '';
-            document.getElementById('companyTax').value = data.tax || '';
-            document.getElementById('companyAddress').value = data.address || '';
-            document.getElementById('companyPhone').value = data.phone || '';
-            document.getElementById('companyEmail').value = data.email || '';
+            document.getElementById('companyName').value = data.name || 'شركة راشد للتجارة و التوزيع';
+            document.getElementById('companyReg').value = data.reg || 'السجل التجاري';
+            document.getElementById('companyTax').value = data.tax || 'الرقم التجاري';
+            document.getElementById('companyAddress').value = data.address || 'العنوان';
+            document.getElementById('companyPhone').value = data.phone || '01158767633';
+            document.getElementById('companyEmail').value = data.email || 'rashedrbae20081217@gmail.com';
             document.getElementById('companyCurrency').value = data.currency || 'EGP';
             document.getElementById('companyTaxRate').value = data.taxRate || 14;
             if (data.logo) {
@@ -860,10 +887,17 @@ function generateReport(type) {
     document.getElementById('reportTitle').innerHTML = `<i class="fas fa-file-alt"></i> ${names[type] || 'تقرير'}`;
     document.getElementById('reportDate').textContent = new Date().toLocaleDateString('ar-EG');
 
-    const companyName = document.getElementById('companyName').value || 'شركة النيل للتجارة';
-    const companyInfo = `${document.getElementById('companyAddress').value || 'القاهرة'} | ت: ${document.getElementById('companyPhone').value || '+20 100 123 4567'}`;
+    // ===== جلب بيانات الشركة =====
+    const companyName = document.getElementById('companyName').value || 'شركة راشد للتجارة و التوزيع';
+    const companyPhone = document.getElementById('companyPhone').value || '01158767633';
+    const companyEmail = document.getElementById('companyEmail').value || 'rashedrbae20081217@gmail.com';
+    const companyAddress = document.getElementById('companyAddress').value || 'العنوان';
+    const companyTax = document.getElementById('companyTax').value || 'الرقم التجاري';
+
     document.getElementById('reportCompanyName').textContent = companyName;
-    document.getElementById('reportCompanyInfo').textContent = companyInfo;
+    document.getElementById('reportCompanyInfo').innerHTML = `
+        ${companyAddress} | ت: ${companyPhone} | ${companyEmail} | الرقم الضريبي: ${companyTax}
+    `;
 
     const summary = document.getElementById('reportSummary');
     const thead = document.getElementById('reportThead');
@@ -1099,10 +1133,6 @@ document.querySelectorAll('nav a').forEach(link => {
             setTimeout(() => { drawChart(); updateTopItems(); }, 100);
         }
     });
-});
-
-document.querySelector('.menu-toggle').addEventListener('click', function() {
-    document.querySelector('.sidebar').classList.toggle('open');
 });
 
 // ================================================================
