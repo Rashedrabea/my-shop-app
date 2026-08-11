@@ -124,6 +124,7 @@ body { background: #F4F6F9; margin: 0; padding: 0; min-height: 100vh; }
     margin-bottom: 20px;
 }
 .brand { font-size: 22px; font-weight: bold; color: var(--primary); cursor: pointer; }
+.brand:hover { opacity: 0.7; }
 .version { font-size: 14px; color: #777; font-weight: normal; }
 .user-info { font-size: 14px; font-weight: bold; }
 
@@ -148,6 +149,7 @@ body { background: #F4F6F9; margin: 0; padding: 0; min-height: 100vh; }
 .dash-card i { font-size: 30px; display: block; margin-bottom: 8px; }
 .dash-card span { font-size: 14px; font-weight: bold; }
 
+/* ===== الرسوم البيانية ===== */
 .charts-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -163,6 +165,7 @@ body { background: #F4F6F9; margin: 0; padding: 0; min-height: 100vh; }
 .chart-wrapper h4 { margin: 0 0 10px 0; font-size: 14px; color: #333; }
 .chart-wrapper canvas { height: 160px !important; width: 100% !important; }
 
+/* ===== الأزرار ===== */
 .btn-main {
     width: 100%;
     padding: 12px;
@@ -206,4 +209,5 @@ body { background: #F4F6F9; margin: 0; padding: 0; min-height: 100vh; }
     .bottom-nav { display: flex; }
     .main-content { padding: 15px 15px 80px 15px; }
     .charts-container { grid-template-columns: 1fr; }
+    .dashboard-grid { grid-template-columns: 1fr 1fr; }
 }
