@@ -200,3 +200,87 @@ body.theme-purple .settings-section { background: #2c1a4d; border-color: #333; }
     .print-area, .print-area * { visibility: visible; }
     .print-area { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; }
 }
+/* ===== إضافات جديدة ===== */
+
+/* تنسيق وسائل الدفع */
+#salePaymentMethod, #purchasePaymentMethod {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 2px solid #00B894;
+}
+
+#purchasePaymentMethod {
+    border-color: #E17055;
+}
+
+/* تنسيق بيانات الشركة */
+#companyDataDisplay {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 10px;
+    border: 2px solid #2E4057;
+}
+
+#companyDataDisplay p {
+    margin: 5px 0;
+    color: #333;
+}
+
+#companyDataDisplay strong {
+    color: #2E4057;
+}
+
+/* تنسيق بطاقات الخزنة */
+#cashTreasuryDisplay { color: #00B894; }
+#walletTreasuryDisplay { color: #6C5CE7; }
+#bankTreasuryDisplay { color: #0984e3; }
+
+/* تنسيق الأزرار في الوضع الداكن */
+body.theme-dark #companyDataDisplay {
+    background: #1a1a2e;
+    border-color: #444;
+}
+
+body.theme-dark #companyDataDisplay p {
+    color: #eee;
+}
+
+body.theme-dark #salePaymentMethod,
+body.theme-dark #purchasePaymentMethod {
+    background: #1a1a2e;
+    border-color: #444;
+}
+
+/* تنسيق الحقول الإضافية */
+input[type="email"] {
+    direction: ltr;
+    text-align: right;
+}
+
+/* تنسيق شاشة وسائل الدفع */
+#page-paymentMethods .form-group input {
+    direction: ltr;
+    text-align: right;
+}
+
+/* تحسين عرض الجدول في الموبايل */
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr 1fr !important;
+    }
+    .dash-card {
+        padding: 15px !important;
+    }
+    .dash-card i {
+        font-size: 20px !important;
+    }
+    .dash-card span {
+        font-size: 11px !important;
+    }
+    #salePaymentMethod, #purchasePaymentMethod {
+        grid-template-columns: 1fr !important;
+    }
+}
+
