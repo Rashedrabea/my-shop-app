@@ -128,6 +128,12 @@ body { background: #F4F6F9; margin: 0; padding: 0; min-height: 100vh; }
 .user-info { font-size: 14px; font-weight: bold; }
 
 /* ===== البطاقات ===== */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
 .dash-card {
     background: white;
     border-radius: var(--radius);
@@ -141,6 +147,21 @@ body { background: #F4F6F9; margin: 0; padding: 0; min-height: 100vh; }
 .dash-card:hover { transform: translateY(-5px); }
 .dash-card i { font-size: 30px; display: block; margin-bottom: 8px; }
 .dash-card span { font-size: 14px; font-weight: bold; }
+
+.charts-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.chart-wrapper {
+    background: white;
+    padding: 15px;
+    border-radius: var(--radius);
+    border: 1px solid #eee;
+    height: 220px;
+}
+.chart-wrapper h4 { margin: 0 0 10px 0; font-size: 14px; color: #333; }
+.chart-wrapper canvas { height: 160px !important; width: 100% !important; }
 
 .btn-main {
     width: 100%;
@@ -184,4 +205,5 @@ body { background: #F4F6F9; margin: 0; padding: 0; min-height: 100vh; }
     .sidebar { display: none; }
     .bottom-nav { display: flex; }
     .main-content { padding: 15px 15px 80px 15px; }
+    .charts-container { grid-template-columns: 1fr; }
 }
