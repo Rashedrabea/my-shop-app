@@ -23,7 +23,6 @@
             <p style="font-size:12px;color:#888;">نظام إدارة المؤسسات المتكامل</p>
         </div>
         
-        <!-- نموذج الدخول -->
         <div id="loginForm">
             <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
             <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
@@ -32,7 +31,6 @@
             <span id="forgotLink" style="display:block;margin-top:8px;font-size:12px;color:#00B894;cursor:pointer;">نسيت كلمة المرور؟</span>
         </div>
         
-        <!-- نموذج التسجيل -->
         <div id="registerForm" style="display:none;">
             <input type="text" id="regUser" placeholder="اسم المستخدم">
             <input type="text" id="regFullName" placeholder="الاسم الكامل">
@@ -41,12 +39,11 @@
             <input type="password" id="regPass" placeholder="كلمة المرور">
             <input type="password" id="regPassConfirm" placeholder="تأكيد كلمة المرور">
             <button class="btn-auth btn-green" id="registerBtn">✅ إنشاء حساب</button>
-            <button class="btn-auth btn-back" id="backToLoginBtn">🔙 عودة للدخول</button>
+            <button class="btn-auth btn-back" id="backToLoginBtn">🔙 عودة</button>
         </div>
         
-        <!-- نموذج استعادة كلمة المرور -->
         <div id="forgotForm" style="display:none;">
-            <p style="font-size:13px;color:#666;">أدخل اسم المستخدم لإعادة تعيين كلمة المرور</p>
+            <p style="font-size:13px;color:#666;">أدخل اسم المستخدم</p>
             <input type="text" id="resetUser" placeholder="اسم المستخدم">
             <button class="btn-auth" id="resetBtn">📧 إرسال</button>
             <button class="btn-auth btn-back" id="backFromForgotBtn">🔙 عودة</button>
@@ -101,64 +98,329 @@
             
             <!-- ===== المبيعات ===== -->
             <div id="page-sales" class="page">
-                <div style="background:white;border-radius:12px;padding:20px;">
-                    <h2>🛒 المبيعات</h2>
-                    <p style="color:#999;">جاري تطوير صفحة المبيعات...</p>
-                    <button class="btn-main" data-page="dashboard">🔙 عودة</button>
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>🛒 المبيعات</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:15px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;color:#666;">رقم الفاتورة</label>
+                            <input type="text" id="saleInvoiceNumber" style="font-weight:bold;background:#e9ecef;border:2px solid #2E4057;" readonly>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;color:#666;">التاريخ</label>
+                            <input type="text" id="saleInvoiceDate" style="font-weight:bold;" readonly>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;color:#666;">العميل</label>
+                            <input type="text" id="saleClient" placeholder="اسم العميل" style="border:2px solid #2E4057;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;color:#666;">نوع الدفع</label>
+                            <select id="saleType" style="border:2px solid #2E4057;">
+                                <option value="cash">كاش</option>
+                                <option value="credit">آجل</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;background:#e9ecef;padding:10px;border-radius:10px;margin-bottom:10px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:11px;color:#666;">المنتج</label>
+                            <input type="text" id="saleProductSearch" placeholder="🔍 اكتب اسم المنتج" style="border:2px solid #2E4057;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:11px;color:#666;">الكمية</label>
+                            <input type="number" id="saleQty" value="1" style="border:2px solid #2E4057;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:11px;color:#666;">السعر</label>
+                            <input type="number" id="salePrice" style="border:2px solid #2E4057;">
+                        </div>
+                        <button id="addSaleBtn" style="background:#00B894;color:white;border:none;border-radius:8px;padding:10px 15px;cursor:pointer;font-weight:bold;height:42px;">➕</button>
+                    </div>
+                    
+                    <div style="background:#fff;border:2px solid #2E4057;border-radius:10px;overflow:hidden;margin-bottom:10px;">
+                        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;background:#2E4057;color:white;padding:8px 10px;font-size:12px;font-weight:bold;">
+                            <span>المنتج</span><span style="text-align:center;">الكمية</span><span style="text-align:center;">السعر</span><span style="text-align:center;">الإجمالي</span><span style="text-align:center;">حذف</span>
+                        </div>
+                        <div id="saleItemsList" style="max-height:200px;overflow-y:auto;">
+                            <div style="text-align:center;padding:30px;color:#999;font-size:13px;">أضف منتجات</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;background:#2E4057;color:white;padding:15px;border-radius:10px;margin-bottom:15px;">
+                        <div style="text-align:center;">
+                            <div style="font-size:12px;color:#aaa;">الإجمالي</div>
+                            <div style="font-size:22px;font-weight:bold;" id="saleTotalDisplay">0 ج.م</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:12px;color:#aaa;">المدفوع</div>
+                            <input type="number" id="salePaid" value="0" style="width:100%;padding:5px;border-radius:6px;border:none;text-align:center;font-weight:bold;font-size:16px;">
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:12px;color:#aaa;">المتبقي</div>
+                            <div style="font-size:22px;font-weight:bold;" id="saleBalanceDisplay">0 ج.م</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex;gap:10px;">
+                        <button id="saveSaleBtn" class="btn-main" style="background:#00B894;font-size:16px;padding:15px;">💾 حفظ الفاتورة</button>
+                        <button id="clearSaleBtn" class="btn-main" style="background:#999;font-size:16px;padding:15px;">🗑️ إلغاء</button>
+                    </div>
+                    
+                    <div style="margin-top:20px;">
+                        <h4 style="color:#2E4057;border-bottom:2px solid #2E4057;padding-bottom:5px;">📋 الفواتير السابقة</h4>
+                        <div id="saleList" class="list-view"></div>
+                    </div>
                 </div>
             </div>
             
             <!-- ===== المشتريات ===== -->
             <div id="page-purchases" class="page">
-                <div style="background:white;border-radius:12px;padding:20px;">
-                    <h2>🚚 المشتريات</h2>
-                    <p style="color:#999;">جاري تطوير صفحة المشتريات...</p>
-                    <button class="btn-main" data-page="dashboard">🔙 عودة</button>
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>🚚 المشتريات</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:15px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;color:#666;">رقم الفاتورة</label>
+                            <input type="text" id="purchaseInvoiceNumber" style="font-weight:bold;background:#e9ecef;border:2px solid #E17055;" readonly>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;color:#666;">التاريخ</label>
+                            <input type="text" id="purchaseInvoiceDate" style="font-weight:bold;" readonly>
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;color:#666;">المورد</label>
+                            <input type="text" id="purchaseSupplier" placeholder="اسم المورد" style="border:2px solid #E17055;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:12px;color:#666;">نوع الدفع</label>
+                            <select id="purchaseType" style="border:2px solid #E17055;">
+                                <option value="cash">كاش</option>
+                                <option value="credit">آجل</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;background:#e9ecef;padding:10px;border-radius:10px;margin-bottom:10px;">
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:11px;color:#666;">المنتج</label>
+                            <input type="text" id="purchaseProductSearch" placeholder="🔍 اكتب اسم المنتج" style="border:2px solid #E17055;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:11px;color:#666;">الكمية</label>
+                            <input type="number" id="purchaseQty" value="1" style="border:2px solid #E17055;">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label style="font-size:11px;color:#666;">سعر الشراء</label>
+                            <input type="number" id="purchasePrice" style="border:2px solid #E17055;">
+                        </div>
+                        <button id="addPurchaseBtn" style="background:#E17055;color:white;border:none;border-radius:8px;padding:10px 15px;cursor:pointer;font-weight:bold;height:42px;">➕</button>
+                    </div>
+                    
+                    <div style="background:#fff;border:2px solid #E17055;border-radius:10px;overflow:hidden;margin-bottom:10px;">
+                        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;background:#E17055;color:white;padding:8px 10px;font-size:12px;font-weight:bold;">
+                            <span>المنتج</span><span style="text-align:center;">الكمية</span><span style="text-align:center;">السعر</span><span style="text-align:center;">الإجمالي</span><span style="text-align:center;">حذف</span>
+                        </div>
+                        <div id="purchaseItemsList" style="max-height:200px;overflow-y:auto;">
+                            <div style="text-align:center;padding:30px;color:#999;font-size:13px;">أضف منتجات</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;background:#E17055;color:white;padding:15px;border-radius:10px;margin-bottom:15px;">
+                        <div style="text-align:center;">
+                            <div style="font-size:12px;color:#fdd;">الإجمالي</div>
+                            <div style="font-size:22px;font-weight:bold;" id="purchaseTotalDisplay">0 ج.م</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:12px;color:#fdd;">المدفوع</div>
+                            <input type="number" id="purchasePaid" value="0" style="width:100%;padding:5px;border-radius:6px;border:none;text-align:center;font-weight:bold;font-size:16px;">
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:12px;color:#fdd;">المتبقي</div>
+                            <div style="font-size:22px;font-weight:bold;" id="purchaseBalanceDisplay">0 ج.م</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex;gap:10px;">
+                        <button id="savePurchaseBtn" class="btn-main" style="background:#E17055;font-size:16px;padding:15px;">💾 حفظ الفاتورة</button>
+                        <button id="clearPurchaseBtn" class="btn-main" style="background:#999;font-size:16px;padding:15px;">🗑️ إلغاء</button>
+                    </div>
+                    
+                    <div style="margin-top:20px;">
+                        <h4 style="color:#E17055;border-bottom:2px solid #E17055;padding-bottom:5px;">📋 فواتير الشراء السابقة</h4>
+                        <div id="purchaseList" class="list-view"></div>
+                    </div>
                 </div>
             </div>
             
             <!-- ===== المنتجات ===== -->
             <div id="page-products" class="page">
-                <div style="background:white;border-radius:12px;padding:20px;">
-                    <h2>📦 المنتجات</h2>
-                    <p style="color:#999;">جاري تطوير صفحة المنتجات...</p>
-                    <button class="btn-main" data-page="dashboard">🔙 عودة</button>
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>📦 المنتجات</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
+                        <div class="form-group"><label>الوصف</label><input type="text" id="prodDesc"></div>
+                        <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
+                        <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
+                        <div class="form-group"><label>سعر البيع</label><input type="number" id="prodSell"></div>
+                        <div class="form-group"><label>الباركود</label><input type="text" id="prodBarcode" placeholder="اتركه لتوليد تلقائي"></div>
+                    </div>
+                    <button id="addProductBtn" class="btn-main">إضافة منتج</button>
+                    <div id="productList" class="list-view"></div>
                 </div>
             </div>
             
             <!-- ===== جهات الاتصال ===== -->
             <div id="page-clients" class="page">
-                <div style="background:white;border-radius:12px;padding:20px;">
-                    <h2>👤 جهات الاتصال</h2>
-                    <p style="color:#999;">جاري تطوير صفحة جهات الاتصال...</p>
-                    <button class="btn-main" data-page="dashboard">🔙 عودة</button>
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>👤 جهات الاتصال</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
+                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="contactPhone"></div>
+                        <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress"></div>
+                        <div class="form-group"><label>النوع</label>
+                            <select id="contactType">
+                                <option value="عميل">عميل</option>
+                                <option value="مورد">مورد</option>
+                                <option value="كلاهما">كلاهما</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="addContactBtn" class="btn-main">إضافة</button>
+                    <div id="clientList" class="list-view"></div>
                 </div>
             </div>
             
             <!-- ===== الخزنة ===== -->
             <div id="page-treasury" class="page">
-                <div style="background:white;border-radius:12px;padding:20px;">
-                    <h2>💰 الخزنة</h2>
-                    <p style="color:#999;">جاري تطوير صفحة الخزنة...</p>
-                    <button class="btn-main" data-page="dashboard">🔙 عودة</button>
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>💰 الخزنة</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div class="treasury-balance">الرصيد: <span id="treasuryDisplay">0</span> ج.م</div>
+                    
+                    <div class="treasury-section">
+                        <h3 class="section-title-green">💰 تحصيل دين</h3>
+                        <div class="form-group"><label>العميل</label><input type="text" id="collectClient"></div>
+                        <div style="display:flex;gap:10px;">
+                            <div style="flex:1;"><label>المبلغ</label><input type="number" id="collectAmount"></div>
+                            <button id="collectDebtBtn" class="btn-green">تحصيل</button>
+                        </div>
+                    </div>
+                    
+                    <div class="treasury-section">
+                        <h3 class="section-title-red">💸 سداد مورد</h3>
+                        <div class="form-group"><label>المورد</label><input type="text" id="paySupplier"></div>
+                        <div style="display:flex;gap:10px;">
+                            <div style="flex:1;"><label>المبلغ</label><input type="number" id="payAmount"></div>
+                            <button id="paySupplierBtn" class="btn-red">سداد</button>
+                        </div>
+                    </div>
+                    
+                    <div class="treasury-section">
+                        <h3 class="section-title-blue">🏦 الخزنة الرئيسية</h3>
+                        <div style="display:flex;gap:10px;">
+                            <div style="flex:1;"><label>المبلغ</label><input type="number" id="treasuryAmount"></div>
+                            <button id="addTreasuryBtn" class="btn-green">إيداع</button>
+                            <button id="withdrawTreasuryBtn" class="btn-red">سحب</button>
+                        </div>
+                    </div>
+                    
+                    <div class="treasury-section">
+                        <h3 class="section-title-red">💸 مصروف</h3>
+                        <div style="display:flex;gap:10px;">
+                            <div style="flex:2;"><label>البيان</label><input type="text" id="expenseDesc"></div>
+                            <div style="flex:1;"><label>المبلغ</label><input type="number" id="expenseAmount"></div>
+                        </div>
+                        <button id="addExpenseBtn" class="btn-red" style="width:100%;">تسجيل</button>
+                    </div>
+                    
+                    <div id="treasuryLog" class="list-view"></div>
                 </div>
             </div>
             
             <!-- ===== التقارير ===== -->
             <div id="page-reports" class="page">
-                <div style="background:white;border-radius:12px;padding:20px;">
-                    <h2>📊 التقارير</h2>
-                    <p style="color:#999;">جاري تطوير صفحة التقارير...</p>
-                    <button class="btn-main" data-page="dashboard">🔙 عودة</button>
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>📊 التقارير</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <button id="reportIncomeBtn" class="btn-main" style="background:#00B894;">📈 قائمة الدخل</button>
+                        <button id="reportDailyBtn" class="btn-main" style="background:#E17055;">📅 تقرير اليوم</button>
+                        <button id="reportTrialBtn" class="btn-main" style="background:#FDCB6E;color:#333;">📋 ميزان المراجعة</button>
+                        <button id="reportStatementBtn" class="btn-main" style="background:#2E4057;">📋 كشف حساب</button>
+                    </div>
+                    
+                    <div class="report-box" id="reportContent">اختر تقريراً للعرض</div>
                 </div>
             </div>
             
             <!-- ===== الإعدادات ===== -->
             <div id="page-settings" class="page">
-                <div style="background:white;border-radius:12px;padding:20px;">
-                    <h2>⚙️ الإعدادات</h2>
-                    <p style="color:#999;">جاري تطوير صفحة الإعدادات...</p>
-                    <button class="btn-main" data-page="dashboard">🔙 عودة</button>
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>⚙️ الإعدادات</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3 class="section-title-blue">🎨 المظهر</h3>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                            <button id="themeDefault" class="btn-theme" style="background:#F4F6F9;color:#333;border:2px solid #ddd;">افتراضي</button>
+                            <button id="themeDark" class="btn-theme" style="background:#1a1a2e;color:white;">داكن</button>
+                            <button id="themeBlue" class="btn-theme" style="background:#0c2461;color:white;">أزرق</button>
+                            <button id="themeGreen" class="btn-theme" style="background:#0a3d2e;color:white;">أخضر</button>
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button id="fontSmall" class="btn-sm">صغير</button>
+                            <button id="fontMedium" class="btn-sm" style="background:#2E4057;color:white;">وسط</button>
+                            <button id="fontLarge" class="btn-sm">كبير</button>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3 class="section-title-green">🔔 التنبيهات</h3>
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">
+                            <label>التنبيهات الصوتية</label>
+                            <label class="switch"><input type="checkbox" id="soundAlerts" checked><span class="slider round"></span></label>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+                            <label>التنبيهات المنبثقة</label>
+                            <label class="switch"><input type="checkbox" id="popupAlerts" checked><span class="slider round"></span></label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3 class="section-title-blue">ℹ️ معلومات</h3>
+                        <div style="background:#f0f2f5;padding:15px;border-radius:8px;color:#333;">
+                            <p><strong>📌 الإصدار:</strong> V31</p>
+                            <p><strong>👨‍💻 المطور:</strong> نظام راشد</p>
+                            <p><strong>👤 المستخدم:</strong> <span id="settingsUser">admin</span></p>
+                            <p><strong>📦 المنتجات:</strong> <span id="settingsProducts">0</span></p>
+                            <p><strong>📋 العملاء:</strong> <span id="settingsClients">0</span></p>
+                        </div>
+                        <button id="resetSettingsBtn" class="btn-red" style="width:100%;margin-top:10px;">🔄 إعادة ضبط</button>
+                    </div>
                 </div>
             </div>
             
