@@ -2179,6 +2179,535 @@ function showToast(msg) {
 }
 
 // ============================================================
+// الميزات الجديدة
+// ============================================================
+
+// ============================================================
+// 1. نظام المصادقة المتقدم
+// ============================================================
+async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+    const remember = document.getElementById('rememberMe').checked;
+    if (!email || !pass) return showToast('⚠️ أدخل البريد وكلمة المرور');
+    try {
+        const { auth } = initFirebase();
+        await auth.signInWithEmailAndPassword(email, pass);
+        const user = auth.currentUser;
+        if (remember) {
+            localStorage.setItem('rememberedUser', email);
+        }
+        // جلب بيانات المستخدم من Firebase
+        const { db } = initFirebase();
+        const snapshot = await db.ref('users/' + user.uid).once('value');
+        const userData = snapshot.val() || {};
+        appData.currentUser = user.uid;
+        appData.users[user.uid] = userData;
+        appData.users[user.uid].email = email;
+        appData.users[user.uid].displayName = userData.displayName || email.split('@')[0];
+        appData.users[user.uid].role = userData.role || 'admin';
+        saveLocal();
+        enterApp();
+        showToast('✅ مرحباً ' + appData.users[user.uid].displayName);
+    } catch(e) {
+        if (e.code === 'auth/user-not-found') showToast('❌ المستخدم غير موجود');
+        else if (e.code === 'auth/wrong-password') showToast('❌ كلمة المرور خطأ');
+        else showToast('❌ ' + e.message);
+    }
+}
+
+async function handleRegister() {
+    const fullName = document.getElementById('regFullName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const pass = document.getElementById('regPass').value.trim();
+    const confirm = document.getElementById('regPassConfirm').value.trim();
+    const role = document.getElementById('regRole').value;
+    if (!fullName || !email || !pass) return showToast('⚠️ أكمل البيانات');
+    if (pass !== confirm) return showToast('⚠️ كلمة المرور غير متطابقة');
+    if (pass.length < 6) return showToast('⚠️ كلمة المرور 6 أحرف على الأقل');
+    try {
+        const { auth, db } = initFirebase();
+        const result = await auth.createUserWithEmailAndPassword(email, pass);
+        const user = result.user;
+        const loc = await getUserLocation();
+        const userData = {
+            displayName: fullName,
+            email: email,
+            phone: phone,
+            role: role,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString(),
+            lastLocation: loc,
+            data: {
+                sales: [], purchases: [], products: [], clients: [], suppliers: [], banks: [],
+                treasury: 0, cashTreasury: 0, walletTreasury: 0, bankTreasury: 0,
+                treasuryLog: [], expenses: [], collections: [], supplierPayments: [],
+                warehouse: [], saleCounter: 0, purchaseCounter: 0,
+                returnSaleCounter: 0, returnPurchaseCounter: 0,
+                company: {}, paymentMethods: {},
+                profile: { shopName: 'نظام راشد', branch: 'رئيسي' },
+                settings: { theme: 'default', fontSize: 'medium', soundAlerts: true, popupAlerts: true, alertSound: 'beep' }
+            }
+        };
+        await db.ref('users/' + user.uid).set(userData);
+        appData.currentUser = user.uid;
+        appData.users[user.uid] = userData;
+        saveLocal();
+        enterApp();
+        showToast('✅ تم إنشاء الحساب بنجاح');
+    } catch(e) {
+        if (e.code === 'auth/email-already-in-use') showToast('⚠️ البريد مستخدم');
+        else showToast('❌ ' + e.message);
+    }
+}
+
+function showForgotPassword() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('forgotPasswordForm').style.display = 'block';
+}
+
+function showLoginForm() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('forgotPasswordForm').style.display = 'none';
+}
+
+async function sendResetPassword() {
+    const email = document.getElementById('resetEmail').value.trim();
+    if (!email) return showToast('⚠️ أدخل البريد الإلكتروني');
+    try {
+        const { auth } = initFirebase();
+        await auth.sendPasswordResetEmail(email);
+        showToast('✅ تم إرسال رابط إعادة التعيين إلى بريدك');
+        showLoginForm();
+    } catch(e) {
+        showToast('❌ ' + e.message);
+    }
+}
+
+// ============================================================
+// 2. نظام الفواتير الإلكترونية
+// ============================================================
+function generateInvoiceQR(invoice) {
+    // توليد QR Code للفاتورة
+    const qrData = JSON.stringify({
+        id: invoice.id,
+        client: invoice.client,
+        total: invoice.total,
+        date: invoice.date,
+        tax: invoice.tax || 0
+    });
+    return qrData;
+}
+
+function exportInvoicePDF() {
+    const invNum = document.getElementById('saleInvoiceNumber').value;
+    if (saleItems.length === 0) return showToast('⚠️ لا توجد منتجات للتصدير');
+    const d = getData();
+    const client = document.getElementById('saleClient').value.trim() || document.getElementById('saleClientNew').value.trim() || 'عميل';
+    const date = document.getElementById('saleInvoiceDate').value;
+    const type = document.getElementById('saleType').value;
+    const paymentMethod = document.getElementById('salePaymentMethodSelect').value;
+    const paymentAccount = document.getElementById('salePaymentAccount').value.trim();
+    const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
+    const paid = parseFloat(document.getElementById('salePaid').value) || 0;
+    const totalAfterDiscount = saleTotal - discount;
+    const tax = totalAfterDiscount * 0.14;
+    const totalWithTax = totalAfterDiscount + tax;
+    const tempInv = {
+        id: invNum, client, date, type, paymentMethod, paymentAccount,
+        discount, tax, items: saleItems, total: saleTotal,
+        totalAfterDiscount, totalWithTax, paid, balance: totalWithTax - paid
+    };
+    const c = d.company || {};
+    const p = d.profile || {};
+    const tn = { cash: 'كاش', credit: 'آجل', installment: 'تقسيط' };
+    const pm = { cash: 'خزنة نقدي', vodafone: 'فودافون كاش', instapay: 'إنستاباي', bank: 'تحويل بنكي' };
+    let itemsHtml = '';
+    tempInv.items.forEach(item => {
+        itemsHtml += `<tr><td style="padding:6px;border:1px solid #ddd;text-align:right;">${item.name}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.qty}</td><td style="padding:6px;border:1px solid #ddd;text-align:center;">${item.price} ج.م</td><td style="padding:6px;border:1px solid #ddd;text-align:left;font-weight:bold;">${item.total} ج.م</td></tr>`;
+    });
+    const logo = c.logo ? `<img src="${c.logo}" style="max-height:60px;margin-bottom:5px;">` : '';
+    const html = `<div style="direction:rtl;font-family:Arial;padding:20px;max-width:800px;margin:auto;background:white;color:#333;border:1px solid #ddd;border-radius:10px;">
+        <div style="text-align:center;border-bottom:2px solid #2E4057;padding-bottom:15px;margin-bottom:20px;">
+            ${logo}
+            <h2 style="margin:0;color:#2E4057;">${c.name || p.shopName || 'نظام راشد'}</h2>
+            <p style="font-size:12px;color:#666;margin:2px 0;">${c.address || p.branch || ''}</p>
+            <p style="font-size:12px;color:#666;">📞 ${c.phone || ''} | 📧 ${c.email || ''} | 🆔 ${c.taxNumber || ''}</p>
+            <p style="font-size:14px;font-weight:bold;color:#2E4057;margin:5px 0;">فاتورة بيع</p>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:15px;flex-wrap:wrap;">
+            <div><strong>رقم:</strong> ${tempInv.id}<br><strong>التاريخ:</strong> ${tempInv.date}</div>
+            <div style="text-align:left;"><strong>العميل:</strong> ${tempInv.client}<br><strong>نوع الدفع:</strong> ${tn[tempInv.type] || tempInv.type}</div>
+            <div style="text-align:left;"><strong>وسيلة الدفع:</strong> ${pm[tempInv.paymentMethod] || tempInv.paymentMethod}<br>${tempInv.paymentAccount ? '<strong>رقم الحساب:</strong> ' + tempInv.paymentAccount : ''}</div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:15px;">
+            <thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;border:1px solid #2E4057;">المنتج</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">الكمية</th><th style="padding:8px;text-align:center;border:1px solid #2E4057;">السعر</th><th style="padding:8px;text-align:left;border:1px solid #2E4057;">الإجمالي</th></tr></thead>
+            <tbody>${itemsHtml}</tbody>
+            <tfoot>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${tempInv.total || 0} ج.م</td></tr>
+                ${tempInv.discount ? `<tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الخصم</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:14px;">-${tempInv.discount} ج.م</td></tr>` : ''}
+                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي بعد الخصم</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${tempInv.totalAfterDiscount || tempInv.total || 0} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الضريبة (14%)</td><td style="padding:8px;border:1px solid #ddd;color:#FDCB6E;font-weight:bold;">${tempInv.tax || 0} ج.م</td></tr>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي النهائي</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${tempInv.totalWithTax || tempInv.total || 0} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${tempInv.paid || 0} ج.م</td></tr>
+                <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(tempInv.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${tempInv.balance || 0} ج.م</td></tr>
+                <tr><td colspan="4" style="padding:8px;text-align:center;border-top:2px solid #2E4057;">
+                    <div style="font-size:12px;color:#666;">🔐 QR Code</div>
+                    <div style="font-size:10px;color:#999;">${generateInvoiceQR(tempInv)}</div>
+                </td></tr>
+            </tfoot>
+        </table>
+        <div style="text-align:center;font-size:11px;color:#999;margin-top:15px;border-top:1px solid #ddd;padding-top:10px;">شكراً لتعاملكم معنا - ${c.name || p.shopName || 'نظام راشد'}</div>
+    </div>`;
+    const win = window.open('', '_blank');
+    if (win) {
+        win.document.write(`<html><head><meta charset="UTF-8"><title>فاتورة ${invNum}</title><style>body{margin:0;padding:20px;background:#f5f5f5;display:flex;justify-content:center;align-items:center;min-height:100vh;}@media print{body{background:white;padding:0;}.print-area{border:none!important;}}</style></head><body>${html}</body></html>`);
+        win.document.close();
+        win.focus();
+        setTimeout(() => win.print(), 500);
+    }
+}
+
+// ============================================================
+// 3. نظام التقارير الذكية
+// ============================================================
+function generateBusinessReport() {
+    const d = getData();
+    const s = d.sales || [];
+    const p = d.purchases || [];
+    const e = d.expenses || [];
+    const products = d.products || [];
+    const clients = d.clients || [];
+    const today = new Date().toLocaleDateString('ar-EG');
+    const totalSales = s.reduce((sum, x) => sum + (x.total || 0), 0);
+    const totalPurchases = p.reduce((sum, x) => sum + (x.total || 0), 0);
+    const totalExpenses = e.reduce((sum, x) => sum + (x.amount || 0), 0);
+    const profit = totalSales - totalPurchases - totalExpenses;
+    
+    // تحليل المبيعات
+    const salesByClient = {};
+    s.forEach(x => {
+        if (!salesByClient[x.client]) salesByClient[x.client] = 0;
+        salesByClient[x.client] += x.total || 0;
+    });
+    const bestClient = Object.keys(salesByClient).length > 0 ? 
+        Object.keys(salesByClient).reduce((a, b) => salesByClient[a] > salesByClient[b] ? a : b) : 'لا يوجد';
+    
+    // تحليل المنتجات
+    const productSales = {};
+    s.forEach(inv => {
+        if (inv.items) {
+            inv.items.forEach(item => {
+                if (!productSales[item.name]) productSales[item.name] = 0;
+                productSales[item.name] += item.qty || 0;
+            });
+        }
+    });
+    const bestProduct = Object.keys(productSales).length > 0 ?
+        Object.keys(productSales).reduce((a, b) => productSales[a] > productSales[b] ? a : b) : 'لا يوجد';
+    
+    const report = `
+📊 **تقرير الأعمال الشامل**
+📅 التاريخ: ${today}
+
+📈 **الإيرادات والمصروفات**
+━━━━━━━━━━━━━━━━━━━━
+💰 إجمالي المبيعات: ${totalSales.toFixed(2)} ج.م
+💸 إجمالي المشتريات: ${totalPurchases.toFixed(2)} ج.م
+🧾 إجمالي المصروفات: ${totalExpenses.toFixed(2)} ج.م
+💎 صافي الربح: ${profit.toFixed(2)} ج.م
+
+🏆 **أفضل عميل:** ${bestClient} (${salesByClient[bestClient]?.toFixed(2) || 0} ج.م)
+
+📦 **أفضل منتج:** ${bestProduct} (${productSales[bestProduct] || 0} وحدة)
+
+👥 **إحصائيات**
+━━━━━━━━━━━━━━━━━━━━
+📦 عدد المنتجات: ${products.length}
+👤 عدد العملاء: ${clients.length}
+📋 عدد الفواتير: ${s.length}
+
+${profit > 0 ? '✅ ✅ ✅ عملك يحقق أرباحاً ممتازة! استمر في التطوير.' : '⚠️ ⚠️ ⚠️ عملك يحقق خسائر. راجع المصروفات واستراتيجية التسعير.'}
+    `;
+    alert(report);
+}
+
+// ============================================================
+// 4. مسح الباركود بالكاميرا
+// ============================================================
+function scanBarcode() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        return showToast('⚠️ الكاميرا غير مدعومة في هذا المتصفح');
+    }
+    // محاكاة مسح الباركود - في التطبيق الحقيقي نستخدم مكتبة مثل html5-qrcode
+    const barcode = prompt('📷 أدخل الباركود (محاكاة المسح):');
+    if (barcode) {
+        document.getElementById('saleProductSearch').value = barcode;
+        searchProductLive(barcode);
+    }
+}
+
+// ============================================================
+// 5. نظام التصدير
+// ============================================================
+function exportAllReports() {
+    const d = getData();
+    const data = {
+        sales: d.sales || [],
+        purchases: d.purchases || [],
+        products: d.products || [],
+        clients: d.clients || [],
+        suppliers: d.suppliers || [],
+        treasury: d.treasury || 0,
+        expenses: d.expenses || [],
+        collections: d.collections || [],
+        supplierPayments: d.supplierPayments || []
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reports_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📤 تم تصدير التقارير');
+}
+
+// ============================================================
+// 6. نظام إدارة المستخدمين والصلاحيات
+// ============================================================
+function showUserManagement() {
+    const panel = document.getElementById('userManagementPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    if (panel.style.display === 'block') {
+        const d = getData();
+        const users = appData.users || {};
+        let html = '<h4 style="color:#2E4057;">👤 المستخدمين</h4>';
+        html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+        html += '<thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">الاسم</th><th style="padding:8px;text-align:right;">البريد</th><th style="padding:8px;text-align:right;">الدور</th><th style="padding:8px;text-align:right;">الحالة</th></tr></thead><tbody>';
+        Object.keys(users).forEach(uid => {
+            const u = users[uid];
+            if (u) {
+                html += `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">${u.displayName || 'غير معروف'}</td><td style="padding:8px;">${u.email || ''}</td><td style="padding:8px;"><span style="background:${u.role === 'admin' ? '#2E4057' : u.role === 'accountant' ? '#00B894' : u.role === 'sales' ? '#FDCB6E' : '#6C5CE7'};color:white;padding:2px 8px;border-radius:4px;font-size:11px;">${u.role || 'user'}</span></td><td style="padding:8px;"><span style="color:${u.lastLogin ? '#00B894' : '#999'};">${u.lastLogin ? '🟢 نشط' : '🔴 غير نشط'}</span></td></tr>`;
+            }
+        });
+        html += '</tbody></table>';
+        panel.innerHTML = html;
+    }
+}
+
+function showRolesManagement() {
+    const panel = document.getElementById('userManagementPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    if (panel.style.display === 'block') {
+        const roles = [
+            { id: 'admin', name: 'مدير', permissions: 'كل الصلاحيات' },
+            { id: 'accountant', name: 'محاسب', permissions: 'الفواتير، التقارير، الخزنة' },
+            { id: 'sales', name: 'مندوب مبيعات', permissions: 'إضافة المبيعات فقط' },
+            { id: 'warehouse', name: 'مشرف مخازن', permissions: 'إدارة المخازن فقط' },
+            { id: 'viewer', name: 'مشاهد', permissions: 'مشاهدة فقط بدون تعديل' }
+        ];
+        let html = '<h4 style="color:#2E4057;">🔐 الصلاحيات</h4>';
+        html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+        html += '<thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">الدور</th><th style="padding:8px;text-align:right;">الصلاحيات</th></tr></thead><tbody>';
+        roles.forEach(r => {
+            html += `<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;"><span style="background:${r.id === 'admin' ? '#2E4057' : r.id === 'accountant' ? '#00B894' : r.id === 'sales' ? '#FDCB6E' : '#6C5CE7'};color:white;padding:2px 8px;border-radius:4px;font-size:11px;">${r.name}</span></td><td style="padding:8px;">${r.permissions}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        panel.innerHTML = html;
+    }
+}
+
+// ============================================================
+// 7. نظام تصنيف العملاء
+// ============================================================
+let currentClientFilter = 'all';
+
+function filterClients(type) {
+    currentClientFilter = type;
+    document.getElementById('filterAll').classList.toggle('active', type === 'all');
+    document.getElementById('filterVip').classList.toggle('active', type === 'vip');
+    document.getElementById('filterRegular').classList.toggle('active', type === 'regular');
+    document.getElementById('filterOverdue').classList.toggle('active', type === 'overdue');
+    updateClientList();
+}
+
+function updateClientList() {
+    const d = getData();
+    let clients = d.clients || [];
+    if (currentClientFilter === 'vip') {
+        clients = clients.filter(c => c.category === 'vip');
+    } else if (currentClientFilter === 'regular') {
+        clients = clients.filter(c => c.category === 'regular' || !c.category);
+    } else if (currentClientFilter === 'overdue') {
+        const today = new Date();
+        clients = clients.filter(c => {
+            if (!c.lastPaymentDate) return false;
+            const lastPayment = new Date(c.lastPaymentDate);
+            const diff = Math.floor((today - lastPayment) / (1000 * 60 * 60 * 24));
+            return diff > (c.paymentPeriod || 30);
+        });
+    }
+    const list = document.getElementById('clientList');
+    if (!list) return;
+    list.innerHTML = clients.map(c => `
+        <div class="list-item">
+            <div>
+                <strong>${c.name}</strong>
+                ${c.category === 'vip' ? '<span style="background:#FDCB6E;color:#333;padding:0 6px;border-radius:4px;font-size:11px;">⭐ VIP</span>' : ''}
+                <br><small>📞 ${c.phone || ''}</small>
+                ${c.balance ? `<br><small style="color:${c.balance > 0 ? '#E17055' : '#00B894'};">الرصيد: ${c.balance} ج.م</small>` : ''}
+            </div>
+            <div>
+                <span style="background:#00B894;color:white;padding:2px 8px;border-radius:4px;font-size:11px;">عميل</span>
+            </div>
+        </div>
+    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا يوجد عملاء</div>';
+}
+
+// ============================================================
+// 8. نظام الأقساط المتقدم
+// ============================================================
+function showAdvancedReport(type) {
+    const d = getData();
+    const today = new Date().toLocaleDateString('ar-EG');
+    let html = '';
+    if (type === 'installments') {
+        const installments = d.installments || [];
+        let rows = '';
+        const totalInstallments = installments.length;
+        const paidInstallments = installments.filter(x => x.paid).length;
+        const overdueInstallments = installments.filter(x => !x.paid && new Date(x.dueDate) < new Date()).length;
+        const totalAmount = installments.reduce((sum, x) => sum + (x.amount || 0), 0);
+        const paidAmount = installments.filter(x => x.paid).reduce((sum, x) => sum + (x.amount || 0), 0);
+        const overdueAmount = installments.filter(x => !x.paid && new Date(x.dueDate) < new Date()).reduce((sum, x) => sum + (x.amount || 0), 0);
+        installments.forEach(x => {
+            const status = x.paid ? '✅ مدفوع' : new Date(x.dueDate) < new Date() ? '⚠️ متأخر' : '⏳ مستحق';
+            const color = x.paid ? '#00B894' : new Date(x.dueDate) < new Date() ? '#E17055' : '#FDCB6E';
+            rows += `<tr style="border-bottom:1px solid #333;"><td style="padding:8px;">${x.client || ''}</td><td style="padding:8px;text-align:center;">${x.invoiceId || ''}</td><td style="padding:8px;text-align:center;">${x.number || 0}/${x.total || 0}</td><td style="padding:8px;text-align:center;">${x.amount || 0} ج.م</td><td style="padding:8px;text-align:center;">${x.dueDate || ''}</td><td style="padding:8px;text-align:center;color:${color};">${status}</td></tr>`;
+        });
+        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;overflow-x:auto;">
+            <div style="text-align:center;border-bottom:2px solid #6C5CE7;padding-bottom:10px;margin-bottom:15px;">
+                <h3 style="margin:0;color:#6C5CE7;">📋 تقرير الأقساط</h3>
+                <small style="color:#888;">${today}</small>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:15px;">
+                <div style="background:#2E4057;padding:10px;border-radius:8px;text-align:center;">
+                    <div style="font-size:12px;color:#aaa;">إجمالي الأقساط</div>
+                    <div style="font-size:20px;font-weight:bold;">${totalInstallments}</div>
+                </div>
+                <div style="background:#00B894;padding:10px;border-radius:8px;text-align:center;">
+                    <div style="font-size:12px;color:#b8e6d9;">المدفوع</div>
+                    <div style="font-size:20px;font-weight:bold;">${paidInstallments}</div>
+                </div>
+                <div style="background:#E17055;padding:10px;border-radius:8px;text-align:center;">
+                    <div style="font-size:12px;color:#fdd;">المتأخر</div>
+                    <div style="font-size:20px;font-weight:bold;">${overdueInstallments}</div>
+                </div>
+                <div style="background:#6C5CE7;padding:10px;border-radius:8px;text-align:center;">
+                    <div style="font-size:12px;color:#d5cdf2;">القيمة</div>
+                    <div style="font-size:20px;font-weight:bold;">${totalAmount} ج.م</div>
+                </div>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">العميل</th><th style="padding:8px;text-align:center;">الفاتورة</th><th style="padding:8px;text-align:center;">القسط</th><th style="padding:8px;text-align:center;">المبلغ</th><th style="padding:8px;text-align:center;">تاريخ الاستحقاق</th><th style="padding:8px;text-align:center;">الحالة</th></tr></thead>
+                <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">لا توجد أقساط</td></tr>'}</tbody>
+            </table>
+            <div style="display:flex;justify-content:space-between;padding:15px 0;margin-top:10px;border-top:2px solid #6C5CE7;font-size:16px;">
+                <span>إجمالي المدفوع: ${paidAmount} ج.م</span>
+                <span style="color:#E17055;">المتأخر: ${overdueAmount} ج.م</span>
+            </div>
+        </div>`;
+    } else if (type === 'profit') {
+        const s = d.sales || [];
+        const p = d.purchases || [];
+        const products = d.products || [];
+        let rows = '';
+        products.forEach(prod => {
+            const sales = s.filter(inv => inv.items && inv.items.some(item => item.name === prod.name));
+            const totalSales = sales.reduce((sum, inv) => sum + (inv.total || 0), 0);
+            const totalQty = sales.reduce((sum, inv) => {
+                const item = inv.items.find(i => i.name === prod.name);
+                return sum + (item ? item.qty : 0);
+            }, 0);
+            const profitMargin = totalQty > 0 ? ((prod.sell || 0) - (prod.buy || 0)) * totalQty : 0;
+            rows += `<tr style="border-bottom:1px solid #333;">
+                <td style="padding:8px;">${prod.name}</td>
+                <td style="padding:8px;text-align:center;">${totalQty}</td>
+                <td style="padding:8px;text-align:center;">${prod.buy || 0} ج.م</td>
+                <td style="padding:8px;text-align:center;">${prod.sell || 0} ج.م</td>
+                <td style="padding:8px;text-align:center;color:${profitMargin > 0 ? '#00B894' : '#E17055'};">${profitMargin} ج.م</td>
+                <td style="padding:8px;text-align:center;color:${profitMargin > 0 ? '#00B894' : '#E17055'};">${((profitMargin / ((prod.buy || 1) * totalQty || 1)) * 100).toFixed(1)}%</td>
+            </tr>`;
+        });
+        html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;overflow-x:auto;">
+            <div style="text-align:center;border-bottom:2px solid #FDCB6E;padding-bottom:10px;margin-bottom:15px;">
+                <h3 style="margin:0;color:#FDCB6E;">💰 تقرير الربحية</h3>
+                <small style="color:#888;">${today}</small>
+            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">المنتج</th><th style="padding:8px;text-align:center;">الكمية المباعة</th><th style="padding:8px;text-align:center;">سعر الشراء</th><th style="padding:8px;text-align:center;">سعر البيع</th><th style="padding:8px;text-align:center;">هامش الربح</th><th style="padding:8px;text-align:center;">نسبة الربح</th></tr></thead>
+                <tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">لا توجد منتجات</td></tr>'}</tbody>
+            </table>
+        </div>`;
+    }
+    document.getElementById('reportContent').innerHTML = html;
+}
+
+// ============================================================
+// 9. نظام تبديل اللغة والثيم
+// ============================================================
+let currentLang = 'ar';
+
+function toggleLanguage() {
+    currentLang = currentLang === 'ar' ? 'en' : 'ar';
+    document.getElementById('langToggle').textContent = currentLang === 'ar' ? 'EN' : 'ع';
+    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = currentLang;
+    showToast(`✅ تم تبديل اللغة إلى ${currentLang === 'ar' ? 'العربية' : 'English'}`);
+}
+
+function toggleTheme() {
+    const body = document.body;
+    const icon = document.getElementById('themeIcon');
+    if (body.classList.contains('theme-dark')) {
+        body.classList.remove('theme-dark');
+        icon.className = 'fas fa-moon';
+        showToast('☀️ تم التبديل إلى الوضع الفاتح');
+    } else {
+        body.classList.add('theme-dark');
+        icon.className = 'fas fa-sun';
+        showToast('🌙 تم التبديل إلى الوضع الداكن');
+    }
+    // حفظ التفضيل
+    const d = getData();
+    if (!d.settings) d.settings = {};
+    d.settings.theme = body.classList.contains('theme-dark') ? 'dark' : 'default';
+    saveLocal();
+}
+
+// ============================================================
+// 10. إعادة ضبط الإعدادات
+// ============================================================
+function resetAppSettings() {
+    if (!confirm('⚠️ هل أنت متأكد من إعادة ضبط جميع الإعدادات؟')) return;
+    const d = getData();
+    d.settings = {
+        theme: 'default',
+        fontSize: 'medium',
+        soundAlerts: true,
+        popupAlerts: true,
+        alertSound: 'beep'
+    };
+    saveLocal();
+    loadSettings();
+    showToast('✅ تم إعادة ضبط الإعدادات');
+}
+
+// ============================================================
 // 27. بدء التشغيل
 // ============================================================
 initFirebase();
@@ -2190,3 +2719,4 @@ if (!autoLogin()) {
     document.getElementById('appContainer').style.display = 'none';
 }
 console.log('✅ نظام راشد V31 - ERP متكامل يعمل');
+
