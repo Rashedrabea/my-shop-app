@@ -12,7 +12,7 @@
     --shadow: 0 2px 12px rgba(0,0,0,0.08);
     --radius: 10px;
     --sidebar-width: 220px;
-    --header-height: 54px;
+    --header-height: 56px;
     --transition: all 0.3s ease;
 }
 
@@ -26,19 +26,31 @@ body.dark-mode {
 }
 
 /* ============================================================ */
-/* عام */
+/* إعدادات عامة */
 /* ============================================================ */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { font-size: 15px; }
-body {
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
     font-family: 'Cairo', 'Segoe UI', sans-serif;
     background: var(--bg);
     color: var(--text);
-    transition: var(--transition);
-    display: flex;
-    height: 100vh;
-    overflow: hidden;
     direction: rtl;
+}
+
+#app {
+    display: flex !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
 }
 
 /* ============================================================ */
@@ -135,6 +147,7 @@ body {
 /* ============================================================ */
 .sidebar {
     width: var(--sidebar-width);
+    height: 100vh !important;
     background: linear-gradient(180deg, #1a2332, #2c3e50);
     color: white;
     display: flex;
@@ -191,9 +204,20 @@ nav a i { width: 18px; text-align: center; }
 .sidebar-footer button:hover { color: white; }
 
 /* ============================================================ */
+/* المحتوى الرئيسي */
+/* ============================================================ */
+.main-content {
+    flex: 1 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+/* ============================================================ */
 /* الهيدر */
 /* ============================================================ */
-.main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 header {
     background: var(--card-bg);
     padding: 0 18px;
@@ -238,10 +262,22 @@ header {
 .user-info i { font-size: 26px; color: var(--primary); }
 
 /* ============================================================ */
-/* المحتوى */
+/* المحتوى القابل للتمرير */
 /* ============================================================ */
-.content { flex: 1; padding: 14px 18px; overflow-y: auto; transition: var(--transition); }
-.page { display: none; animation: fadeIn 0.25s ease; }
+.content {
+    flex: 1 !important;
+    width: 100% !important;
+    height: calc(100vh - var(--header-height, 56px)) !important;
+    overflow-y: auto !important;
+    padding: 14px 18px !important;
+    background: var(--bg);
+    transition: var(--transition);
+}
+
+.page {
+    display: none;
+    animation: fadeIn 0.25s ease;
+}
 .page.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -873,7 +909,7 @@ table tr:hover { background: var(--bg); }
 }
 
 /* ============================================================ */
-/* التجاوب */
+/* التجاوب - الكمبيوتر والموبايل */
 /* ============================================================ */
 @media (max-width: 992px) {
     .sidebar { width: 60px; }
@@ -909,7 +945,7 @@ table tr:hover { background: var(--bg); }
     nav a.active { border-right-color: var(--primary); border-bottom: none; }
     .menu-toggle { display: block; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
-    .content { padding: 10px 12px; }
+    .content { padding: 10px 12px !important; }
     header { padding: 0 12px; height: 48px; }
     .page-title { font-size: 15px; }
     .date-display { display: none; }
