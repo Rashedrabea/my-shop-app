@@ -109,14 +109,13 @@
                             <input type="text" id="saleClientNew" placeholder="أو اكتب اسم جديد" style="margin-top:5px;border:2px solid #2E4057;padding:8px;border-radius:8px;width:100%;">
                         </div>
                         <div class="form-group" style="margin:0;"><label style="font-size:12px;color:#666;">نوع الدفع</label>
-                            <select id="saleType" style="border:2px solid #2E4057;" onchange="togglePaymentMethod('sale')">
+                            <select id="saleType" style="border:2px solid #2E4057;">
                                 <option value="cash">كاش</option>
                                 <option value="credit">آجل</option>
                                 <option value="installment">تقسيط</option>
                             </select>
                         </div>
                     </div>
-                    <!-- وسيلة الدفع -->
                     <div id="salePaymentMethod" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#e8f8f5;padding:10px;border-radius:10px;margin-bottom:10px;border:2px solid #00B894;">
                         <div class="form-group" style="margin:0;"><label style="font-size:12px;color:#666;">وسيلة الدفع</label>
                             <select id="salePaymentMethodSelect" style="border:2px solid #00B894;">
@@ -143,7 +142,6 @@
                             <span><strong>المنتج:</strong> <span id="selectedProductName"></span></span>
                             <span><strong>المخزون:</strong> <span id="selectedProductQty" style="color:#2E4057;font-weight:bold;"></span></span>
                             <span><strong>سعر البيع:</strong> <span id="selectedProductPrice" style="color:#00B894;font-weight:bold;"></span> ج.م</span>
-                            <span><strong>التصنيف:</strong> <span id="selectedProductCategory"></span></span>
                         </div>
                     </div>
                     <div style="background:#fff;border:2px solid #2E4057;border-radius:10px;overflow:hidden;margin-bottom:10px;">
@@ -185,7 +183,7 @@
                             <input type="text" id="purchaseSupplierNew" placeholder="أو اكتب اسم جديد" style="margin-top:5px;border:2px solid #E17055;padding:8px;border-radius:8px;width:100%;">
                         </div>
                         <div class="form-group" style="margin:0;"><label style="font-size:12px;color:#666;">نوع الدفع</label>
-                            <select id="purchaseType" style="border:2px solid #E17055;" onchange="togglePaymentMethod('purchase')">
+                            <select id="purchaseType" style="border:2px solid #E17055;">
                                 <option value="cash">كاش</option>
                                 <option value="credit">آجل</option>
                             </select>
@@ -282,7 +280,7 @@
                 </div>
             </div>
 
-            <!-- ======== الأصناف (المنتجات) ======== -->
+            <!-- ======== الأصناف ======== -->
             <div id="page-products" class="page">
                 <div class="modal-box">
                     <div class="modal-header"><h2>📦 الأصناف</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
@@ -290,24 +288,9 @@
                         <div class="form-group"><label>اسم الصنف</label><input type="text" id="prodName"></div>
                         <div class="form-group"><label>الوصف</label><input type="text" id="prodDesc"></div>
                         <div class="form-group"><label>الباركود</label><input type="text" id="prodBarcode" placeholder="اتركه لتوليد تلقائي"></div>
-                        <div class="form-group"><label>التصنيف الرئيسي</label>
-                            <select id="prodMainCategory">
-                                <option value="عام">عام</option>
-                                <option value="مواد خام">مواد خام</option>
-                                <option value="منتجات تامة">منتجات تامة</option>
-                                <option value="خدمات">خدمات</option>
-                                <option value="قطع غيار">قطع غيار</option>
-                            </select>
-                        </div>
+                        <div class="form-group"><label>التصنيف الرئيسي</label><select id="prodMainCategory"><option value="عام">عام</option><option value="مواد خام">مواد خام</option><option value="منتجات تامة">منتجات تامة</option><option value="خدمات">خدمات</option><option value="قطع غيار">قطع غيار</option></select></div>
                         <div class="form-group"><label>التصنيف الفرعي</label><input type="text" id="prodSubCategory" placeholder="مثال: إلكترونيات"></div>
-                        <div class="form-group"><label>وحدة القياس</label>
-                            <select id="prodUnit">
-                                <option value="قطعة">قطعة</option><option value="كيلو">كيلو</option>
-                                <option value="جرام">جرام</option><option value="لتر">لتر</option>
-                                <option value="متر">متر</option><option value="علبة">علبة</option>
-                                <option value="كرتونة">كرتونة</option>
-                            </select>
-                        </div>
+                        <div class="form-group"><label>وحدة القياس</label><select id="prodUnit"><option value="قطعة">قطعة</option><option value="كيلو">كيلو</option><option value="جرام">جرام</option><option value="لتر">لتر</option><option value="متر">متر</option><option value="علبة">علبة</option></select></div>
                         <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
                         <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
                         <div class="form-group"><label>سعر البيع</label><input type="number" id="prodSell"></div>
@@ -326,13 +309,7 @@
                     <div class="modal-header"><h2>👤 العملاء والموردين</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
                         <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
-                        <div class="form-group"><label>النوع</label>
-                            <select id="contactType" onchange="toggleClientFields()">
-                                <option value="عميل">عميل</option>
-                                <option value="مورد">مورد</option>
-                                <option value="كلاهما">كلاهما</option>
-                            </select>
-                        </div>
+                        <div class="form-group"><label>النوع</label><select id="contactType"><option value="عميل">عميل</option><option value="مورد">مورد</option><option value="كلاهما">كلاهما</option></select></div>
                         <div class="form-group"><label>رقم الهاتف</label><input type="text" id="contactPhone"></div>
                         <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress"></div>
                         <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="contactEmail"></div>
@@ -368,52 +345,21 @@
                     <div class="treasury-balance">إجمالي الرصيد: <span id="treasuryDisplay">0</span> ج.م</div>
                     <div class="treasury-section"><h3 class="section-title-green">💰 تحصيل دين</h3>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                            <div class="form-group"><label>العميل</label>
-                                <select id="collectClient">
-                                    <option value="">اختر العميل</option>
-                                </select>
-                                <input type="text" id="collectClientNew" placeholder="أو اكتب اسم جديد" style="margin-top:5px;padding:8px;border:2px solid #ddd;border-radius:8px;width:100%;">
-                            </div>
-                            <div class="form-group"><label>وسيلة الدفع</label>
-                                <select id="collectPaymentMethod">
-                                    <option value="cash">خزنة نقدي</option>
-                                    <option value="vodafone">فودافون كاش</option>
-                                    <option value="instapay">إنستاباي</option>
-                                    <option value="bank">تحويل بنكي</option>
-                                </select>
-                            </div>
+                            <div class="form-group"><label>العميل</label><select id="collectClient"><option value="">اختر العميل</option></select><input type="text" id="collectClientNew" placeholder="أو اكتب اسم جديد" style="margin-top:5px;padding:8px;border:2px solid #ddd;border-radius:8px;width:100%;"></div>
+                            <div class="form-group"><label>وسيلة الدفع</label><select id="collectPaymentMethod"><option value="cash">خزنة نقدي</option><option value="vodafone">فودافون كاش</option><option value="instapay">إنستاباي</option><option value="bank">تحويل بنكي</option></select></div>
                         </div>
                         <div style="display:flex;gap:10px;"><div style="flex:1;"><label>المبلغ</label><input type="number" id="collectAmount"></div><button onclick="collectDebt()" class="btn-green">تحصيل</button></div>
                     </div>
                     <div class="treasury-section"><h3 class="section-title-red">💸 سداد مورد</h3>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                            <div class="form-group"><label>المورد</label>
-                                <select id="paySupplier">
-                                    <option value="">اختر المورد</option>
-                                </select>
-                                <input type="text" id="paySupplierNew" placeholder="أو اكتب اسم جديد" style="margin-top:5px;padding:8px;border:2px solid #ddd;border-radius:8px;width:100%;">
-                            </div>
-                            <div class="form-group"><label>وسيلة الدفع</label>
-                                <select id="payPaymentMethod">
-                                    <option value="cash">خزنة نقدي</option>
-                                    <option value="vodafone">فودافون كاش</option>
-                                    <option value="instapay">إنستاباي</option>
-                                    <option value="bank">تحويل بنكي</option>
-                                </select>
-                            </div>
+                            <div class="form-group"><label>المورد</label><select id="paySupplier"><option value="">اختر المورد</option></select><input type="text" id="paySupplierNew" placeholder="أو اكتب اسم جديد" style="margin-top:5px;padding:8px;border:2px solid #ddd;border-radius:8px;width:100%;"></div>
+                            <div class="form-group"><label>وسيلة الدفع</label><select id="payPaymentMethod"><option value="cash">خزنة نقدي</option><option value="vodafone">فودافون كاش</option><option value="instapay">إنستاباي</option><option value="bank">تحويل بنكي</option></select></div>
                         </div>
                         <div style="display:flex;gap:10px;"><div style="flex:1;"><label>المبلغ</label><input type="number" id="payAmount"></div><button onclick="paySupplier()" class="btn-red">سداد</button></div>
                     </div>
                     <div class="treasury-section"><h3 class="section-title-blue">🏦 الخزنة الرئيسية</h3>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                            <div class="form-group"><label>نوع الحركة</label>
-                                <select id="treasuryType">
-                                    <option value="cash">خزنة نقدي</option>
-                                    <option value="vodafone">فودافون كاش</option>
-                                    <option value="instapay">إنستاباي</option>
-                                    <option value="bank">تحويل بنكي</option>
-                                </select>
-                            </div>
+                            <div class="form-group"><label>نوع الحركة</label><select id="treasuryType"><option value="cash">خزنة نقدي</option><option value="vodafone">فودافون كاش</option><option value="instapay">إنستاباي</option><option value="bank">تحويل بنكي</option></select></div>
                             <div class="form-group"><label>البيان</label><input type="text" id="treasuryDesc" placeholder="سبب الحركة"></div>
                         </div>
                         <div style="display:flex;gap:10px;"><div style="flex:1;"><label>المبلغ</label><input type="number" id="treasuryAmount"></div><button onclick="addToTreasury()" class="btn-green">إيداع</button><button onclick="withdrawTreasury()" class="btn-red">سحب</button></div>
@@ -421,14 +367,7 @@
                     <div class="treasury-section"><h3 class="section-title-red">💸 مصروف</h3>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                             <div class="form-group"><label>البيان</label><input type="text" id="expenseDesc"></div>
-                            <div class="form-group"><label>وسيلة الدفع</label>
-                                <select id="expensePaymentMethod">
-                                    <option value="cash">خزنة نقدي</option>
-                                    <option value="vodafone">فودافون كاش</option>
-                                    <option value="instapay">إنستاباي</option>
-                                    <option value="bank">تحويل بنكي</option>
-                                </select>
-                            </div>
+                            <div class="form-group"><label>وسيلة الدفع</label><select id="expensePaymentMethod"><option value="cash">خزنة نقدي</option><option value="vodafone">فودافون كاش</option><option value="instapay">إنستاباي</option><option value="bank">تحويل بنكي</option></select></div>
                         </div>
                         <div style="display:flex;gap:10px;"><div style="flex:1;"><label>المبلغ</label><input type="number" id="expenseAmount"></div><button onclick="addExpense()" class="btn-red">تسجيل</button></div>
                     </div>
@@ -440,7 +379,6 @@
             <div id="page-paymentMethods" class="page">
                 <div class="modal-box">
                     <div class="modal-header"><h2>💳 وسائل الدفع</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                    
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;">
                         <div style="background:#f8f9fa;padding:15px;border-radius:10px;border:2px solid #00B894;">
                             <h4 style="color:#00B894;margin-top:0;">📱 المحافظ الإلكترونية</h4>
@@ -506,8 +444,7 @@
             <div id="page-settings" class="page">
                 <div class="modal-box">
                     <div class="modal-header"><h2>⚙️ الإعدادات</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
-                    <div class="settings-section">
-                        <h3 class="section-title-blue">🎨 المظهر</h3>
+                    <div class="settings-section"><h3 class="section-title-blue">🎨 المظهر</h3>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
                             <button onclick="changeTheme('default')" class="btn-theme" style="background:#F4F6F9;color:#333;border:2px solid #ddd;">افتراضي</button>
                             <button onclick="changeTheme('dark')" class="btn-theme" style="background:#1a1a2e;color:white;">داكن</button>
@@ -522,14 +459,12 @@
                             <button onclick="changeFontSize('xlarge')" class="btn-sm">كبير جداً</button>
                         </div>
                     </div>
-                    <div class="settings-section">
-                        <h3 class="section-title-green">🔔 التنبيهات</h3>
+                    <div class="settings-section"><h3 class="section-title-green">🔔 التنبيهات</h3>
                         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;"><label>صوتية</label><label class="switch"><input type="checkbox" id="soundAlerts" checked><span class="slider round"></span></label></div>
                         <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;"><label>منبثقة</label><label class="switch"><input type="checkbox" id="popupAlerts" checked><span class="slider round"></span></label></div>
                         <div class="form-group" style="margin-top:10px;"><label>صوت</label><select id="alertSound" style="width:100%;padding:10px;border:2px solid #eee;border-radius:8px;"><option value="beep">🔔 بيب</option><option value="bell">🔔 جرس</option><option value="notification">📱 إشعار</option></select></div>
                     </div>
-                    <div class="settings-section">
-                        <h3 class="section-title-blue">ℹ️ معلومات</h3>
+                    <div class="settings-section"><h3 class="section-title-blue">ℹ️ معلومات</h3>
                         <div style="background:#f0f2f5;padding:15px;border-radius:8px;color:#333;">
                             <p><strong>📌 الإصدار:</strong> V31</p>
                             <p><strong>👨‍💻 المطور:</strong> نظام راشد</p>
@@ -597,8 +532,8 @@
                 <span style="font-weight:bold;color:#2E4057;">⚙️ الإعدادات المتقدمة</span>
                 <button onclick="closeAdminPanel()" style="background:none;border:none;font-size:24px;cursor:pointer;">&times;</button>
             </div>
-            <div class="form-group"><label>اسم الشركة</label><input type="text" id="adminShopName"></div>
-            <div class="form-group"><label>الفرع</label><input type="text" id="adminBranch"></div>
+            <div class="form-group"><label>اسم الشركة</label><input type="text" id="adminShopName" value="نظام راشد"></div>
+            <div class="form-group"><label>الفرع</label><input type="text" id="adminBranch" value="رئيسي"></div>
             <hr>
             <div class="form-group"><label>كلمة المرور الجديدة</label><input type="password" id="adminNewPassword"></div>
             <button onclick="changeAdminPassword()" class="btn-main" style="background:#00B894;">تحديث</button>
