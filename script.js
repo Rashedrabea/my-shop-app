@@ -407,14 +407,16 @@ function updateAllUI() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${t.date}</td>
+            <td>${t.type || 'حركة'}</td>
             <td>${t.desc}</td>
             <td>${t.debit ? t.debit.toFixed(2) : '-'}</td>
             <td>${t.credit ? t.credit.toFixed(2) : '-'}</td>
+            <td>${(t.balance || 0).toFixed(2)}</td>
         `;
         tt.appendChild(row);
     });
 
-    // المرتجعات
+    // مرتجعات المبيعات
     const srt = document.getElementById('salesReturnsList');
     srt.innerHTML = '';
     salesReturns.forEach(r => {
@@ -425,9 +427,13 @@ function updateAllUI() {
             <td>${r.invoiceNo}</td>
             <td>${r.party}</td>
             <td>${(r.amount || 0).toFixed(2)}</td>
+            <td>${r.reason || 'مرتجع'}</td>
+            <td><button class="btn-delete" onclick="deleteSaleReturn(${r.id})"><i class="fas fa-trash"></i></button></td>
         `;
         srt.appendChild(row);
     });
+
+    // مرتجعات المشتريات
     const prt = document.getElementById('purchasesReturnsList');
     prt.innerHTML = '';
     purchasesReturns.forEach(r => {
@@ -438,6 +444,8 @@ function updateAllUI() {
             <td>${r.invoiceNo}</td>
             <td>${r.party}</td>
             <td>${(r.amount || 0).toFixed(2)}</td>
+            <td>${r.reason || 'مرتجع'}</td>
+            <td><button class="btn-delete" onclick="deletePurchaseReturn(${r.id})"><i class="fas fa-trash"></i></button></td>
         `;
         prt.appendChild(row);
     });
@@ -475,6 +483,8 @@ function updateAllUI() {
 
     updateCustomerSelects();
     updateSupplierSelects();
+    updateReturnCustomerSelects();
+    updateReturnSupplierSelects();
 
     if (isOnline) saveAllData();
     document.getElementById('lastUpdate').textContent = new Date().toLocaleString('ar-EG');
@@ -504,6 +514,51 @@ function updateSupplierSelects() {
     });
 }
 
+function updateReturnCustomerSelects() {
+    const sel = document.getElementById('saleReturnCustomer');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- اختر --</option>';
+    customers.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.name;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+    });
+    // تعبئة الفواتير الأصلية
+    const invSel = document.getElementById('saleReturnOriginalInvoice');
+    if (invSel) {
+        invSel.innerHTML = '<option value="">-- اختر فاتورة --</option>';
+        sales.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.invoiceNo;
+            opt.textContent = s.invoiceNo + ' - ' + s.customer;
+            invSel.appendChild(opt);
+        });
+    }
+}
+
+function updateReturnSupplierSelects() {
+    const sel = document.getElementById('purchaseReturnSupplier');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">-- اختر --</option>';
+    suppliers.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.name;
+        opt.textContent = s.name;
+        sel.appendChild(opt);
+    });
+    const invSel = document.getElementById('purchaseReturnOriginalInvoice');
+    if (invSel) {
+        invSel.innerHTML = '<option value="">-- اختر فاتورة --</option>';
+        purchases.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.invoiceNo;
+            opt.textContent = p.invoiceNo + ' - ' + p.supplier;
+            invSel.appendChild(opt);
+        });
+    }
+}
+
 // ================================================================
 // البحث والتصفية
 // ================================================================
@@ -528,7 +583,7 @@ document.getElementById('customerForm').addEventListener('submit', async functio
     e.preventDefault();
     const name = document.getElementById('custName').value.trim();
     if (!name) { alert('أدخل الاسم'); return; }
-    const customer = { id: customerId++, name, phone: document.getElementById('custPhone').value || '', creditLimit: parseFloat(document.getElementById('custCreditLimit').value) || 0, balance: 0 };
+    const customer = { id: customerId++, name, phone: document.getElementById('custPhone').value || '', creditLimit: parseFloat(document.getElementById('custCreditLimit').value) || 0, balance: 0, address: document.getElementById('custAddress').value || '' };
     customers.push(customer);
     await saveToFirebase('customers', customer.id, customer);
     updateAllUI();
@@ -541,7 +596,7 @@ document.getElementById('supplierForm').addEventListener('submit', async functio
     e.preventDefault();
     const name = document.getElementById('suppName').value.trim();
     if (!name) { alert('أدخل الاسم'); return; }
-    const supplier = { id: supplierId++, name, phone: document.getElementById('suppPhone').value || '', creditLimit: parseFloat(document.getElementById('suppCreditLimit').value) || 0, balance: 0 };
+    const supplier = { id: supplierId++, name, phone: document.getElementById('suppPhone').value || '', creditLimit: parseFloat(document.getElementById('suppCreditLimit').value) || 0, balance: 0, address: document.getElementById('suppAddress').value || '' };
     suppliers.push(supplier);
     await saveToFirebase('suppliers', supplier.id, supplier);
     updateAllUI();
@@ -610,31 +665,74 @@ document.getElementById('warehouseForm').addEventListener('submit', async functi
 });
 
 // ================================================================
-// الخزينة
+// الخزينة - إيداع
 // ================================================================
-document.getElementById('transactionForm').addEventListener('submit', async function(e) {
+document.getElementById('treasuryDepositForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const type = document.getElementById('transactionType').value;
-    const desc = document.getElementById('transactionDesc').value.trim();
-    const amount = parseFloat(document.getElementById('transactionAmount').value);
+    const desc = document.getElementById('depositDesc').value.trim();
+    const amount = parseFloat(document.getElementById('depositAmount').value);
     if (!desc || !amount) { alert('أدخل البيان والمبلغ'); return; }
     const date = new Date().toISOString().split('T')[0];
-    let transaction;
-    if (type === 'income') {
-        treasuryBalance += amount;
-        treasuryIncome += amount;
-        transaction = { id: Date.now(), date, desc, debit: amount, credit: 0 };
-    } else {
-        treasuryBalance -= amount;
-        treasuryExpense += amount;
-        transaction = { id: Date.now(), date, desc, debit: 0, credit: amount };
-    }
-    treasuryTransactions.push(transaction);
-    await saveToFirebase('treasury', transaction.id, transaction);
+    treasuryBalance += amount;
+    treasuryIncome += amount;
+    const trans = { id: Date.now(), date, type: 'إيداع', desc, debit: amount, credit: 0, balance: treasuryBalance };
+    treasuryTransactions.push(trans);
+    await saveToFirebase('treasury', trans.id, trans);
     updateAllUI();
-    closeModal('transactionModal');
+    closeModal('treasuryDepositModal');
     this.reset();
-    addNotification('success', '✅ تم تسجيل الحركة');
+    addNotification('success', `✅ تم تسجيل الإيداع بقيمة ${amount}`);
+});
+
+// ================================================================
+// الخزينة - سحب
+// ================================================================
+document.getElementById('treasuryWithdrawForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const desc = document.getElementById('withdrawDesc').value.trim();
+    const amount = parseFloat(document.getElementById('withdrawAmount').value);
+    if (!desc || !amount) { alert('أدخل البيان والمبلغ'); return; }
+    if (amount > treasuryBalance) { alert('⚠️ الرصيد غير كافي'); return; }
+    const date = new Date().toISOString().split('T')[0];
+    treasuryBalance -= amount;
+    treasuryExpense += amount;
+    const trans = { id: Date.now(), date, type: 'سحب', desc, debit: 0, credit: amount, balance: treasuryBalance };
+    treasuryTransactions.push(trans);
+    await saveToFirebase('treasury', trans.id, trans);
+    updateAllUI();
+    closeModal('treasuryWithdrawModal');
+    this.reset();
+    addNotification('warning', `✅ تم تسجيل السحب بقيمة ${amount}`);
+});
+
+// ================================================================
+// الخزينة - تحويل
+// ================================================================
+document.getElementById('treasuryTransferForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const from = document.getElementById('transferFrom').value;
+    const to = document.getElementById('transferTo').value;
+    const amount = parseFloat(document.getElementById('transferAmount').value);
+    const desc = document.getElementById('transferDesc').value.trim() || `تحويل من ${from} إلى ${to}`;
+    if (!amount) { alert('أدخل المبلغ'); return; }
+    if (from === to) { alert('⚠️ لا يمكن التحويل لنفس الخزينة'); return; }
+    const date = new Date().toISOString().split('T')[0];
+    // سحب من الأولى
+    treasuryBalance -= amount;
+    treasuryExpense += amount;
+    const trans1 = { id: Date.now(), date, type: 'تحويل (من)', desc: `${desc} - من ${from}`, debit: 0, credit: amount, balance: treasuryBalance };
+    treasuryTransactions.push(trans1);
+    await saveToFirebase('treasury', trans1.id, trans1);
+    // إيداع في الثانية (محاكاة)
+    treasuryBalance += amount;
+    treasuryIncome += amount;
+    const trans2 = { id: Date.now() + 1, date, type: 'تحويل (إلى)', desc: `${desc} - إلى ${to}`, debit: amount, credit: 0, balance: treasuryBalance };
+    treasuryTransactions.push(trans2);
+    await saveToFirebase('treasury', trans2.id, trans2);
+    updateAllUI();
+    closeModal('treasuryTransferModal');
+    this.reset();
+    addNotification('success', `✅ تم تحويل ${amount} من ${from} إلى ${to}`);
 });
 
 // ================================================================
@@ -676,10 +774,55 @@ function openPurchaseInvoice() {
     calcInvoiceTotal('purchase');
 }
 
+function openSaleReturnInvoice() {
+    document.getElementById('saleReturnModal').style.display = 'block';
+    document.getElementById('saleReturnDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('saleReturnNo').value = `SR-${String(salesReturns.length + 1).padStart(4, '0')}`;
+    updateReturnCustomerSelects();
+    document.getElementById('saleReturnItems').innerHTML = `
+        <tr class="item-row">
+            <td><input type="text" class="item-name" placeholder="الصنف"></td>
+            <td><input type="number" class="item-qty" value="1" oninput="calcRowTotal(this,'sale-return')"></td>
+            <td><input type="number" class="item-price" value="0" oninput="calcRowTotal(this,'sale-return')"></td>
+            <td><input type="number" class="item-discount" value="0" oninput="calcRowTotal(this,'sale-return')"></td>
+            <td><input type="number" class="item-total" value="0" readonly></td>
+            <td><button type="button" class="btn-delete-sm" onclick="removeRow(this,'sale-return')"><i class="fas fa-times"></i></button></td>
+        </tr>
+    `;
+    calcInvoiceTotal('sale-return');
+}
+
+function openPurchaseReturnInvoice() {
+    document.getElementById('purchaseReturnModal').style.display = 'block';
+    document.getElementById('purchaseReturnDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('purchaseReturnNo').value = `PR-${String(purchasesReturns.length + 1).padStart(4, '0')}`;
+    updateReturnSupplierSelects();
+    document.getElementById('purchaseReturnItems').innerHTML = `
+        <tr class="item-row">
+            <td><input type="text" class="item-name" placeholder="الصنف"></td>
+            <td><input type="number" class="item-qty" value="1" oninput="calcRowTotal(this,'purchase-return')"></td>
+            <td><input type="number" class="item-price" value="0" oninput="calcRowTotal(this,'purchase-return')"></td>
+            <td><input type="number" class="item-discount" value="0" oninput="calcRowTotal(this,'purchase-return')"></td>
+            <td><input type="number" class="item-total" value="0" readonly></td>
+            <td><button type="button" class="btn-delete-sm" onclick="removeRow(this,'purchase-return')"><i class="fas fa-times"></i></button></td>
+        </tr>
+    `;
+    calcInvoiceTotal('purchase-return');
+}
+
 function addRow(type) {
-    const container = document.getElementById(type === 'sale' ? 'saleInvoiceItems' : 'purchaseInvoiceItems');
+    const containerMap = {
+        'sale': 'saleInvoiceItems',
+        'purchase': 'purchaseInvoiceItems',
+        'sale-return': 'saleReturnItems',
+        'purchase-return': 'purchaseReturnItems'
+    };
+    const container = document.getElementById(containerMap[type]);
+    if (!container) return;
     const row = document.createElement('tr');
     row.className = 'item-row';
+    const isPurchase = type === 'purchase' || type === 'purchase-return';
+    const isReturn = type === 'sale-return' || type === 'purchase-return';
     row.innerHTML = `
         <td><input type="text" class="item-name" placeholder="الصنف"></td>
         <td><input type="number" class="item-qty" value="1" oninput="calcRowTotal(this,'${type}')"></td>
@@ -693,7 +836,14 @@ function addRow(type) {
 }
 
 function removeRow(btn, type) {
-    const container = document.getElementById(type === 'sale' ? 'saleInvoiceItems' : 'purchaseInvoiceItems');
+    const containerMap = {
+        'sale': 'saleInvoiceItems',
+        'purchase': 'purchaseInvoiceItems',
+        'sale-return': 'saleReturnItems',
+        'purchase-return': 'purchaseReturnItems'
+    };
+    const container = document.getElementById(containerMap[type]);
+    if (!container) return;
     if (container.querySelectorAll('.item-row').length <= 1) { alert('يجب أن يكون صف واحد على الأقل'); return; }
     btn.closest('tr').remove();
     calcInvoiceTotal(type);
@@ -709,13 +859,25 @@ function calcRowTotal(el, type) {
 }
 
 function calcInvoiceTotal(type) {
-    const container = document.getElementById(type === 'sale' ? 'saleInvoiceItems' : 'purchaseInvoiceItems');
+    const containerMap = {
+        'sale': 'saleInvoiceItems',
+        'purchase': 'purchaseInvoiceItems',
+        'sale-return': 'saleReturnItems',
+        'purchase-return': 'purchaseReturnItems'
+    };
+    const totalMap = {
+        'sale': 'saleGrandTotal',
+        'purchase': 'purchaseGrandTotal',
+        'sale-return': 'saleReturnGrandTotal',
+        'purchase-return': 'purchaseReturnGrandTotal'
+    };
+    const container = document.getElementById(containerMap[type]);
+    if (!container) return;
     let grandTotal = 0;
     container.querySelectorAll('.item-row').forEach(row => {
         grandTotal += parseFloat(row.querySelector('.item-total').value) || 0;
     });
-    const prefix = type === 'sale' ? 'sale' : 'purchase';
-    document.getElementById(`${prefix}GrandTotal`).textContent = grandTotal.toFixed(2);
+    document.getElementById(totalMap[type]).textContent = grandTotal.toFixed(2);
 }
 
 // ================================================================
@@ -734,10 +896,11 @@ document.getElementById('saleInvoiceForm').addEventListener('submit', async func
     const sale = { id: sales.length + 1, invoiceNo, date, customer, subtotal, tax, total: grandTotal, status: 'مدفوعة', payment: document.getElementById('salePaymentMethod').value };
     sales.push(sale);
     await saveToFirebase('sales', sale.id, sale);
-    const trans = { id: Date.now(), date, desc: `مبيعات - ${invoiceNo}`, debit: grandTotal, credit: 0 };
-    treasuryTransactions.push(trans);
+    // تحديث الخزينة
     treasuryBalance += grandTotal;
     treasuryIncome += grandTotal;
+    const trans = { id: Date.now(), date, type: 'مبيعات', desc: `مبيعات - ${invoiceNo}`, debit: grandTotal, credit: 0, balance: treasuryBalance };
+    treasuryTransactions.push(trans);
     await saveToFirebase('treasury', trans.id, trans);
     updateAllUI();
     closeModal('saleInvoiceModal');
@@ -757,10 +920,10 @@ document.getElementById('purchaseInvoiceForm').addEventListener('submit', async 
     const purchase = { id: purchases.length + 1, invoiceNo, date, supplier, subtotal, tax, total: grandTotal, status: 'مدفوعة', payment: document.getElementById('purchasePaymentMethod').value };
     purchases.push(purchase);
     await saveToFirebase('purchases', purchase.id, purchase);
-    const trans = { id: Date.now(), date, desc: `مشتريات - ${invoiceNo}`, debit: 0, credit: grandTotal };
-    treasuryTransactions.push(trans);
     treasuryBalance -= grandTotal;
     treasuryExpense += grandTotal;
+    const trans = { id: Date.now(), date, type: 'مشتريات', desc: `مشتريات - ${invoiceNo}`, debit: 0, credit: grandTotal, balance: treasuryBalance };
+    treasuryTransactions.push(trans);
     await saveToFirebase('treasury', trans.id, trans);
     updateAllUI();
     closeModal('purchaseInvoiceModal');
@@ -768,47 +931,63 @@ document.getElementById('purchaseInvoiceForm').addEventListener('submit', async 
 });
 
 // ================================================================
-// المرتجعات
+// حفظ مرتجعات المبيعات
 // ================================================================
-function openReturnModal(type) {
-    document.getElementById('returnModal').style.display = 'block';
-    document.getElementById('returnType').value = type;
-}
-
-document.getElementById('returnForm').addEventListener('submit', async function(e) {
+document.getElementById('saleReturnForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const type = document.getElementById('returnType').value;
-    const invoiceNo = document.getElementById('returnInvoiceNo').value.trim();
-    const party = document.getElementById('returnParty').value.trim();
-    const amount = parseFloat(document.getElementById('returnAmount').value);
-    if (!invoiceNo || !party || !amount) { alert('املأ الحقول المطلوبة'); return; }
-    const date = new Date().toISOString().split('T')[0];
-    const returnNo = (type === 'sales' ? 'SR-' : 'PR-') + String((type === 'sales' ? salesReturns.length : purchasesReturns.length) + 1).padStart(3, '0');
-    let ret, trans;
-    if (type === 'sales') {
-        ret = { id: salesReturns.length + 1, returnNo, date, invoiceNo, party, amount, reason: 'مرتجع' };
-        salesReturns.push(ret);
-        trans = { id: Date.now(), date, desc: `مرتجع مبيعات - ${returnNo}`, debit: 0, credit: amount };
-        treasuryBalance -= amount;
-        treasuryExpense += amount;
-    } else {
-        ret = { id: purchasesReturns.length + 1, returnNo, date, invoiceNo, party, amount, reason: 'مرتجع' };
-        purchasesReturns.push(ret);
-        trans = { id: Date.now(), date, desc: `مرتجع مشتريات - ${returnNo}`, debit: amount, credit: 0 };
-        treasuryBalance += amount;
-        treasuryIncome += amount;
-    }
+    const customer = document.getElementById('saleReturnCustomer').value;
+    const invoiceNo = document.getElementById('saleReturnOriginalInvoice').value;
+    const grandTotal = parseFloat(document.getElementById('saleReturnGrandTotal').textContent) || 0;
+    const returnNo = document.getElementById('saleReturnNo').value;
+    const date = document.getElementById('saleReturnDate').value;
+    const reason = document.getElementById('saleReturnReason').value;
+    if (!customer) { alert('اختر العميل'); return; }
+    if (!invoiceNo) { alert('اختر الفاتورة الأصلية'); return; }
+    if (grandTotal === 0) { alert('أضف منتجات'); return; }
+    const ret = { id: salesReturns.length + 1, returnNo, date, invoiceNo, party: customer, amount: grandTotal, reason };
+    salesReturns.push(ret);
+    await saveToFirebase('salesReturns', ret.id, ret);
+    // تحديث الخزينة (سحب)
+    treasuryBalance -= grandTotal;
+    treasuryExpense += grandTotal;
+    const trans = { id: Date.now(), date, type: 'مرتجع مبيعات', desc: `مرتجع مبيعات - ${returnNo}`, debit: 0, credit: grandTotal, balance: treasuryBalance };
     treasuryTransactions.push(trans);
-    await saveToFirebase(type === 'sales' ? 'salesReturns' : 'purchasesReturns', ret.id, ret);
     await saveToFirebase('treasury', trans.id, trans);
     updateAllUI();
-    closeModal('returnModal');
-    this.reset();
-    addNotification('success', `✅ تم تسجيل ${returnNo}`);
+    closeModal('saleReturnModal');
+    addNotification('warning', `✅ تم تسجيل مرتجع ${returnNo} بقيمة ${grandTotal.toFixed(2)}`);
 });
 
 // ================================================================
-// حذف الفواتير
+// حفظ مرتجعات المشتريات
+// ================================================================
+document.getElementById('purchaseReturnForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const supplier = document.getElementById('purchaseReturnSupplier').value;
+    const invoiceNo = document.getElementById('purchaseReturnOriginalInvoice').value;
+    const grandTotal = parseFloat(document.getElementById('purchaseReturnGrandTotal').textContent) || 0;
+    const returnNo = document.getElementById('purchaseReturnNo').value;
+    const date = document.getElementById('purchaseReturnDate').value;
+    const reason = document.getElementById('purchaseReturnReason').value;
+    if (!supplier) { alert('اختر المورد'); return; }
+    if (!invoiceNo) { alert('اختر الفاتورة الأصلية'); return; }
+    if (grandTotal === 0) { alert('أضف منتجات'); return; }
+    const ret = { id: purchasesReturns.length + 1, returnNo, date, invoiceNo, party: supplier, amount: grandTotal, reason };
+    purchasesReturns.push(ret);
+    await saveToFirebase('purchasesReturns', ret.id, ret);
+    // تحديث الخزينة (إيداع)
+    treasuryBalance += grandTotal;
+    treasuryIncome += grandTotal;
+    const trans = { id: Date.now(), date, type: 'مرتجع مشتريات', desc: `مرتجع مشتريات - ${returnNo}`, debit: grandTotal, credit: 0, balance: treasuryBalance };
+    treasuryTransactions.push(trans);
+    await saveToFirebase('treasury', trans.id, trans);
+    updateAllUI();
+    closeModal('purchaseReturnModal');
+    addNotification('success', `✅ تم تسجيل مرتجع ${returnNo} بقيمة ${grandTotal.toFixed(2)}`);
+});
+
+// ================================================================
+// حذف الفواتير والمرتجعات
 // ================================================================
 async function deleteSale(id) {
     if (confirm('حذف الفاتورة؟')) {
@@ -822,6 +1001,22 @@ async function deletePurchase(id) {
     if (confirm('حذف الفاتورة؟')) {
         purchases = purchases.filter(p => p.id !== id);
         await deleteFromFirebase('purchases', id);
+        updateAllUI();
+        addNotification('warning', 'تم الحذف');
+    }
+}
+async function deleteSaleReturn(id) {
+    if (confirm('حذف المرتجع؟')) {
+        salesReturns = salesReturns.filter(r => r.id !== id);
+        await deleteFromFirebase('salesReturns', id);
+        updateAllUI();
+        addNotification('warning', 'تم الحذف');
+    }
+}
+async function deletePurchaseReturn(id) {
+    if (confirm('حذف المرتجع؟')) {
+        purchasesReturns = purchasesReturns.filter(r => r.id !== id);
+        await deleteFromFirebase('purchasesReturns', id);
         updateAllUI();
         addNotification('warning', 'تم الحذف');
     }
@@ -887,7 +1082,6 @@ function generateReport(type) {
     document.getElementById('reportTitle').innerHTML = `<i class="fas fa-file-alt"></i> ${names[type] || 'تقرير'}`;
     document.getElementById('reportDate').textContent = new Date().toLocaleDateString('ar-EG');
 
-    // ===== جلب بيانات الشركة =====
     const companyName = document.getElementById('companyName').value || 'شركة راشد للتجارة و التوزيع';
     const companyPhone = document.getElementById('companyPhone').value || '01158767633';
     const companyEmail = document.getElementById('companyEmail').value || 'rashedrbae20081217@gmail.com';
@@ -1031,7 +1225,7 @@ function exportToExcel(data, name) {
 }
 
 function exportAllData() {
-    const all = { customers, suppliers, items, sales, purchases, treasuryTransactions };
+    const all = { customers, suppliers, items, sales, purchases, salesReturns, purchasesReturns, treasuryTransactions };
     const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1041,16 +1235,32 @@ function exportAllData() {
 }
 
 function exportInvoicePDF(type) {
-    const id = type === 'sale' ? 'saleInvoiceContent' : 'purchaseInvoiceContent';
-    const el = document.getElementById(id);
+    const idMap = {
+        'sale': 'saleInvoiceContent',
+        'purchase': 'purchaseInvoiceContent',
+        'sale-return': 'saleReturnContent',
+        'purchase-return': 'purchaseReturnContent'
+    };
+    const nameMap = {
+        'sale': 'فاتورة_مبيعات',
+        'purchase': 'فاتورة_مشتريات',
+        'sale-return': 'مرتجع_مبيعات',
+        'purchase-return': 'مرتجع_مشتريات'
+    };
+    const el = document.getElementById(idMap[type]);
     if (!el) { alert('لا توجد فاتورة'); return; }
-    html2pdf().from(el).save(`${type === 'sale' ? 'فاتورة_مبيعات' : 'فاتورة_مشتريات'}.pdf`);
+    html2pdf().from(el).save(`${nameMap[type]}.pdf`);
     addNotification('success', '✅ تم تصدير PDF');
 }
 
 function printInvoiceContent(type) {
-    const id = type === 'sale' ? 'saleInvoiceContent' : 'purchaseInvoiceContent';
-    const content = document.getElementById(id);
+    const idMap = {
+        'sale': 'saleInvoiceContent',
+        'purchase': 'purchaseInvoiceContent',
+        'sale-return': 'saleReturnContent',
+        'purchase-return': 'purchaseReturnContent'
+    };
+    const content = document.getElementById(idMap[type]);
     if (!content) return;
     const win = window.open('', '_blank');
     win.document.write(`
