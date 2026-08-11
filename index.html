@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- ===== Firebase SDK (compat mode) - الصيغة الصحيحة ===== -->
+    <!-- Firebase SDK (compat mode) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -235,19 +235,19 @@
                         </div>
                         <div class="form-group">
                             <label>اسم الشركة</label>
-                            <input type="text" id="companyName" placeholder="اسم الشركة">
+                            <input type="text" id="companyName" placeholder="اسم الشركة" value="شركة راشد للتجارة و التوزيع">
                         </div>
                     </div>
-                    <div class="form-group"><label>السجل التجاري</label><input type="text" id="companyReg" placeholder="السجل التجاري"></div>
-                    <div class="form-group"><label>الرقم الضريبي</label><input type="text" id="companyTax" placeholder="الرقم الضريبي"></div>
-                    <div class="form-group"><label>العنوان</label><input type="text" id="companyAddress" placeholder="العنوان"></div>
-                    <div class="form-group"><label>الهاتف</label><input type="tel" id="companyPhone" placeholder="الهاتف"></div>
-                    <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="companyEmail" placeholder="البريد الإلكتروني"></div>
+                    <div class="form-group"><label>السجل التجاري</label><input type="text" id="companyReg" placeholder="السجل التجاري" value="السجل التجاري"></div>
+                    <div class="form-group"><label>الرقم التجاري</label><input type="text" id="companyTax" placeholder="الرقم التجاري" value="الرقم التجاري"></div>
+                    <div class="form-group"><label>العنوان</label><input type="text" id="companyAddress" placeholder="العنوان" value="العنوان"></div>
+                    <div class="form-group"><label>الهاتف</label><input type="tel" id="companyPhone" placeholder="الهاتف" value="01158767633"></div>
+                    <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="companyEmail" placeholder="البريد الإلكتروني" value="rashedrbae20081217@gmail.com"></div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>العملة</label>
                             <select id="companyCurrency">
-                                <option value="EGP">جنيه مصري</option>
+                                <option value="EGP" selected>جنيه مصري</option>
                                 <option value="USD">دولار أمريكي</option>
                                 <option value="SAR">ريال سعودي</option>
                             </select>
@@ -606,7 +606,7 @@
             <form id="saleInvoiceForm">
                 <div class="invoice-header">
                     <div class="company-info" id="saleCompanyInfo">
-                        <h2 id="saleCompanyName">شركة النيل للتجارة</h2>
+                        <h2 id="saleCompanyName">شركة راشد للتجارة و التوزيع</h2>
                     </div>
                     <div class="invoice-title">
                         <h1>فاتورة مبيعات</h1>
@@ -680,7 +680,7 @@
             <form id="purchaseInvoiceForm">
                 <div class="invoice-header">
                     <div class="company-info" id="purchaseCompanyInfo">
-                        <h2 id="purchaseCompanyName">شركة النيل للتجارة</h2>
+                        <h2 id="purchaseCompanyName">شركة راشد للتجارة و التوزيع</h2>
                     </div>
                     <div class="invoice-title">
                         <h1>فاتورة مشتريات</h1>
@@ -762,8 +762,8 @@
         <div class="report-body" id="reportBody">
             <div class="report-header">
                 <div class="report-company">
-                    <h2 id="reportCompanyName">شركة النيل للتجارة</h2>
-                    <p id="reportCompanyInfo">القاهرة - مصر | ت: +20 100 123 4567</p>
+                    <h2 id="reportCompanyName">شركة راشد للتجارة و التوزيع</h2>
+                    <p id="reportCompanyInfo">العنوان | ت: 01158767633 | rashedrbae20081217@gmail.com</p>
                 </div>
                 <div class="report-title-section">
                     <h1 id="reportMainTitle">تقرير المبيعات</h1>
