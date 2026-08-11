@@ -1,6 +1,5 @@
 // ============================================================
 // نظام راشد V31 - ERP متكامل
-// جميع الدوال في ملف واحد
 // ============================================================
 
 // ============================================================
@@ -25,7 +24,6 @@ let clickCount = 0;
 let clickTimer = null;
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 
-// متغيرات الفواتير
 let saleItems = [], saleTotal = 0, saleDiscount = 0;
 let returnSaleItems = [], returnSaleTotal = 0;
 let purchaseItems = [], purchaseTotal = 0, purchaseDiscount = 0;
@@ -286,7 +284,7 @@ function searchProductLive(input) {
     const results = products.filter(p => 
         p.name.toLowerCase().includes(input.toLowerCase()) ||
         (p.barcode && p.barcode.includes(input)) ||
-        (p.category && p.category.toLowerCase().includes(input.toLowerCase()))
+        (p.mainCategory && p.mainCategory.toLowerCase().includes(input.toLowerCase()))
     );
     if (results.length === 0) {
         if (suggestions) { suggestions.innerHTML = '<div style="padding:10px;color:#999;text-align:center;">لا توجد نتائج</div>'; suggestions.style.display = 'block'; }
@@ -312,7 +310,6 @@ function selectProductForSale(productId) {
     document.getElementById('selectedProductName').textContent = product.name;
     document.getElementById('selectedProductQty').textContent = product.qty || 0;
     document.getElementById('selectedProductPrice').textContent = product.sell || 0;
-    document.getElementById('selectedProductCategory').textContent = product.mainCategory || product.category || 'عام';
     document.getElementById('productInfoDisplay').style.display = 'block';
     document.getElementById('productSuggestions').style.display = 'none';
 }
@@ -452,7 +449,6 @@ function saveSaleInvoice() {
     const totalAfterDiscount = saleTotal - discount;
     const inv = { id: invNum, client, date, type, paymentMethod, paymentAccount, discount, items: JSON.parse(JSON.stringify(saleItems)), total: saleTotal, totalAfterDiscount, paid, balance: totalAfterDiscount - paid, isReturn: false };
     d.sales.push(inv);
-    // تحديث الخزنة حسب وسيلة الدفع
     if (paid > 0) {
         if (paymentMethod === 'cash') { d.cashTreasury = (d.cashTreasury || 0) + paid; }
         else if (paymentMethod === 'vodafone' || paymentMethod === 'instapay') { d.walletTreasury = (d.walletTreasury || 0) + paid; }
@@ -532,7 +528,6 @@ function printSaleInvoice(id) {
 function printSaleInvoiceCurrent() {
     const invNum = document.getElementById('saleInvoiceNumber').value;
     if (saleItems.length === 0) return showToast('⚠️ لا توجد منتجات للطباعة');
-    // حفظ مؤقت ثم طباعة
     const d = getData();
     const client = document.getElementById('saleClient').value.trim() || document.getElementById('saleClientNew').value.trim() || 'عميل';
     const date = document.getElementById('saleInvoiceDate').value;
@@ -1185,7 +1180,7 @@ function showWarehouseReport() {
 }
 
 // ============================================================
-// 14. المنتجات (الأصناف)
+// 14. المنتجات
 // ============================================================
 function addProduct() {
     const d = getData();
@@ -1219,7 +1214,7 @@ function clearProductForm() {
 }
 
 // ============================================================
-// 15. جهات الاتصال (العملاء والموردين)
+// 15. جهات الاتصال
 // ============================================================
 function addContact() {
     const d = getData();
@@ -1251,10 +1246,6 @@ function clearContactForm() {
         const el = document.getElementById(id);
         if (el) el.value = '0';
     });
-}
-
-function toggleClientFields() {
-    // اختياري
 }
 
 function updateClientSelects() {
@@ -1743,7 +1734,6 @@ function updateUI() {
     updateSelects();
     updateClientSelects();
     
-    // تحديث الخزنة التفصيلية
     document.getElementById('cashTreasuryDisplay').textContent = (d.cashTreasury || 0) + ' ج.م';
     document.getElementById('walletTreasuryDisplay').textContent = (d.walletTreasury || 0) + ' ج.م';
     document.getElementById('bankTreasuryDisplay').textContent = (d.bankTreasury || 0) + ' ج.م';
@@ -1767,14 +1757,14 @@ function updateUI() {
     document.getElementById('saleList').innerHTML = (d.sales || []).slice().reverse().map(s => `
         <div class="list-item" style="flex-wrap:wrap;gap:5px;${s.isReturn ? 'background:#fff5f5;border-right:3px solid #E17055;' : ''}">
             <div><strong>${s.id}</strong> ${s.isReturn ? '↩️' : ''} - ${s.client}<small style="color:#999;display:block;font-size:11px;">${s.date} | ${s.items ? s.items.length : 0} منتج</small></div>
-            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:${s.isReturn ? '#E17055' : '#2E4057'};">${s.total || 0} ج.م</span><button onclick="${s.isReturn ? 'printSaleInvoice' : 'printSaleInvoice'}('${s.id}')" style="background:#2E4057;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:${s.isReturn ? '#E17055' : '#2E4057'};">${s.total || 0} ج.م</span><button onclick="printSaleInvoice('${s.id}')" style="background:#2E4057;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
         </div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد فواتير</div>';
     
     document.getElementById('purchaseList').innerHTML = (d.purchases || []).slice().reverse().map(p => `
         <div class="list-item" style="flex-wrap:wrap;gap:5px;${p.isReturn ? 'background:#fff5f5;border-right:3px solid #E17055;' : ''}">
             <div><strong>${p.id}</strong> ${p.isReturn ? '↩️' : ''} - ${p.supplier}<small style="color:#999;display:block;font-size:11px;">${p.date} | ${p.items ? p.items.length : 0} منتج</small></div>
-            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:#E17055;">${p.total || 0} ج.م</span><button onclick="${p.isReturn ? 'printPurchaseInvoice' : 'printPurchaseInvoice'}('${p.id}')" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="font-weight:bold;color:#E17055;">${p.total || 0} ج.م</span><button onclick="printPurchaseInvoice('${p.id}')" style="background:#E17055;color:white;border:none;border-radius:4px;padding:2px 10px;cursor:pointer;font-size:11px;"><i class="fas fa-print"></i></button></div>
         </div>
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد فواتير شراء</div>';
     
