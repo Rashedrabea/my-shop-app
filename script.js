@@ -1,5 +1,6 @@
 // ============================================================
 // نظام راشد V31 - ERP متكامل
+// جميع الدوال في ملف واحد
 // ============================================================
 
 // ============================================================
@@ -28,6 +29,8 @@ let saleItems = [], saleTotal = 0, saleDiscount = 0;
 let returnSaleItems = [], returnSaleTotal = 0;
 let purchaseItems = [], purchaseTotal = 0, purchaseDiscount = 0;
 let returnPurchaseItems = [], returnPurchaseTotal = 0;
+
+let currentClientFilter = 'all';
 
 // ============================================================
 // 3. تهيئة Firebase
@@ -68,7 +71,8 @@ function saveLocal() {
 function getData() {
     if (!appData.currentUser || !appData.users[appData.currentUser]) {
         return {
-            sales: [], purchases: [], products: [], clients: [],
+            sales: [], purchases: [], products: [], clients: [], suppliers: [],
+            banks: [],
             treasury: 0, cashTreasury: 0, walletTreasury: 0, bankTreasury: 0,
             treasuryLog: [], expenses: [], collections: [], supplierPayments: [],
             warehouse: [], saleCounter: 0, purchaseCounter: 0,
@@ -83,6 +87,8 @@ function getData() {
     if (!d.purchases) d.purchases = [];
     if (!d.products) d.products = [];
     if (!d.clients) d.clients = [];
+    if (!d.suppliers) d.suppliers = [];
+    if (!d.banks) d.banks = [];
     if (d.treasury === undefined) d.treasury = 0;
     if (d.cashTreasury === undefined) d.cashTreasury = 0;
     if (d.walletTreasury === undefined) d.walletTreasury = 0;
@@ -146,7 +152,7 @@ async function handleLogin() {
             appData.users[user.uid] = {
                 displayName: u, fullName: u, phone: '', address: '',
                 data: {
-                    sales: [], purchases: [], products: [], clients: [],
+                    sales: [], purchases: [], products: [], clients: [], suppliers: [], banks: [],
                     treasury: 0, cashTreasury: 0, walletTreasury: 0, bankTreasury: 0,
                     treasuryLog: [], expenses: [], collections: [], supplierPayments: [],
                     warehouse: [], saleCounter: 0, purchaseCounter: 0,
@@ -182,7 +188,7 @@ async function handleRegister() {
         const result = await auth.createUserWithEmailAndPassword(u + '@rashed.com', p);
         const user = result.user, loc = await getUserLocation();
         await db.ref('users/' + user.uid + '/data').set({
-            sales: [], purchases: [], products: [], clients: [],
+            sales: [], purchases: [], products: [], clients: [], suppliers: [], banks: [],
             treasury: 0, cashTreasury: 0, walletTreasury: 0, bankTreasury: 0,
             treasuryLog: [], expenses: [], collections: [], supplierPayments: [],
             warehouse: [], saleCounter: 0, purchaseCounter: 0,
@@ -196,7 +202,7 @@ async function handleRegister() {
             displayName: u, fullName: fn, phone: ph, address: ad,
             lastLogin: new Date().toISOString(), lastLocation: loc,
             data: {
-                sales: [], purchases: [], products: [], clients: [],
+                sales: [], purchases: [], products: [], clients: [], suppliers: [], banks: [],
                 treasury: 0, cashTreasury: 0, walletTreasury: 0, bankTreasury: 0,
                 treasuryLog: [], expenses: [], collections: [], supplierPayments: [],
                 warehouse: [], saleCounter: 0, purchaseCounter: 0,
@@ -254,22 +260,26 @@ function switchPage(page) {
     if (page === 'dashboard') drawCharts();
     if (page === 'reports') updateReportSelects();
     if (page === 'company') loadCompanyData();
-    if (page === 'paymentMethods') loadPaymentMethods();
-    if (page === 'sales') { initSaleInvoice(); updateClientSelects(); }
-    if (page === 'purchases') { initPurchaseInvoice(); updateClientSelects(); }
     if (page === 'settings') {
         loadSettings();
+        loadPaymentMethods();
         const d = getData();
         document.getElementById('settingsUser').textContent = appData.users[appData.currentUser]?.fullName || appData.users[appData.currentUser]?.displayName || 'مستخدم';
         document.getElementById('settingsProducts').textContent = d.products.length;
         document.getElementById('settingsClients').textContent = d.clients.length;
+        document.getElementById('settingsSuppliers').textContent = d.suppliers.length;
     }
+    if (page === 'sales') { initSaleInvoice(); updateClientSelects(); }
+    if (page === 'purchases') { initPurchaseInvoice(); updateSupplierSelects(); }
     if (page === 'admin') updateAdminPanel();
     if (page === 'warehouse') updateWarehouseLog();
+    if (page === 'clients') updateClientList();
+    if (page === 'suppliers') updateSupplierList();
+    if (page === 'banks') updateBankList();
 }
 
 // ============================================================
-// 8. البحث الذكي عن المنتجات
+// 8. البحث الذكي
 // ============================================================
 function searchProductLive(input) {
     const d = getData();
@@ -418,11 +428,58 @@ function updateSaleTotals() {
     const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
     const paid = parseFloat(document.getElementById('salePaid').value) || 0;
     const totalAfterDiscount = saleTotal - discount;
-    const balance = totalAfterDiscount - paid;
+    const tax = totalAfterDiscount * 0.14;
+    const totalWithTax = totalAfterDiscount + tax;
+    const balance = totalWithTax - paid;
     document.getElementById('saleTotalDisplay').textContent = totalAfterDiscount + ' ج.م';
+    document.getElementById('saleTaxDisplay').textContent = tax + ' ج.م';
     const el = document.getElementById('saleBalanceDisplay');
     el.textContent = balance + ' ج.م';
     el.style.color = balance > 0 ? '#E17055' : '#00B894';
+}
+
+function toggleInstallmentFields() {
+    const type = document.getElementById('saleType').value;
+    const fields = document.getElementById('installmentFields');
+    if (type === 'installment') {
+        fields.style.display = 'block';
+        updateInstallmentCalc();
+    } else {
+        fields.style.display = 'none';
+    }
+}
+
+function updateInstallmentCalc() {
+    const total = saleTotal - (parseFloat(document.getElementById('saleDiscount').value) || 0);
+    const count = parseInt(document.getElementById('installmentCount').value) || 1;
+    if (count > 0 && total > 0) {
+        const amount = total / count;
+        document.getElementById('installmentAmount').value = amount.toFixed(2);
+        generateInstallmentSchedule(amount, count);
+    }
+}
+
+function generateInstallmentSchedule(amount, count) {
+    const schedule = document.getElementById('installmentSchedule');
+    let startDate = document.getElementById('installmentStartDate').value;
+    if (!startDate) {
+        const today = new Date();
+        startDate = today.toISOString().split('T')[0];
+        document.getElementById('installmentStartDate').value = startDate;
+    }
+    let html = '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;font-weight:bold;background:#2E4057;color:white;padding:5px 8px;border-radius:6px;">';
+    html += '<span>#</span><span>التاريخ</span><span>المبلغ</span></div>';
+    const date = new Date(startDate);
+    for (let i = 0; i < count; i++) {
+        const d = new Date(date);
+        d.setMonth(d.getMonth() + i);
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;padding:4px 8px;border-bottom:1px solid #eee;font-size:12px;">
+            <span>${i + 1}</span>
+            <span>${d.toLocaleDateString('ar-EG')}</span>
+            <span>${amount.toFixed(2)} ج.م</span>
+        </div>`;
+    }
+    schedule.innerHTML = html;
 }
 
 function saveSaleInvoice() {
@@ -447,7 +504,9 @@ function saveSaleInvoice() {
     if (!can) return;
     saleItems.forEach(item => { const p = d.products.find(x => x.name === item.name); if (p) p.qty -= item.qty; });
     const totalAfterDiscount = saleTotal - discount;
-    const inv = { id: invNum, client, date, type, paymentMethod, paymentAccount, discount, items: JSON.parse(JSON.stringify(saleItems)), total: saleTotal, totalAfterDiscount, paid, balance: totalAfterDiscount - paid, isReturn: false };
+    const tax = totalAfterDiscount * 0.14;
+    const totalWithTax = totalAfterDiscount + tax;
+    const inv = { id: invNum, client, date, type, paymentMethod, paymentAccount, discount, tax, items: JSON.parse(JSON.stringify(saleItems)), total: saleTotal, totalAfterDiscount, totalWithTax, paid, balance: totalWithTax - paid, isReturn: false };
     d.sales.push(inv);
     if (paid > 0) {
         if (paymentMethod === 'cash') { d.cashTreasury = (d.cashTreasury || 0) + paid; }
@@ -456,8 +515,17 @@ function saveSaleInvoice() {
         d.treasury = (d.treasury || 0) + paid;
         d.treasuryLog.push({ desc: 'بيع - ' + client + ' (' + invNum + ') - ' + paymentMethod, amount: paid });
     }
+    // حفظ الأقساط
+    if (type === 'installment' && paid < totalWithTax) {
+        const count = parseInt(document.getElementById('installmentCount').value) || 1;
+        const installmentAmount = (totalWithTax - paid) / count;
+        if (!d.installments) d.installments = [];
+        for (let i = 0; i < count; i++) {
+            d.installments.push({ invoiceId: invNum, client, number: i + 1, total: count, amount: installmentAmount, paid: false, dueDate: new Date(Date.now() + (i + 1) * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] });
+        }
+    }
     saveLocal();
-    showToast('✅ تم حفظ ' + invNum + ' بقيمة ' + totalAfterDiscount + ' ج.م');
+    showToast('✅ تم حفظ ' + invNum + ' بقيمة ' + totalWithTax + ' ج.م');
     printSaleInvoice(invNum);
     clearSaleInvoice();
     updateUI();
@@ -510,6 +578,8 @@ function printSaleInvoice(id) {
                 <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${inv.total || 0} ج.م</td></tr>
                 ${inv.discount ? `<tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الخصم</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:14px;">-${inv.discount} ج.م</td></tr>` : ''}
                 <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي بعد الخصم</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${inv.totalAfterDiscount || inv.total || 0} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الضريبة (14%)</td><td style="padding:8px;border:1px solid #ddd;color:#FDCB6E;font-weight:bold;">${inv.tax || 0} ج.م</td></tr>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي النهائي</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${inv.totalWithTax || inv.total || 0} ج.م</td></tr>
                 <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${inv.paid || 0} ج.م</td></tr>
                 <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(inv.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${inv.balance || 0} ج.م</td></tr>
             </tfoot>
@@ -536,10 +606,13 @@ function printSaleInvoiceCurrent() {
     const paymentAccount = document.getElementById('salePaymentAccount').value.trim();
     const discount = parseFloat(document.getElementById('saleDiscount').value) || 0;
     const paid = parseFloat(document.getElementById('salePaid').value) || 0;
+    const totalAfterDiscount = saleTotal - discount;
+    const tax = totalAfterDiscount * 0.14;
+    const totalWithTax = totalAfterDiscount + tax;
     const tempInv = {
         id: invNum, client, date, type, paymentMethod, paymentAccount,
-        discount, items: saleItems, total: saleTotal,
-        totalAfterDiscount: saleTotal - discount, paid, balance: saleTotal - discount - paid,
+        discount, tax, items: saleItems, total: saleTotal,
+        totalAfterDiscount, totalWithTax, paid, balance: totalWithTax - paid,
         isReturn: false
     };
     const c = d.company || {};
@@ -571,6 +644,8 @@ function printSaleInvoiceCurrent() {
                 <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${tempInv.total || 0} ج.م</td></tr>
                 ${tempInv.discount ? `<tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الخصم</td><td style="padding:8px;border:1px solid #ddd;color:#E17055;font-size:14px;">-${tempInv.discount} ج.م</td></tr>` : ''}
                 <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي بعد الخصم</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${tempInv.totalAfterDiscount || tempInv.total || 0} ج.م</td></tr>
+                <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الضريبة (14%)</td><td style="padding:8px;border:1px solid #ddd;color:#FDCB6E;font-weight:bold;">${tempInv.tax || 0} ج.م</td></tr>
+                <tr style="background:#f0f2f5;font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">الإجمالي النهائي</td><td style="padding:8px;border:1px solid #ddd;color:#2E4057;font-size:16px;">${tempInv.totalWithTax || tempInv.total || 0} ج.م</td></tr>
                 <tr><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المدفوع</td><td style="padding:8px;border:1px solid #ddd;color:#00B894;font-weight:bold;">${tempInv.paid || 0} ج.م</td></tr>
                 <tr style="font-weight:bold;"><td colspan="3" style="padding:8px;border:1px solid #ddd;text-align:left;">المتبقي</td><td style="padding:8px;border:1px solid #ddd;color:${(tempInv.balance || 0) > 0 ? '#E17055' : '#00B894'};font-size:16px;">${tempInv.balance || 0} ج.م</td></tr>
             </tfoot>
@@ -804,8 +879,8 @@ function savePurchaseInvoice() {
     if (!supplier) return showToast('⚠️ أدخل اسم المورد');
     if (purchaseItems.length === 0) return showToast('⚠️ أضف منتجات');
     const d = getData();
-    if (supplierNew && !d.clients.find(c => c.name === supplierNew)) {
-        d.clients.push({ id: Date.now().toString(), name: supplierNew, phone: '', address: '', type: 'مورد', balance: 0, creditLimit: 0, taxNumber: '', notes: '', email: '', paymentPeriod: 30 });
+    if (supplierNew && !d.suppliers.find(c => c.name === supplierNew)) {
+        d.suppliers.push({ id: Date.now().toString(), name: supplierNew, phone: '', address: '', balance: 0, taxNumber: '', notes: '', email: '', paymentPeriod: 30 });
     }
     purchaseItems.forEach(item => {
         let p = d.products.find(x => x.name === item.name);
@@ -900,10 +975,11 @@ function printPurchaseInvoiceCurrent() {
     const paymentAccount = document.getElementById('purchasePaymentAccount').value.trim();
     const discount = parseFloat(document.getElementById('purchaseDiscount').value) || 0;
     const paid = parseFloat(document.getElementById('purchasePaid').value) || 0;
+    const totalAfterDiscount = purchaseTotal - discount;
     const tempInv = {
         id: invNum, supplier, date, type, paymentMethod, paymentAccount,
         discount, items: purchaseItems, total: purchaseTotal,
-        totalAfterDiscount: purchaseTotal - discount, paid, balance: purchaseTotal - discount - paid,
+        totalAfterDiscount, paid, balance: totalAfterDiscount - paid,
         isReturn: false
     };
     const c = d.company || {};
@@ -1026,8 +1102,8 @@ function saveReturnPurchaseInvoice() {
     if (!supplier) return showToast('⚠️ أدخل اسم المورد');
     if (returnPurchaseItems.length === 0) return showToast('⚠️ أضف منتجات');
     const d = getData();
-    if (supplierNew && !d.clients.find(c => c.name === supplierNew)) {
-        d.clients.push({ id: Date.now().toString(), name: supplierNew, phone: '', address: '', type: 'مورد', balance: 0, creditLimit: 0, taxNumber: '', notes: '', email: '', paymentPeriod: 30 });
+    if (supplierNew && !d.suppliers.find(c => c.name === supplierNew)) {
+        d.suppliers.push({ id: Date.now().toString(), name: supplierNew, phone: '', address: '', balance: 0, taxNumber: '', notes: '', email: '', paymentPeriod: 30 });
     }
     returnPurchaseItems.forEach(item => {
         const p = d.products.find(x => x.name === item.name);
@@ -1214,73 +1290,153 @@ function clearProductForm() {
 }
 
 // ============================================================
-// 15. جهات الاتصال
+// 15. العملاء والموردين (منفصلين)
 // ============================================================
-function addContact() {
+function addClient() {
     const d = getData();
-    const name = document.getElementById('contactName').value.trim();
-    const phone = document.getElementById('contactPhone').value.trim();
-    const address = document.getElementById('contactAddress').value.trim();
-    const email = document.getElementById('contactEmail').value.trim();
-    const type = document.getElementById('contactType').value;
-    const balance = parseFloat(document.getElementById('contactBalance').value) || 0;
-    const creditLimit = parseFloat(document.getElementById('contactCreditLimit').value) || 0;
-    const paymentPeriod = parseInt(document.getElementById('contactPaymentPeriod').value) || 30;
-    const taxNumber = document.getElementById('contactTaxNumber').value.trim();
-    const notes = document.getElementById('contactNotes').value.trim();
-    if (!name) return showToast('⚠️ أدخل الاسم');
-    d.clients.push({ id: Date.now().toString(), name, phone, address, email, type, balance, creditLimit, paymentPeriod, taxNumber, notes });
+    const name = document.getElementById('clientName').value.trim();
+    const phone = document.getElementById('clientPhone').value.trim();
+    const address = document.getElementById('clientAddress').value.trim();
+    const email = document.getElementById('clientEmail').value.trim();
+    const balance = parseFloat(document.getElementById('clientBalance').value) || 0;
+    const creditLimit = parseFloat(document.getElementById('clientCreditLimit').value) || 0;
+    const paymentPeriod = parseInt(document.getElementById('clientPaymentPeriod').value) || 30;
+    const taxNumber = document.getElementById('clientTaxNumber').value.trim();
+    const notes = document.getElementById('clientNotes').value.trim();
+    if (!name) return showToast('⚠️ أدخل اسم العميل');
+    d.clients.push({ id: Date.now().toString(), name, phone, address, email, type: 'عميل', balance, creditLimit, paymentPeriod, taxNumber, notes });
     saveLocal();
-    clearContactForm();
+    clearClientForm();
     updateUI();
-    updateClientSelects();
-    showToast('✅ تم إضافة ' + name);
+    updateClientList();
+    showToast('✅ تم إضافة العميل ' + name);
 }
 
-function clearContactForm() {
-    ['contactName', 'contactPhone', 'contactAddress', 'contactEmail', 'contactTaxNumber', 'contactNotes'].forEach(id => {
+function clearClientForm() {
+    ['clientName', 'clientPhone', 'clientAddress', 'clientEmail', 'clientTaxNumber', 'clientNotes'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
-    ['contactBalance', 'contactCreditLimit', 'contactPaymentPeriod'].forEach(id => {
+    ['clientBalance', 'clientCreditLimit', 'clientPaymentPeriod'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '0';
     });
 }
 
-function updateClientSelects() {
+function updateClientList() {
     const d = getData();
     const clients = d.clients || [];
-    const selects = ['saleClient', 'collectClient', 'statementClientSelect'];
-    selects.forEach(id => {
-        const sel = document.getElementById(id);
-        if (!sel) return;
-        const currentVal = sel.value;
-        sel.innerHTML = '<option value="">اختر</option>';
-        clients.forEach(c => {
-            if (c.type === 'عميل' || c.type === 'كلاهما') {
-                sel.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-            }
-        });
-        if (currentVal) sel.value = currentVal;
+    const list = document.getElementById('clientList');
+    if (!list) return;
+    list.innerHTML = clients.map(c => `
+        <div class="list-item">
+            <div>
+                <strong>${c.name}</strong>
+                <br><small>📞 ${c.phone || ''}</small>
+                ${c.balance ? `<br><small style="color:${c.balance > 0 ? '#E17055' : '#00B894'};">الرصيد: ${c.balance} ج.م</small>` : ''}
+            </div>
+            <div>
+                <span style="background:#00B894;color:white;padding:2px 8px;border-radius:4px;font-size:11px;">عميل</span>
+            </div>
+        </div>
+    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا يوجد عملاء</div>';
+}
+
+function addSupplier() {
+    const d = getData();
+    const name = document.getElementById('supplierName').value.trim();
+    const phone = document.getElementById('supplierPhone').value.trim();
+    const address = document.getElementById('supplierAddress').value.trim();
+    const email = document.getElementById('supplierEmail').value.trim();
+    const balance = parseFloat(document.getElementById('supplierBalance').value) || 0;
+    const paymentPeriod = parseInt(document.getElementById('supplierPaymentPeriod').value) || 30;
+    const taxNumber = document.getElementById('supplierTaxNumber').value.trim();
+    const notes = document.getElementById('supplierNotes').value.trim();
+    if (!name) return showToast('⚠️ أدخل اسم المورد');
+    d.suppliers.push({ id: Date.now().toString(), name, phone, address, email, type: 'مورد', balance, paymentPeriod, taxNumber, notes });
+    saveLocal();
+    clearSupplierForm();
+    updateUI();
+    updateSupplierList();
+    showToast('✅ تم إضافة المورد ' + name);
+}
+
+function clearSupplierForm() {
+    ['supplierName', 'supplierPhone', 'supplierAddress', 'supplierEmail', 'supplierTaxNumber', 'supplierNotes'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
     });
-    const supplierSelects = ['purchaseSupplier', 'paySupplier'];
-    supplierSelects.forEach(id => {
-        const sel = document.getElementById(id);
-        if (!sel) return;
-        const currentVal = sel.value;
-        sel.innerHTML = '<option value="">اختر</option>';
-        clients.forEach(c => {
-            if (c.type === 'مورد' || c.type === 'كلاهما') {
-                sel.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-            }
-        });
-        if (currentVal) sel.value = currentVal;
+    ['supplierBalance', 'supplierPaymentPeriod'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '0';
     });
 }
 
+function updateSupplierList() {
+    const d = getData();
+    const suppliers = d.suppliers || [];
+    const list = document.getElementById('supplierList');
+    if (!list) return;
+    list.innerHTML = suppliers.map(c => `
+        <div class="list-item">
+            <div>
+                <strong>${c.name}</strong>
+                <br><small>📞 ${c.phone || ''}</small>
+                ${c.balance ? `<br><small style="color:${c.balance > 0 ? '#E17055' : '#00B894'};">الرصيد: ${c.balance} ج.م</small>` : ''}
+            </div>
+            <div>
+                <span style="background:#E17055;color:white;padding:2px 8px;border-radius:4px;font-size:11px;">مورد</span>
+            </div>
+        </div>
+    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا يوجد موردين</div>';
+}
+
 // ============================================================
-// 16. الخزنة
+// 16. البنوك
+// ============================================================
+function addBankAccount() {
+    const d = getData();
+    const name = document.getElementById('bankName').value.trim();
+    const account = document.getElementById('bankAccountNumber').value.trim();
+    const iban = document.getElementById('bankIBAN').value.trim();
+    const balance = parseFloat(document.getElementById('bankBalance').value) || 0;
+    if (!name || !account) return showToast('⚠️ أدخل اسم البنك ورقم الحساب');
+    d.banks.push({ id: Date.now().toString(), name, account, iban, balance });
+    saveLocal();
+    clearBankForm();
+    updateBankList();
+    showToast('✅ تم إضافة الحساب البنكي ' + name);
+}
+
+function clearBankForm() {
+    ['bankName', 'bankAccountNumber', 'bankIBAN'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('bankBalance').value = 0;
+}
+
+function updateBankList() {
+    const d = getData();
+    const banks = d.banks || [];
+    const list = document.getElementById('bankList');
+    if (!list) return;
+    list.innerHTML = banks.map(b => `
+        <div class="list-item">
+            <div>
+                <strong>🏦 ${b.name}</strong>
+                <br><small>رقم الحساب: ${b.account}</small>
+                ${b.iban ? `<br><small>IBAN: ${b.iban}</small>` : ''}
+            </div>
+            <div>
+                <span style="font-weight:bold;color:#0984e3;">${b.balance || 0} ج.م</span>
+            </div>
+        </div>
+    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد حسابات بنكية</div>';
+}
+
+// ============================================================
+// 17. الخزنة
 // ============================================================
 function collectDebt() {
     const d = getData();
@@ -1315,8 +1471,8 @@ function paySupplier() {
     const amount = parseFloat(document.getElementById('payAmount').value);
     const method = document.getElementById('payPaymentMethod').value;
     if (!supplier || !amount || amount <= 0) return showToast('⚠️ أدخل البيانات');
-    if (supplierNew && !d.clients.find(c => c.name === supplierNew)) {
-        d.clients.push({ id: Date.now().toString(), name: supplierNew, phone: '', address: '', type: 'مورد', balance: 0, creditLimit: 0, taxNumber: '', notes: '', email: '', paymentPeriod: 30 });
+    if (supplierNew && !d.suppliers.find(c => c.name === supplierNew)) {
+        d.suppliers.push({ id: Date.now().toString(), name: supplierNew, phone: '', address: '', balance: 0, taxNumber: '', notes: '', email: '', paymentPeriod: 30 });
     }
     if ((d.treasury || 0) < amount) return showToast('⚠️ الرصيد غير كافي');
     if (method === 'cash') { d.cashTreasury = (d.cashTreasury || 0) - amount; }
@@ -1398,7 +1554,7 @@ function addExpense() {
 }
 
 // ============================================================
-// 17. بيانات الشركة
+// 18. بيانات الشركة
 // ============================================================
 function saveCompanyData() {
     const d = getData();
@@ -1454,16 +1610,16 @@ function loadCompanyData() {
 }
 
 // ============================================================
-// 18. وسائل الدفع
+// 19. وسائل الدفع
 // ============================================================
 function savePaymentMethods() {
     const d = getData();
     d.paymentMethods = {
         vodafone: document.getElementById('vodafoneNumber').value.trim(),
         instapay: document.getElementById('instapayNumber').value.trim(),
-        bankName: document.getElementById('bankName').value.trim(),
-        bankAccount: document.getElementById('bankAccount').value.trim(),
-        bankIBAN: document.getElementById('bankIBAN').value.trim()
+        bankName: document.getElementById('settingsBankName').value.trim(),
+        bankAccount: document.getElementById('settingsBankAccount').value.trim(),
+        bankIBAN: document.getElementById('settingsBankIBAN').value.trim()
     };
     saveLocal();
     showPaymentMethods();
@@ -1487,14 +1643,14 @@ function loadPaymentMethods() {
     const p = d.paymentMethods || {};
     document.getElementById('vodafoneNumber').value = p.vodafone || '';
     document.getElementById('instapayNumber').value = p.instapay || '';
-    document.getElementById('bankName').value = p.bankName || '';
-    document.getElementById('bankAccount').value = p.bankAccount || '';
-    document.getElementById('bankIBAN').value = p.bankIBAN || '';
+    document.getElementById('settingsBankName').value = p.bankName || '';
+    document.getElementById('settingsBankAccount').value = p.bankAccount || '';
+    document.getElementById('settingsBankIBAN').value = p.bankIBAN || '';
     showPaymentMethods();
 }
 
 // ============================================================
-// 19. التقارير
+// 20. التقارير
 // ============================================================
 function drawCharts() {
     const d = getData();
@@ -1621,7 +1777,7 @@ function printStatement(clientName) {
 }
 
 // ============================================================
-// 20. التقارير المتقدمة
+// 21. التقارير المتقدمة
 // ============================================================
 function showAdvancedReport(type) {
     const d = getData();
@@ -1646,14 +1802,11 @@ function showAdvancedReport(type) {
         let rows = '';
         c.forEach(x => {
             const st = s.filter(si => si.client === x.name).reduce((sum, si) => sum + (si.total || 0), 0);
-            const isClient = x.type === 'عميل' || x.type === 'كلاهما';
-            const isSupplier = x.type === 'مورد' || x.type === 'كلاهما';
-            const tl = isClient && isSupplier ? 'عميل/مورد' : isClient ? 'عميل' : 'مورد';
-            rows += `<tr style="border-bottom:1px solid #333;"><td style="padding:8px;">${x.name}</td><td style="padding:8px;text-align:center;">${tl}</td><td style="padding:8px;text-align:center;">${x.phone || '-'}</td><td style="padding:8px;text-align:center;color:${(x.balance || 0) > 0 ? '#E17055' : '#00B894'};">${x.balance || 0} ج.م</td><td style="padding:8px;text-align:center;">${x.creditLimit || 0} ج.م</td><td style="padding:8px;text-align:center;color:#00B894;">${st} ج.م</td></tr>`;
+            rows += `<tr style="border-bottom:1px solid #333;"><td style="padding:8px;">${x.name}</td><td style="padding:8px;text-align:center;">${x.phone || '-'}</td><td style="padding:8px;text-align:center;color:${(x.balance || 0) > 0 ? '#E17055' : '#00B894'};">${x.balance || 0} ج.م</td><td style="padding:8px;text-align:center;">${x.creditLimit || 0} ج.م</td><td style="padding:8px;text-align:center;color:#00B894;">${st} ج.م</td></tr>`;
         });
         html = `<div style="background:#1e1e2e;border-radius:12px;padding:15px;color:white;overflow-x:auto;">
             <div style="text-align:center;border-bottom:2px solid #6C5CE7;padding-bottom:10px;margin-bottom:15px;"><h3 style="margin:0;color:#6C5CE7;">👤 تقرير العملاء</h3><small style="color:#888;">${today}</small></div>
-            <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">الاسم</th><th style="padding:8px;text-align:center;">النوع</th><th style="padding:8px;text-align:center;">الهاتف</th><th style="padding:8px;text-align:center;">الرصيد</th><th style="padding:8px;text-align:center;">الحد الائتماني</th><th style="padding:8px;text-align:center;">إجمالي المبيعات</th></tr></thead><tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:#888;">لا توجد جهات اتصال</td></tr>'}</tbody></table>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;"><thead><tr style="background:#2E4057;color:white;"><th style="padding:8px;text-align:right;">الاسم</th><th style="padding:8px;text-align:center;">الهاتف</th><th style="padding:8px;text-align:center;">الرصيد</th><th style="padding:8px;text-align:center;">الحد الائتماني</th><th style="padding:8px;text-align:center;">إجمالي المبيعات</th></tr></thead><tbody>${rows || '<tr><td colspan="5" style="text-align:center;padding:20px;color:#888;">لا يوجد عملاء</td></tr>'}</tbody></table>
         </div>`;
     } else if (type === 'sales') {
         const s = d.sales || [];
@@ -1726,22 +1879,19 @@ function showAIReport() {
 }
 
 // ============================================================
-// 21. تحديث الواجهة
+// 22. تحديث الواجهة
 // ============================================================
 function updateUI() {
     if (!appData.currentUser) return;
     const d = getData();
     updateSelects();
     updateClientSelects();
+    updateSupplierSelects();
     
     document.getElementById('cashTreasuryDisplay').textContent = (d.cashTreasury || 0) + ' ج.م';
     document.getElementById('walletTreasuryDisplay').textContent = (d.walletTreasury || 0) + ' ج.م';
     document.getElementById('bankTreasuryDisplay').textContent = (d.bankTreasury || 0) + ' ج.م';
     document.getElementById('treasuryDisplay').textContent = d.treasury || 0;
-    
-    document.getElementById('clientList').innerHTML = (d.clients || []).map(c => `
-        <div class="list-item"><div><strong>${c.name}</strong><br><small>📞 ${c.phone || ''} | ${c.type}</small></div><div><span style="background:#eee;padding:2px 8px;border-radius:4px;font-size:11px;">${c.balance || 0} ج.م</span></div></div>
-    `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد جهات اتصال</div>';
     
     document.getElementById('productList').innerHTML = (d.products || []).map(p => `
         <div class="list-item"><div><strong>${p.name}</strong><br><small>${p.mainCategory || 'عام'} | ${p.unit || 'قطعة'}</small></div><div><span style="font-weight:bold;">${p.sell || 0} ج.م (${p.qty || 0})</span></div></div>
@@ -1769,6 +1919,9 @@ function updateUI() {
     `).join('') || '<div style="text-align:center;color:#999;padding:10px;">لا توجد فواتير شراء</div>';
     
     updateWarehouseLog();
+    updateClientList();
+    updateSupplierList();
+    updateBankList();
 }
 
 function updateSelects() {
@@ -1782,8 +1935,36 @@ function updateSelects() {
     });
 }
 
+function updateClientSelects() {
+    const d = getData();
+    const clients = d.clients || [];
+    const selects = ['saleClient', 'collectClient', 'statementClientSelect'];
+    selects.forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">اختر</option>';
+        clients.forEach(c => { sel.innerHTML += `<option value="${c.name}">${c.name}</option>`; });
+        if (currentVal) sel.value = currentVal;
+    });
+}
+
+function updateSupplierSelects() {
+    const d = getData();
+    const suppliers = d.suppliers || [];
+    const selects = ['purchaseSupplier', 'paySupplier'];
+    selects.forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">اختر</option>';
+        suppliers.forEach(c => { sel.innerHTML += `<option value="${c.name}">${c.name}</option>`; });
+        if (currentVal) sel.value = currentVal;
+    });
+}
+
 // ============================================================
-// 22. الإعدادات
+// 23. الإعدادات
 // ============================================================
 function getSettings() {
     const d = getData();
@@ -1804,7 +1985,6 @@ function loadSettings() {
     const sz = { small: '13px', medium: '16px', large: '19px', xlarge: '22px' };
     document.body.style.fontSize = sz[s.fontSize] || '16px';
     document.getElementById('soundAlerts').checked = s.soundAlerts !== false;
-    document.getElementById('popupAlerts').checked = s.popupAlerts !== false;
     document.getElementById('alertSound').value = s.alertSound || 'beep';
 }
 
@@ -1836,7 +2016,7 @@ function resetAppSettings() {
 }
 
 // ============================================================
-// 23. لوحة التحكم
+// 24. لوحة التحكم
 // ============================================================
 function updateAdminPanel() {
     const users = Object.keys(appData.users || {});
@@ -1870,7 +2050,7 @@ function updateAdminPanel() {
 }
 
 // ============================================================
-// 24. لوحة الأدمن (5 ضغطات)
+// 25. لوحة الأدمن (5 ضغطات)
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
     const logo = document.getElementById('brandLogo');
@@ -1963,6 +2143,8 @@ function clearAllData() {
     d.purchases = [];
     d.products = [];
     d.clients = [];
+    d.suppliers = [];
+    d.banks = [];
     d.treasury = 0;
     d.cashTreasury = 0;
     d.walletTreasury = 0;
@@ -1985,7 +2167,7 @@ function clearAllData() {
 }
 
 // ============================================================
-// 25. Toast
+// 26. Toast
 // ============================================================
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -1997,7 +2179,7 @@ function showToast(msg) {
 }
 
 // ============================================================
-// 26. بدء التشغيل
+// 27. بدء التشغيل
 // ============================================================
 initFirebase();
 loadLocal();
