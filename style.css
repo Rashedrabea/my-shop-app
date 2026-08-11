@@ -909,78 +909,381 @@ table tr:hover { background: var(--bg); }
 }
 
 /* ============================================================ */
-/* التجاوب - الكمبيوتر والموبايل */
 /* ============================================================ */
-@media (max-width: 992px) {
-    .sidebar { width: 60px; }
-    .sidebar .logo h2, .sidebar nav a span, .sidebar .user-profile span, .sidebar-footer span { display: none; }
-    .sidebar .logo { justify-content: center; padding: 12px; }
-    .sidebar .logo i { font-size: 22px; }
-    nav a { justify-content: center; padding: 10px 0; border-right: none; border-bottom: 3px solid transparent; }
-    nav a:hover { border-right: none; border-bottom-color: var(--primary); }
-    nav a.active { border-right: none; border-bottom-color: var(--primary); }
-    nav a i { font-size: 18px; }
-    .user-profile { justify-content: center; }
-    .user-avatar i { font-size: 26px; }
-    .charts-row { grid-template-columns: 1fr; }
-    .summary-grid { grid-template-columns: 1fr 1fr; }
-}
+/* 🟢 تحسينات الموبايل (الأهم) */
+/* ============================================================ */
+/* ============================================================ */
 
 @media (max-width: 768px) {
-    :root { --sidebar-width: 0px; }
+    /* القائمة الجانبية */
     .sidebar {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 260px;
-        height: 100%;
-        transform: translateX(100%);
-        transition: transform 0.3s ease;
-        z-index: 999;
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        width: 280px !important;
+        height: 100% !important;
+        transform: translateX(100%) !important;
+        transition: transform 0.3s ease !important;
+        z-index: 999 !important;
+        background: linear-gradient(180deg, #1a2332, #2c3e50) !important;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.3) !important;
     }
-    .sidebar.open { transform: translateX(0); }
-    .sidebar .logo h2, .sidebar nav a span, .sidebar .user-profile span { display: inline; }
-    nav a { justify-content: flex-start; padding: 10px 18px; border-right: 3px solid transparent; border-bottom: none; }
-    nav a:hover { border-right-color: var(--primary); border-bottom: none; }
-    nav a.active { border-right-color: var(--primary); border-bottom: none; }
-    .menu-toggle { display: block; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .content { padding: 10px 12px !important; }
-    header { padding: 0 12px; height: 48px; }
-    .page-title { font-size: 15px; }
-    .date-display { display: none; }
-    .page-header { flex-direction: column; align-items: flex-start; }
-    .form-row { grid-template-columns: 1fr; }
-    .tabs-header .tab-btn { padding: 6px 12px; font-size: 11px; }
-    .invoice-header, .report-header { flex-direction: column; }
-    .invoice-dates { flex-direction: column; }
-    .invoice-summary-bar { gap: 8px; justify-content: center; }
-    .customer-section { flex-direction: column; align-items: stretch; }
-    .invoice-footer { flex-direction: column; align-items: stretch; }
-    .warehouses-grid { grid-template-columns: 1fr; }
-    .treasury-summary { grid-template-columns: 1fr; }
-    .reports-grid { grid-template-columns: 1fr 1fr; }
-    .modal-content { margin: 5% auto; padding: 16px; width: 95%; }
-    .invoice-items-table { font-size: 10px; }
-    .invoice-items-table th, .invoice-items-table td { padding: 1px; }
-    .invoice-items-table input, .invoice-items-table select { font-size: 9px; padding: 1px 2px; }
-    .toolbar { flex-direction: column; align-items: stretch; }
-    .search-input { min-width: 100%; }
-    .summary-grid { grid-template-columns: 1fr; }
-    .header-actions .icon-btn .badge { font-size: 7px; min-width: 14px; padding: 0 4px; }
-    .report-card { padding: 12px 10px; }
-    .report-card i { font-size: 24px; }
-    .report-card h3 { font-size: 12px; }
-    .login-box { padding: 20px 16px; }
+    .sidebar.open {
+        transform: translateX(0) !important;
+    }
+    
+    /* زر القائمة */
+    .menu-toggle {
+        display: block !important;
+        font-size: 22px !important;
+        color: var(--text) !important;
+    }
+    
+    /* البطاقات */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .stat-card {
+        padding: 12px 14px !important;
+    }
+    .stat-number {
+        font-size: 18px !important;
+    }
+    
+    /* الرسوم البيانية */
+    .charts-row {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+    .chart-box {
+        padding: 12px !important;
+    }
+    #salesChart {
+        max-height: 150px !important;
+    }
+    
+    /* الجداول */
+    .table-container {
+        padding: 8px !important;
+        overflow-x: auto !important;
+    }
+    table {
+        font-size: 12px !important;
+    }
+    table th, table td {
+        padding: 4px 6px !important;
+        white-space: nowrap !important;
+    }
+    
+    /* التقارير */
+    .reports-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+    .report-card {
+        padding: 12px 8px !important;
+    }
+    .report-card i {
+        font-size: 24px !important;
+    }
+    .report-card h3 {
+        font-size: 12px !important;
+    }
+    .report-card p {
+        font-size: 10px !important;
+    }
+    
+    /* الفواتير */
+    .invoice-items-table {
+        font-size: 10px !important;
+    }
+    .invoice-items-table input,
+    .invoice-items-table select {
+        font-size: 9px !important;
+        padding: 2px !important;
+    }
+    .invoice-items-table th,
+    .invoice-items-table td {
+        padding: 2px !important;
+    }
+    .invoice-summary-bar {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 6px !important;
+    }
+    .summary-item.highlight {
+        font-size: 12px !important;
+        padding: 2px 10px !important;
+    }
+    
+    /* المودالات */
+    .modal-content {
+        padding: 16px !important;
+        margin: 10% auto !important;
+        width: 95% !important;
+        max-height: 85vh !important;
+    }
+    .modal-content h2 {
+        font-size: 16px !important;
+    }
+    
+    /* النماذج */
+    .form-container {
+        padding: 14px !important;
+        max-width: 100% !important;
+    }
+    .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .form-group input,
+    .form-group select {
+        padding: 6px 10px !important;
+        font-size: 13px !important;
+    }
+    
+    /* الخزينة */
+    .treasury-summary {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    .treasury-card {
+        padding: 10px 12px !important;
+    }
+    .treasury-card .amount {
+        font-size: 16px !important;
+    }
+    
+    /* المخازن */
+    .warehouses-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    .warehouse-card {
+        padding: 12px !important;
+    }
+    
+    /* الهيدر */
+    header {
+        padding: 0 10px !important;
+        height: 48px !important;
+    }
+    .page-title {
+        font-size: 14px !important;
+    }
+    .date-display {
+        display: none !important;
+    }
+    .user-info span {
+        display: none !important;
+    }
+    .header-actions .icon-btn {
+        font-size: 14px !important;
+    }
+    
+    /* المحتوى */
+    .content {
+        padding: 8px 10px !important;
+    }
+    .page-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+    .page-header h2 {
+        font-size: 16px !important;
+    }
+    .page-subtitle {
+        font-size: 10px !important;
+    }
+    
+    /* الأزرار */
+    .btn-primary,
+    .btn-secondary {
+        padding: 5px 12px !important;
+        font-size: 11px !important;
+    }
+    .btn-primary i,
+    .btn-secondary i {
+        font-size: 11px !important;
+    }
+    
+    /* شريط البحث */
+    .search-input {
+        min-width: 100% !important;
+        font-size: 12px !important;
+        padding: 4px 10px !important;
+    }
+    .toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .toolbar-left {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .toolbar-right {
+        text-align: center !important;
+    }
+    
+    /* التبويبات */
+    .tabs-header .tab-btn {
+        padding: 4px 10px !important;
+        font-size: 11px !important;
+    }
+    .tabs-body {
+        padding: 6px !important;
+    }
+    
+    /* التقارير المنبثقة */
+    .report-body {
+        padding: 10px !important;
+    }
+    .report-header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+    .report-company h2 {
+        font-size: 16px !important;
+    }
+    .report-title-section h1 {
+        font-size: 17px !important;
+    }
+    .summary-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .summary-stat {
+        padding: 6px !important;
+    }
+    .summary-stat strong {
+        font-size: 13px !important;
+    }
+    .report-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+    .report-toolbar > div {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 4px !important;
+    }
+    .tool-btn {
+        font-size: 10px !important;
+        padding: 3px 8px !important;
+    }
+    
+    /* تسجيل الدخول */
+    .login-box {
+        padding: 20px !important;
+    }
+    .login-logo i {
+        font-size: 32px !important;
+    }
+    .login-logo h1 {
+        font-size: 18px !important;
+    }
+    .login-box h2 {
+        font-size: 15px !important;
+    }
+    .login-box .form-group input {
+        font-size: 13px !important;
+        padding: 8px 10px !important;
+    }
+    
+    /* الفواتير المنبثقة */
+    .invoice-body {
+        padding: 10px !important;
+    }
+    .invoice-header {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+    }
+    .invoice-dates {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    .customer-section {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .invoice-footer {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .footer-left {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
 }
 
-@media (max-width: 480px) {
-    .stats-grid { grid-template-columns: 1fr; }
-    .reports-grid { grid-template-columns: 1fr; }
-    .header-right .user-info span { display: none; }
-    .login-container { padding: 10px; }
-    .modal-full .modal-content { width: 98%; }
-    .invoice-body, .report-body { padding: 10px; }
-    .invoice-title h1, .report-title-section h1 { font-size: 16px; }
-    .summary-item.highlight { font-size: 12px; padding: 2px 8px; }
+/* للشاشات الصغيرة جداً (أقل من 400px) */
+@media (max-width: 400px) {
+    .reports-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .modal-full .modal-content {
+        width: 98% !important;
+    }
+    .invoice-items-table {
+        font-size: 9px !important;
+    }
+    .invoice-items-table input,
+    .invoice-items-table select {
+        font-size: 8px !important;
+        padding: 1px !important;
+    }
+    .summary-item {
+        font-size: 10px !important;
+    }
+    .summary-item.highlight {
+        font-size: 11px !important;
+    }
+}
+
+/* للشاشات الكبيرة */
+@media (min-width: 769px) and (max-width: 992px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    .charts-row {
+        grid-template-columns: 1fr !important;
+    }
+    .reports-grid {
+        grid-template-columns: 1fr 1fr 1fr !important;
+    }
+    .sidebar {
+        width: 70px !important;
+    }
+    .sidebar .logo h2,
+    .sidebar nav a span,
+    .sidebar .user-profile span,
+    .sidebar-footer span {
+        display: none !important;
+    }
+    nav a {
+        justify-content: center !important;
+        padding: 12px 0 !important;
+    }
+    nav a i {
+        font-size: 20px !important;
+    }
+    .user-profile {
+        justify-content: center !important;
+    }
+    .logo {
+        justify-content: center !important;
+        padding: 12px !important;
+    }
+    .logo i {
+        font-size: 22px !important;
+    }
 }
