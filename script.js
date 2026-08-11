@@ -2,7 +2,7 @@
 // 🔥 Firebase Config (بالمفتاح الجديد)
 // ================================================================
 const firebaseConfig = {
-    apiKey: "BK9fehbRmOoNVQ-nfJZCHKwHYTSnEfNiCq5WiV4ZGSo3Ph32pnvko3lgBoNLY8Co9SV9P-QYSPaeycdPcYI3xXk",
+    apiKey: "itJSqqvzx4Pb4yzbv0jl9aSm8X03",
     authDomain: "accounting-system-4695d.firebaseapp.com",
     databaseURL: "https://accounting-system-4695d-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "accounting-system-4695d",
@@ -11,7 +11,6 @@ const firebaseConfig = {
     appId: "1:577360785300:web:c277d41bd114ebcefea981",
     measurementId: "G-VPHGNXYPDZ"
 };
-
 // ================================================================
 // تهيئة Firebase
 // ================================================================
