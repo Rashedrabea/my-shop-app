@@ -15,7 +15,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
-
 <!-- ========================================= -->
 <!-- شاشة الدخول المتقدمة -->
 <!-- ========================================= -->
@@ -26,42 +25,36 @@
             <p style="font-size:12px;color:#888;">نظام إدارة المؤسسات المتكامل</p>
         </div>
         <div id="loginForm">
-            <input type="email" id="loginEmail" placeholder="البريد الإلكتروني" value="admin@rashed.com">
+            <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
             <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                 <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:5px;">
                     <input type="checkbox" id="rememberMe"> تذكرني
                 </label>
-                <a href="#" onclick="showForgotPassword()" style="font-size:12px;color:#00B894;text-decoration:none;">نسيت كلمة المرور؟</a>
+                <a href="#" onclick="showForgotPassword()" style="font-size:12px;color:#00B894;text-decoration:none;cursor:pointer;">نسيت كلمة المرور؟</a>
             </div>
             <button class="btn-auth" onclick="handleLogin()">🚪 دخول</button>
             <button class="btn-auth btn-green" onclick="toggleAuthMode()">➕ حساب جديد</button>
         </div>
         <div id="registerForm" style="display:none;">
+            <input type="text" id="regUser" placeholder="اسم المستخدم">
             <input type="text" id="regFullName" placeholder="الاسم الكامل">
-            <input type="email" id="regEmail" placeholder="البريد الإلكتروني">
             <input type="text" id="regPhone" placeholder="رقم الهاتف">
+            <input type="text" id="regAddress" placeholder="العنوان">
             <input type="password" id="regPass" placeholder="كلمة المرور">
             <input type="password" id="regPassConfirm" placeholder="تأكيد كلمة المرور">
-            <select id="regRole" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin-bottom:10px;">
-                <option value="admin">مدير (Admin)</option>
-                <option value="accountant">محاسب</option>
-                <option value="sales">مندوب مبيعات</option>
-                <option value="warehouse">مشرف مخازن</option>
-                <option value="viewer">مشاهد</option>
-            </select>
-            <button class="btn-auth btn-green" onclick="handleRegister()">✅ إنشاء</button>
+            <button class="btn-auth btn-green" onclick="handleRegister()">✅ إنشاء حساب</button>
             <button class="btn-auth btn-back" onclick="toggleAuthMode()">🔙 عودة</button>
         </div>
         <div id="forgotPasswordForm" style="display:none;">
-            <p style="font-size:14px;color:#666;">أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور</p>
-            <input type="email" id="resetEmail" placeholder="البريد الإلكتروني">
-            <button class="btn-auth" onclick="sendResetPassword()">📧 إرسال رابط إعادة التعيين</button>
-            <button class="btn-auth btn-back" onclick="showLoginForm()">🔙 عودة للدخول</button>
+            <p style="font-size:14px;color:#666;">أدخل اسم المستخدم وسنرسل رابط إعادة تعيين كلمة المرور</p>
+            <input type="text" id="resetEmail" placeholder="اسم المستخدم">
+            <button class="btn-auth" onclick="sendResetPassword()">📧 إرسال رابط</button>
+            <button class="btn-auth btn-back" onclick="showLoginForm()">🔙 عودة</button>
         </div>
     </div>
 </div>
-
+    
 <!-- ========================================= -->
 <!-- التطبيق الرئيسي -->
 <!-- ========================================= -->
