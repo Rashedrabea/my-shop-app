@@ -63,8 +63,10 @@
             <button class="nav-btn" data-page="dashboard"><i class="fas fa-home"></i> الرئيسية</button>
             <button class="nav-btn" data-page="sales"><i class="fas fa-shopping-cart"></i> المبيعات</button>
             <button class="nav-btn" data-page="purchases"><i class="fas fa-truck"></i> المشتريات</button>
-            <button class="nav-btn" data-page="products"><i class="fas fa-boxes"></i> المنتجات</button>
-            <button class="nav-btn" data-page="clients"><i class="fas fa-address-book"></i> جهات الاتصال</button>
+            <button class="nav-btn" data-page="products"><i class="fas fa-boxes"></i> الأصناف</button>
+            <button class="nav-btn" data-page="warehouse"><i class="fas fa-warehouse"></i> المخازن</button>
+            <button class="nav-btn" data-page="clients"><i class="fas fa-user"></i> العملاء</button>
+            <button class="nav-btn" data-page="suppliers"><i class="fas fa-truck"></i> الموردين</button>
             <button class="nav-btn" data-page="treasury"><i class="fas fa-coins"></i> الخزنة</button>
             <button class="nav-btn" data-page="reports"><i class="fas fa-chart-pie"></i> التقارير</button>
             <button class="nav-btn" data-page="settings"><i class="fas fa-cog"></i> الإعدادات</button>
@@ -83,8 +85,10 @@
                 <div class="dashboard-grid">
                     <div class="dash-card" data-page="sales"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
                     <div class="dash-card" data-page="purchases"><i class="fas fa-truck"></i><span>مشتريات</span></div>
-                    <div class="dash-card" data-page="products"><i class="fas fa-boxes"></i><span>المنتجات</span></div>
-                    <div class="dash-card" data-page="clients"><i class="fas fa-address-book"></i><span>جهات الاتصال</span></div>
+                    <div class="dash-card" data-page="products"><i class="fas fa-boxes"></i><span>الأصناف</span></div>
+                    <div class="dash-card" data-page="warehouse"><i class="fas fa-warehouse"></i><span>المخازن</span></div>
+                    <div class="dash-card" data-page="clients"><i class="fas fa-user"></i><span>العملاء</span></div>
+                    <div class="dash-card" data-page="suppliers"><i class="fas fa-truck"></i><span>الموردين</span></div>
                     <div class="dash-card" data-page="treasury"><i class="fas fa-coins"></i><span>الخزنة</span></div>
                     <div class="dash-card" data-page="reports"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
                     <div class="dash-card" data-page="settings"><i class="fas fa-cog"></i><span>الإعدادات</span></div>
@@ -102,6 +106,12 @@
                     <div class="modal-header">
                         <h2>🛒 المبيعات</h2>
                         <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <!-- أزرار التبديل بين البيع والمرتجع -->
+                    <div style="display:flex;gap:10px;margin-bottom:15px;">
+                        <button id="saleModeAdd" class="btn-toggle active">📝 بيع</button>
+                        <button id="saleModeReturn" class="btn-toggle" style="background:#E17055;color:white;">↩️ مرتجع</button>
                     </div>
                     
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:15px;">
@@ -186,6 +196,11 @@
                         <button class="modal-close" data-page="dashboard">&times;</button>
                     </div>
                     
+                    <div style="display:flex;gap:10px;margin-bottom:15px;">
+                        <button id="purchaseModeAdd" class="btn-toggle active">📝 شراء</button>
+                        <button id="purchaseModeReturn" class="btn-toggle" style="background:#E17055;color:white;">↩️ مرتجع</button>
+                    </div>
+                    
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:15px;">
                         <div class="form-group" style="margin:0;">
                             <label style="font-size:12px;color:#666;">رقم الفاتورة</label>
@@ -260,49 +275,97 @@
                 </div>
             </div>
             
-            <!-- ===== المنتجات ===== -->
+            <!-- ===== الأصناف ===== -->
             <div id="page-products" class="page">
                 <div class="modal-box">
                     <div class="modal-header">
-                        <h2>📦 المنتجات</h2>
+                        <h2>📦 الأصناف</h2>
                         <button class="modal-close" data-page="dashboard">&times;</button>
                     </div>
                     
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                        <div class="form-group"><label>اسم المنتج</label><input type="text" id="prodName"></div>
+                        <div class="form-group"><label>اسم الصنف</label><input type="text" id="prodName"></div>
                         <div class="form-group"><label>الوصف</label><input type="text" id="prodDesc"></div>
                         <div class="form-group"><label>الكمية</label><input type="number" id="prodQty"></div>
                         <div class="form-group"><label>سعر الشراء</label><input type="number" id="prodBuy"></div>
                         <div class="form-group"><label>سعر البيع</label><input type="number" id="prodSell"></div>
                         <div class="form-group"><label>الباركود</label><input type="text" id="prodBarcode" placeholder="اتركه لتوليد تلقائي"></div>
                     </div>
-                    <button id="addProductBtn" class="btn-main">إضافة منتج</button>
+                    <button id="addProductBtn" class="btn-main">إضافة صنف</button>
                     <div id="productList" class="list-view"></div>
                 </div>
             </div>
             
-            <!-- ===== جهات الاتصال ===== -->
+            <!-- ===== المخازن ===== -->
+            <div id="page-warehouse" class="page">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>📦 المخازن</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:15px;">
+                        <button id="whAddBtn" class="btn-main" style="background:#00B894;font-size:13px;padding:12px;">📥 إذن إضافة</button>
+                        <button id="whRemoveBtn" class="btn-main" style="background:#E17055;font-size:13px;padding:12px;">📤 إذن صرف</button>
+                        <button id="whTransferBtn" class="btn-main" style="background:#6C5CE7;font-size:13px;padding:12px;">🔄 تحويل مخزن</button>
+                        <button id="whInventoryBtn" class="btn-main" style="background:#FDCB6E;color:#333;font-size:13px;padding:12px;">📋 جرد</button>
+                        <button id="whOpeningBtn" class="btn-main" style="background:#2E4057;font-size:13px;padding:12px;">📊 مخزون أول المدة</button>
+                        <button id="whReportBtn" class="btn-main" style="background:#0984e3;font-size:13px;padding:12px;">📈 تقارير المخازن</button>
+                    </div>
+                    
+                    <div id="whForm" style="display:none;background:#f8f9fa;padding:15px;border-radius:10px;margin-bottom:15px;border:2px solid #2E4057;">
+                        <h4 id="whFormTitle" style="color:#2E4057;">📥 إذن إضافة</h4>
+                        <div class="form-group"><label>المنتج</label><select id="whProduct" style="border:2px solid #2E4057;"><option>اختر</option></select></div>
+                        <div class="form-group"><label>الكمية</label><input type="number" id="whQty" value="1" style="border:2px solid #2E4057;"></div>
+                        <div class="form-group"><label>السبب</label><input type="text" id="whReason" placeholder="سبب الإذن" style="border:2px solid #2E4057;"></div>
+                        <div style="display:flex;gap:10px;">
+                            <button id="whSaveBtn" class="btn-main" style="background:#00B894;">حفظ</button>
+                            <button id="whCancelBtn" class="btn-main" style="background:#999;">إلغاء</button>
+                        </div>
+                    </div>
+                    
+                    <div id="whLog" class="list-view"></div>
+                </div>
+            </div>
+            
+            <!-- ===== العملاء ===== -->
             <div id="page-clients" class="page">
                 <div class="modal-box">
                     <div class="modal-header">
-                        <h2>👤 جهات الاتصال</h2>
+                        <h2>👤 العملاء</h2>
                         <button class="modal-close" data-page="dashboard">&times;</button>
                     </div>
                     
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                        <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
-                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="contactPhone"></div>
-                        <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress"></div>
-                        <div class="form-group"><label>النوع</label>
-                            <select id="contactType">
-                                <option value="عميل">عميل</option>
-                                <option value="مورد">مورد</option>
-                                <option value="كلاهما">كلاهما</option>
-                            </select>
-                        </div>
+                        <div class="form-group"><label>اسم العميل</label><input type="text" id="clientName"></div>
+                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="clientPhone"></div>
+                        <div class="form-group"><label>العنوان</label><input type="text" id="clientAddress"></div>
+                        <div class="form-group"><label>الرصيد الافتتاحي</label><input type="number" id="clientBalance" value="0"></div>
+                        <div class="form-group"><label>الحد الائتماني</label><input type="number" id="clientCreditLimit" value="0"></div>
+                        <div class="form-group"><label>ملاحظات</label><input type="text" id="clientNotes"></div>
                     </div>
-                    <button id="addContactBtn" class="btn-main">إضافة</button>
+                    <button id="addClientBtn" class="btn-main">إضافة عميل</button>
                     <div id="clientList" class="list-view"></div>
+                </div>
+            </div>
+            
+            <!-- ===== الموردين ===== -->
+            <div id="page-suppliers" class="page">
+                <div class="modal-box">
+                    <div class="modal-header">
+                        <h2>🏭 الموردين</h2>
+                        <button class="modal-close" data-page="dashboard">&times;</button>
+                    </div>
+                    
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <div class="form-group"><label>اسم المورد</label><input type="text" id="supplierName"></div>
+                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="supplierPhone"></div>
+                        <div class="form-group"><label>العنوان</label><input type="text" id="supplierAddress"></div>
+                        <div class="form-group"><label>الرصيد الافتتاحي</label><input type="number" id="supplierBalance" value="0"></div>
+                        <div class="form-group"><label>ملاحظات</label><input type="text" id="supplierNotes"></div>
+                    </div>
+                    <button id="addSupplierBtn" class="btn-main">إضافة مورد</button>
+                    <div id="supplierList" class="list-view"></div>
                 </div>
             </div>
             
@@ -416,8 +479,9 @@
                             <p><strong>📌 الإصدار:</strong> V31</p>
                             <p><strong>👨‍💻 المطور:</strong> نظام راشد</p>
                             <p><strong>👤 المستخدم:</strong> <span id="settingsUser">admin</span></p>
-                            <p><strong>📦 المنتجات:</strong> <span id="settingsProducts">0</span></p>
-                            <p><strong>📋 العملاء:</strong> <span id="settingsClients">0</span></p>
+                            <p><strong>📦 الأصناف:</strong> <span id="settingsProducts">0</span></p>
+                            <p><strong>👤 العملاء:</strong> <span id="settingsClients">0</span></p>
+                            <p><strong>🏭 الموردين:</strong> <span id="settingsSuppliers">0</span></p>
                         </div>
                         <button id="resetSettingsBtn" class="btn-red" style="width:100%;margin-top:10px;">🔄 إعادة ضبط</button>
                     </div>
@@ -432,7 +496,8 @@
         <button data-page="dashboard"><i class="fas fa-home"></i><span>الرئيسية</span></button>
         <button data-page="sales"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></button>
         <button data-page="purchases"><i class="fas fa-truck"></i><span>مشتريات</span></button>
-        <button data-page="products"><i class="fas fa-boxes"></i><span>منتجات</span></button>
+        <button data-page="products"><i class="fas fa-boxes"></i><span>أصناف</span></button>
+        <button data-page="warehouse"><i class="fas fa-warehouse"></i><span>مخازن</span></button>
         <button data-page="settings"><i class="fas fa-cog"></i><span>إعدادات</span></button>
         <button id="logoutBtnBottom" style="color:#E17055;"><i class="fas fa-sign-out-alt"></i><span>خروج</span></button>
     </div>
