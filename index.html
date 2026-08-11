@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>نظام راشد V31</title>
+    <title>نظام راشد V31 - نظام إدارة المؤسسات</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -13,28 +13,23 @@
 </head>
 <body>
 
-<!-- ========================================= -->
+<!-- ========================================================== -->
 <!-- شاشة الدخول -->
-<!-- ========================================= -->
+<!-- ========================================================== -->
 <div class="auth-container" id="authContainer">
     <div class="auth-box">
         <div style="text-align:center;margin-bottom:20px;">
             <h2 style="margin:0;color:#2E4057;">📊 نظام راشد V31</h2>
-            <p style="font-size:12px;color:#888;">نظام إدارة المؤسسات</p>
+            <p style="font-size:12px;color:#888;">نظام إدارة المؤسسات المتكامل</p>
         </div>
         
         <!-- نموذج الدخول -->
         <div id="loginForm">
             <input type="text" id="loginUser" placeholder="اسم المستخدم" value="admin">
             <input type="password" id="loginPass" placeholder="كلمة المرور" value="123456">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <label style="font-size:12px;color:#666;display:flex;align-items:center;gap:5px;">
-                    <input type="checkbox" id="rememberMe"> تذكرني
-                </label>
-                <span id="forgotLink" style="font-size:12px;color:#00B894;cursor:pointer;">نسيت كلمة المرور؟</span>
-            </div>
-            <button id="loginBtn" class="btn-auth">🚪 دخول</button>
-            <button id="showRegisterBtn" class="btn-auth btn-green">➕ حساب جديد</button>
+            <button class="btn-auth" id="loginBtn">🚪 دخول</button>
+            <button class="btn-auth btn-green" id="showRegisterBtn">➕ حساب جديد</button>
+            <span id="forgotLink" style="display:block;margin-top:8px;font-size:12px;color:#00B894;cursor:pointer;">نسيت كلمة المرور؟</span>
         </div>
         
         <!-- نموذج التسجيل -->
@@ -45,23 +40,23 @@
             <input type="text" id="regAddress" placeholder="العنوان">
             <input type="password" id="regPass" placeholder="كلمة المرور">
             <input type="password" id="regPassConfirm" placeholder="تأكيد كلمة المرور">
-            <button id="registerBtn" class="btn-auth btn-green">✅ إنشاء حساب</button>
-            <button id="backToLoginBtn" class="btn-auth btn-back">🔙 عودة للدخول</button>
+            <button class="btn-auth btn-green" id="registerBtn">✅ إنشاء حساب</button>
+            <button class="btn-auth btn-back" id="backToLoginBtn">🔙 عودة للدخول</button>
         </div>
         
-        <!-- نموذج نسيت كلمة المرور -->
+        <!-- نموذج استعادة كلمة المرور -->
         <div id="forgotForm" style="display:none;">
             <p style="font-size:13px;color:#666;">أدخل اسم المستخدم لإعادة تعيين كلمة المرور</p>
             <input type="text" id="resetUser" placeholder="اسم المستخدم">
-            <button id="resetBtn" class="btn-auth">📧 إرسال</button>
-            <button id="backFromForgotBtn" class="btn-auth btn-back">🔙 عودة</button>
+            <button class="btn-auth" id="resetBtn">📧 إرسال</button>
+            <button class="btn-auth btn-back" id="backFromForgotBtn">🔙 عودة</button>
         </div>
     </div>
 </div>
 
-<!-- ========================================= -->
+<!-- ========================================================== -->
 <!-- التطبيق الرئيسي -->
-<!-- ========================================= -->
+<!-- ========================================================== -->
 <div id="appContainer" style="display:none;">
     <div class="app-wrapper">
         
@@ -82,11 +77,11 @@
         <!-- المحتوى -->
         <div class="main-content">
             <div class="top-bar">
-                <div class="brand" id="brandLogo">نظام راشد <span class="version">V31</span></div>
+                <div class="brand" id="brandLogo" style="cursor:pointer;">نظام راشد <span class="version">V31</span></div>
                 <div class="user-info">👤 <span id="userDisplay">admin</span></div>
             </div>
             
-            <!-- ======== الرئيسية ======== -->
+            <!-- ===== الرئيسية ===== -->
             <div id="page-dashboard" class="page active">
                 <div class="dashboard-grid">
                     <div class="dash-card" data-page="sales"><i class="fas fa-shopping-cart"></i><span>مبيعات</span></div>
@@ -104,65 +99,65 @@
                 <button id="aiReportBtn" style="width:100%;margin-top:15px;padding:15px;background:linear-gradient(135deg,#2E4057,#00B894);color:white;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;">🤖 تحليل الذكاء الاصطناعي</button>
             </div>
             
-            <!-- ======== المبيعات ======== -->
+            <!-- ===== المبيعات ===== -->
             <div id="page-sales" class="page">
                 <div style="background:white;border-radius:12px;padding:20px;">
                     <h2>🛒 المبيعات</h2>
-                    <p style="color:#999;">صفحة المبيعات</p>
+                    <p style="color:#999;">جاري تطوير صفحة المبيعات...</p>
                     <button class="btn-main" data-page="dashboard">🔙 عودة</button>
                 </div>
             </div>
             
-            <!-- ======== المشتريات ======== -->
+            <!-- ===== المشتريات ===== -->
             <div id="page-purchases" class="page">
                 <div style="background:white;border-radius:12px;padding:20px;">
                     <h2>🚚 المشتريات</h2>
-                    <p style="color:#999;">صفحة المشتريات</p>
+                    <p style="color:#999;">جاري تطوير صفحة المشتريات...</p>
                     <button class="btn-main" data-page="dashboard">🔙 عودة</button>
                 </div>
             </div>
             
-            <!-- ======== المنتجات ======== -->
+            <!-- ===== المنتجات ===== -->
             <div id="page-products" class="page">
                 <div style="background:white;border-radius:12px;padding:20px;">
                     <h2>📦 المنتجات</h2>
-                    <p style="color:#999;">صفحة المنتجات</p>
+                    <p style="color:#999;">جاري تطوير صفحة المنتجات...</p>
                     <button class="btn-main" data-page="dashboard">🔙 عودة</button>
                 </div>
             </div>
             
-            <!-- ======== جهات الاتصال ======== -->
+            <!-- ===== جهات الاتصال ===== -->
             <div id="page-clients" class="page">
                 <div style="background:white;border-radius:12px;padding:20px;">
                     <h2>👤 جهات الاتصال</h2>
-                    <p style="color:#999;">صفحة جهات الاتصال</p>
+                    <p style="color:#999;">جاري تطوير صفحة جهات الاتصال...</p>
                     <button class="btn-main" data-page="dashboard">🔙 عودة</button>
                 </div>
             </div>
             
-            <!-- ======== الخزنة ======== -->
+            <!-- ===== الخزنة ===== -->
             <div id="page-treasury" class="page">
                 <div style="background:white;border-radius:12px;padding:20px;">
                     <h2>💰 الخزنة</h2>
-                    <p style="color:#999;">صفحة الخزنة</p>
+                    <p style="color:#999;">جاري تطوير صفحة الخزنة...</p>
                     <button class="btn-main" data-page="dashboard">🔙 عودة</button>
                 </div>
             </div>
             
-            <!-- ======== التقارير ======== -->
+            <!-- ===== التقارير ===== -->
             <div id="page-reports" class="page">
                 <div style="background:white;border-radius:12px;padding:20px;">
                     <h2>📊 التقارير</h2>
-                    <p style="color:#999;">صفحة التقارير</p>
+                    <p style="color:#999;">جاري تطوير صفحة التقارير...</p>
                     <button class="btn-main" data-page="dashboard">🔙 عودة</button>
                 </div>
             </div>
             
-            <!-- ======== الإعدادات ======== -->
+            <!-- ===== الإعدادات ===== -->
             <div id="page-settings" class="page">
                 <div style="background:white;border-radius:12px;padding:20px;">
                     <h2>⚙️ الإعدادات</h2>
-                    <p style="color:#999;">صفحة الإعدادات</p>
+                    <p style="color:#999;">جاري تطوير صفحة الإعدادات...</p>
                     <button class="btn-main" data-page="dashboard">🔙 عودة</button>
                 </div>
             </div>
@@ -181,7 +176,9 @@
     </div>
 </div>
 
-<!-- ======== Toast ======== -->
+<!-- ========================================================== -->
+<!-- Toast -->
+<!-- ========================================================== -->
 <div id="toast" class="toast"></div>
 
 <script src="script.js"></script>
