@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK (compat mode) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -154,10 +154,12 @@
 
         <div class="content">
 
-            <!-- ===== الصفحة الرئيسية ===== -->
+            <!-- ============================================================ -->
+            <!-- الصفحة الرئيسية (Dashboard) -->
+            <!-- ============================================================ -->
             <div id="page-dashboard" class="page active">
                 <div class="page-header">
-                    <h2><i class="fas fa-chart-pie"></i> لوحة التحكم</h2>
+                    <h2><i class="fas fa-chart-pie"></i> الإحصائيات</h2>
                     <span class="page-subtitle">آخر تحديث: <span id="lastUpdate"></span></span>
                 </div>
                 
@@ -218,7 +220,9 @@
                 </div>
             </div>
 
-            <!-- ===== بيانات الشركة ===== -->
+            <!-- ============================================================ -->
+            <!-- بيانات الشركة -->
+            <!-- ============================================================ -->
             <div id="page-company" class="page">
                 <div class="page-header"><h2><i class="fas fa-building"></i> بيانات الشركة</h2></div>
                 <form id="companyForm" class="form-container">
@@ -230,7 +234,7 @@
                                 <span>اضغط لرفع الشعار</span>
                             </div>
                             <input type="file" id="logoUpload" accept="image/*" style="display:none">
-                            <button type="button" class="btn-secondary btn-upload" onclick="document.getElementById('logoUpload').click()">
+                            <button type="button" class="btn-primary btn-upload btn-full" onclick="document.getElementById('logoUpload').click()">
                                 <i class="fas fa-upload"></i> رفع شعار
                             </button>
                         </div>
@@ -260,12 +264,14 @@
                         </div>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn-primary"><i class="fas fa-save"></i> حفظ البيانات</button>
+                        <button type="submit" class="btn-primary btn-save"><i class="fas fa-save"></i> حفظ البيانات</button>
                     </div>
                 </form>
             </div>
 
-            <!-- ===== العملاء ===== -->
+            <!-- ============================================================ -->
+            <!-- العملاء (مطور) -->
+            <!-- ============================================================ -->
             <div id="page-customers" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-users"></i> العملاء</h2>
@@ -279,13 +285,15 @@
                 </div>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>الاسم</th><th>الهاتف</th><th>الرصيد</th><th>حد الائتمان</th><th>الإجراءات</th></tr></thead>
+                        <thead><tr><th>الاسم</th><th>النوع</th><th>الهاتف</th><th>الرصيد</th><th>حد الائتمان</th><th>الإجراءات</th></tr></thead>
                         <tbody id="customersList"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- ===== الموردين ===== -->
+            <!-- ============================================================ -->
+            <!-- الموردين (مطور) -->
+            <!-- ============================================================ -->
             <div id="page-suppliers" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-truck"></i> الموردين</h2>
@@ -299,13 +307,15 @@
                 </div>
                 <div class="table-container">
                     <table>
-                        <thead><tr><th>الاسم</th><th>الهاتف</th><th>الرصيد</th><th>حد الائتمان</th><th>الإجراءات</th></tr></thead>
+                        <thead><tr><th>الاسم</th><th>النوع</th><th>الهاتف</th><th>الرصيد</th><th>حد الائتمان</th><th>الإجراءات</th></tr></thead>
                         <tbody id="suppliersList"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- ===== المبيعات ===== -->
+            <!-- ============================================================ -->
+            <!-- المبيعات -->
+            <!-- ============================================================ -->
             <div id="page-sales" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-cart-plus"></i> المبيعات</h2>
@@ -327,7 +337,9 @@
                 </div>
             </div>
 
-            <!-- ===== مرتجعات المبيعات ===== -->
+            <!-- ============================================================ -->
+            <!-- مرتجعات المبيعات -->
+            <!-- ============================================================ -->
             <div id="page-sales-returns" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-undo"></i> مرتجعات المبيعات</h2>
@@ -349,7 +361,9 @@
                 </div>
             </div>
 
-            <!-- ===== المشتريات ===== -->
+            <!-- ============================================================ -->
+            <!-- المشتريات -->
+            <!-- ============================================================ -->
             <div id="page-purchases" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-truck-loading"></i> المشتريات</h2>
@@ -371,7 +385,9 @@
                 </div>
             </div>
 
-            <!-- ===== مرتجعات المشتريات ===== -->
+            <!-- ============================================================ -->
+            <!-- مرتجعات المشتريات -->
+            <!-- ============================================================ -->
             <div id="page-purchases-returns" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-undo-alt"></i> مرتجعات المشتريات</h2>
@@ -393,7 +409,9 @@
                 </div>
             </div>
 
-            <!-- ===== الأصناف ===== -->
+            <!-- ============================================================ -->
+            <!-- الأصناف (مطور) -->
+            <!-- ============================================================ -->
             <div id="page-items" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-boxes"></i> الأصناف</h2>
@@ -415,16 +433,25 @@
                 </div>
             </div>
 
-            <!-- ===== المخازن ===== -->
+            <!-- ============================================================ -->
+            <!-- المخازن (مطور) -->
+            <!-- ============================================================ -->
             <div id="page-warehouses" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-warehouse"></i> المخازن</h2>
-                    <button class="btn-primary" onclick="showModal('warehouseModal')"><i class="fas fa-plus"></i> إضافة مخزن</button>
+                    <div>
+                        <button class="btn-primary" onclick="showModal('warehouseModal')"><i class="fas fa-plus"></i> إضافة مخزن</button>
+                        <button class="btn-secondary" onclick="showModal('warehouseTransferModal')"><i class="fas fa-exchange-alt"></i> تحويل بين المخازن</button>
+                        <button class="btn-secondary" onclick="showModal('warehouseIssueModal')"><i class="fas fa-sign-out-alt"></i> إذن صرف</button>
+                        <button class="btn-secondary" onclick="showModal('warehouseReceiptModal')"><i class="fas fa-sign-in-alt"></i> إذن إضافة</button>
+                    </div>
                 </div>
                 <div class="warehouses-grid" id="warehousesGrid"></div>
             </div>
 
-            <!-- ===== الخزينة ===== -->
+            <!-- ============================================================ -->
+            <!-- الخزينة (مطور) -->
+            <!-- ============================================================ -->
             <div id="page-treasury" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-money-bill-wave"></i> الخزينة</h2>
@@ -432,6 +459,8 @@
                         <button class="btn-primary" onclick="showModal('treasuryDepositModal')"><i class="fas fa-plus-circle"></i> إيداع</button>
                         <button class="btn-danger" onclick="showModal('treasuryWithdrawModal')"><i class="fas fa-minus-circle"></i> سحب</button>
                         <button class="btn-secondary" onclick="showModal('treasuryTransferModal')"><i class="fas fa-exchange-alt"></i> تحويل</button>
+                        <button class="btn-success" onclick="showModal('treasuryCollectionModal')"><i class="fas fa-hand-holding-usd"></i> تحصيل</button>
+                        <button class="btn-warning" onclick="showModal('treasuryPaymentModal')"><i class="fas fa-money-bill"></i> سداد</button>
                         <button class="btn-secondary" onclick="exportToExcel(treasuryTransactions,'الخزينة')"><i class="fas fa-file-excel"></i> Excel</button>
                     </div>
                 </div>
@@ -466,7 +495,9 @@
                 </div>
             </div>
 
-            <!-- ===== التقارير ===== -->
+            <!-- ============================================================ -->
+            <!-- التقارير -->
+            <!-- ============================================================ -->
             <div id="page-reports" class="page">
                 <div class="page-header"><h2><i class="fas fa-file-alt"></i> التقارير</h2></div>
                 <div class="reports-grid">
@@ -490,73 +521,171 @@
 <!-- المودالات -->
 <!-- ============================================================ -->
 
-<!-- مودال عميل -->
+<!-- ===== مودال عميل (مطور) ===== -->
 <div id="customerModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('customerModal')">&times;</span>
         <h2><i class="fas fa-user-plus"></i> إضافة عميل</h2>
         <form id="customerForm">
             <div class="form-group"><label>الاسم *</label><input type="text" id="custName" required></div>
+            <div class="form-group">
+                <label>النوع</label>
+                <select id="custType">
+                    <option value="عميل">عميل</option>
+                    <option value="مورد">مورد</option>
+                    <option value="عميل ومورد">عميل ومورد</option>
+                </select>
+            </div>
             <div class="form-group"><label>الهاتف</label><input type="tel" id="custPhone"></div>
-            <div class="form-group"><label>حد الائتمان</label><input type="number" id="custCreditLimit" value="0"></div>
+            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="custEmail"></div>
             <div class="form-group"><label>العنوان</label><input type="text" id="custAddress"></div>
+            <div class="form-group"><label>السجل التجاري</label><input type="text" id="custCommercial"></div>
+            <div class="form-group"><label>الرقم الضريبي</label><input type="text" id="custTax"></div>
+            <div class="form-group"><label>حد الائتمان</label><input type="number" id="custCreditLimit" value="0" step="0.01"></div>
+            <div class="form-group"><label>ملاحظات</label><textarea id="custNotes" rows="3"></textarea></div>
             <button type="submit" class="btn-primary btn-full">حفظ</button>
         </form>
     </div>
 </div>
 
-<!-- مودال مورد -->
+<!-- ===== مودال مورد (مطور) ===== -->
 <div id="supplierModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('supplierModal')">&times;</span>
         <h2><i class="fas fa-truck"></i> إضافة مورد</h2>
         <form id="supplierForm">
             <div class="form-group"><label>الاسم *</label><input type="text" id="suppName" required></div>
+            <div class="form-group">
+                <label>النوع</label>
+                <select id="suppType">
+                    <option value="مورد">مورد</option>
+                    <option value="عميل">عميل</option>
+                    <option value="عميل ومورد">عميل ومورد</option>
+                </select>
+            </div>
             <div class="form-group"><label>الهاتف</label><input type="tel" id="suppPhone"></div>
-            <div class="form-group"><label>حد الائتمان</label><input type="number" id="suppCreditLimit" value="0"></div>
+            <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="suppEmail"></div>
             <div class="form-group"><label>العنوان</label><input type="text" id="suppAddress"></div>
+            <div class="form-group"><label>السجل التجاري</label><input type="text" id="suppCommercial"></div>
+            <div class="form-group"><label>الرقم الضريبي</label><input type="text" id="suppTax"></div>
+            <div class="form-group"><label>حد الائتمان</label><input type="number" id="suppCreditLimit" value="0" step="0.01"></div>
+            <div class="form-group"><label>ملاحظات</label><textarea id="suppNotes" rows="3"></textarea></div>
             <button type="submit" class="btn-primary btn-full">حفظ</button>
         </form>
     </div>
 </div>
 
-<!-- مودال صنف -->
+<!-- ===== مودال صنف (مطور) ===== -->
 <div id="itemModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('itemModal')">&times;</span>
         <h2><i class="fas fa-box"></i> إضافة صنف</h2>
         <form id="itemForm">
             <div class="form-group"><label>الكود *</label><input type="text" id="itemCode" required></div>
-            <div class="form-group"><label>الاسم *</label><input type="text" id="itemName" required></div>
-            <div class="form-group"><label>الوحدة</label>
+            <div class="form-group"><label>اسم الصنف *</label><input type="text" id="itemName" required></div>
+            <div class="form-group"><label>التصنيف</label><input type="text" id="itemCategory" placeholder="مثل: إلكترونيات، مواد غذائية"></div>
+            <div class="form-group">
+                <label>الوحدة</label>
                 <select id="itemUnit">
                     <option value="قطعة">قطعة</option>
                     <option value="كجم">كجم</option>
                     <option value="علبة">علبة</option>
+                    <option value="كرتونة">كرتونة</option>
                     <option value="حزمة">حزمة</option>
+                    <option value="متر">متر</option>
+                    <option value="لتر">لتر</option>
                 </select>
             </div>
-            <div class="form-group"><label>سعر البيع</label><input type="number" id="itemSalePrice" step="0.01"></div>
-            <div class="form-group"><label>المخزون</label><input type="number" id="itemStock" value="0"></div>
+            <div class="form-group"><label>الوزن (كجم)</label><input type="number" id="itemWeight" step="0.001" value="0"></div>
+            <div class="form-group"><label>الحجم (م³)</label><input type="number" id="itemVolume" step="0.001" value="0"></div>
+            <div class="form-group"><label>اللون</label><input type="text" id="itemColor"></div>
+            <div class="form-group"><label>سعر الشراء</label><input type="number" id="itemPurchasePrice" step="0.01" value="0"></div>
+            <div class="form-group"><label>سعر البيع</label><input type="number" id="itemSalePrice" step="0.01" value="0"></div>
+            <div class="form-group"><label>المخزون الافتتاحي</label><input type="number" id="itemStock" value="0"></div>
+            <div class="form-group"><label>الحد الأدنى للمخزون</label><input type="number" id="itemMinStock" value="5"></div>
+            <div class="form-group"><label>ملاحظات</label><textarea id="itemNotes" rows="3"></textarea></div>
             <button type="submit" class="btn-primary btn-full">حفظ</button>
         </form>
     </div>
 </div>
 
-<!-- مودال مخزن -->
+<!-- ===== مودال مخزن ===== -->
 <div id="warehouseModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('warehouseModal')">&times;</span>
         <h2><i class="fas fa-warehouse"></i> إضافة مخزن</h2>
         <form id="warehouseForm">
-            <div class="form-group"><label>الاسم *</label><input type="text" id="warehouseName" required></div>
+            <div class="form-group"><label>اسم المخزن *</label><input type="text" id="warehouseName" required></div>
             <div class="form-group"><label>الموقع</label><input type="text" id="warehouseLocation"></div>
+            <div class="form-group"><label>الوصف</label><textarea id="warehouseDesc" rows="3"></textarea></div>
             <button type="submit" class="btn-primary btn-full">حفظ</button>
         </form>
     </div>
 </div>
 
-<!-- مودال إيداع -->
+<!-- ===== مودال تحويل بين المخازن ===== -->
+<div id="warehouseTransferModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('warehouseTransferModal')">&times;</span>
+        <h2><i class="fas fa-exchange-alt"></i> تحويل بين المخازن</h2>
+        <form id="warehouseTransferForm">
+            <div class="form-group"><label>من مخزن</label>
+                <select id="transferFromWarehouse"></select>
+            </div>
+            <div class="form-group"><label>إلى مخزن</label>
+                <select id="transferToWarehouse"></select>
+            </div>
+            <div class="form-group"><label>الصنف</label>
+                <select id="transferItem"></select>
+            </div>
+            <div class="form-group"><label>الكمية</label><input type="number" id="transferQty" value="1" min="1"></div>
+            <div class="form-group"><label>البيان</label><input type="text" id="transferNotes"></div>
+            <button type="submit" class="btn-primary btn-full">تسجيل التحويل</button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== مودال إذن صرف ===== -->
+<div id="warehouseIssueModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('warehouseIssueModal')">&times;</span>
+        <h2><i class="fas fa-sign-out-alt"></i> إذن صرف</h2>
+        <form id="warehouseIssueForm">
+            <div class="form-group"><label>المخزن</label>
+                <select id="issueWarehouse"></select>
+            </div>
+            <div class="form-group"><label>الصنف</label>
+                <select id="issueItem"></select>
+            </div>
+            <div class="form-group"><label>الكمية</label><input type="number" id="issueQty" value="1" min="1"></div>
+            <div class="form-group"><label>جهة الصرف</label><input type="text" id="issueTo"></div>
+            <div class="form-group"><label>البيان</label><input type="text" id="issueNotes"></div>
+            <button type="submit" class="btn-danger btn-full">تسجيل الصرف</button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== مودال إذن إضافة ===== -->
+<div id="warehouseReceiptModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('warehouseReceiptModal')">&times;</span>
+        <h2><i class="fas fa-sign-in-alt"></i> إذن إضافة</h2>
+        <form id="warehouseReceiptForm">
+            <div class="form-group"><label>المخزن</label>
+                <select id="receiptWarehouse"></select>
+            </div>
+            <div class="form-group"><label>الصنف</label>
+                <select id="receiptItem"></select>
+            </div>
+            <div class="form-group"><label>الكمية</label><input type="number" id="receiptQty" value="1" min="1"></div>
+            <div class="form-group"><label>جهة الإضافة</label><input type="text" id="receiptFrom"></div>
+            <div class="form-group"><label>البيان</label><input type="text" id="receiptNotes"></div>
+            <button type="submit" class="btn-success btn-full">تسجيل الإضافة</button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== مودال إيداع ===== -->
 <div id="treasuryDepositModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('treasuryDepositModal')">&times;</span>
@@ -571,12 +700,13 @@
                     <option value="شيك">شيك</option>
                 </select>
             </div>
+            <div class="form-group"><label>الجهة</label><input type="text" id="depositParty" placeholder="من الجهة"></div>
             <button type="submit" class="btn-primary btn-full">تسجيل الإيداع</button>
         </form>
     </div>
 </div>
 
-<!-- مودال سحب -->
+<!-- ===== مودال سحب ===== -->
 <div id="treasuryWithdrawModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('treasuryWithdrawModal')">&times;</span>
@@ -591,12 +721,13 @@
                     <option value="شيك">شيك</option>
                 </select>
             </div>
+            <div class="form-group"><label>الجهة</label><input type="text" id="withdrawParty" placeholder="إلى الجهة"></div>
             <button type="submit" class="btn-danger btn-full">تسجيل السحب</button>
         </form>
     </div>
 </div>
 
-<!-- مودال تحويل -->
+<!-- ===== مودال تحويل خزينة ===== -->
 <div id="treasuryTransferModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('treasuryTransferModal')">&times;</span>
@@ -621,7 +752,53 @@
     </div>
 </div>
 
-<!-- مودال فاتورة مبيعات -->
+<!-- ===== مودال تحصيل من عميل ===== -->
+<div id="treasuryCollectionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('treasuryCollectionModal')">&times;</span>
+        <h2><i class="fas fa-hand-holding-usd"></i> تحصيل من عميل</h2>
+        <form id="treasuryCollectionForm">
+            <div class="form-group"><label>العميل</label>
+                <select id="collectionCustomer"></select>
+            </div>
+            <div class="form-group"><label>المبلغ *</label><input type="number" id="collectionAmount" step="0.01" required></div>
+            <div class="form-group"><label>البيان</label><input type="text" id="collectionDesc" placeholder="رقم الفاتورة أو البيان"></div>
+            <div class="form-group"><label>طريقة الدفع</label>
+                <select id="collectionMethod">
+                    <option value="نقدي">نقدي</option>
+                    <option value="بنك">تحويل بنكي</option>
+                    <option value="شيك">شيك</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-success btn-full">تسجيل التحصيل</button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== مودال سداد لمورد ===== -->
+<div id="treasuryPaymentModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('treasuryPaymentModal')">&times;</span>
+        <h2><i class="fas fa-money-bill"></i> سداد لمورد</h2>
+        <form id="treasuryPaymentForm">
+            <div class="form-group"><label>المورد</label>
+                <select id="paymentSupplier"></select>
+            </div>
+            <div class="form-group"><label>المبلغ *</label><input type="number" id="paymentAmount" step="0.01" required></div>
+            <div class="form-group"><label>البيان</label><input type="text" id="paymentDesc" placeholder="رقم الفاتورة أو البيان"></div>
+            <div class="form-group"><label>طريقة الدفع</label>
+                <select id="paymentMethod">
+                    <option value="نقدي">نقدي</option>
+                    <option value="بنك">تحويل بنكي</option>
+                    <option value="شيك">شيك</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-warning btn-full">تسجيل السداد</button>
+        </form>
+    </div>
+</div>
+
+<!-- ===== مودال فاتورة مبيعات ===== -->
 <div id="saleInvoiceModal" class="modal modal-full">
     <div class="modal-content invoice-container">
         <span class="close" onclick="closeModal('saleInvoiceModal')">&times;</span>
@@ -695,7 +872,7 @@
     </div>
 </div>
 
-<!-- مودال فاتورة مشتريات -->
+<!-- ===== مودال فاتورة مشتريات ===== -->
 <div id="purchaseInvoiceModal" class="modal modal-full">
     <div class="modal-content invoice-container">
         <span class="close" onclick="closeModal('purchaseInvoiceModal')">&times;</span>
@@ -769,7 +946,7 @@
     </div>
 </div>
 
-<!-- مودال مرتجع مبيعات -->
+<!-- ===== مودال مرتجع مبيعات ===== -->
 <div id="saleReturnModal" class="modal modal-full">
     <div class="modal-content invoice-container">
         <span class="close" onclick="closeModal('saleReturnModal')">&times;</span>
@@ -845,7 +1022,7 @@
     </div>
 </div>
 
-<!-- مودال مرتجع مشتريات -->
+<!-- ===== مودال مرتجع مشتريات ===== -->
 <div id="purchaseReturnModal" class="modal modal-full">
     <div class="modal-content invoice-container">
         <span class="close" onclick="closeModal('purchaseReturnModal')">&times;</span>
@@ -921,7 +1098,7 @@
     </div>
 </div>
 
-<!-- مودال الإشعارات -->
+<!-- ===== مودال الإشعارات ===== -->
 <div id="notifModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeModal('notifModal')">&times;</span>
@@ -930,7 +1107,7 @@
     </div>
 </div>
 
-<!-- مودال التقارير -->
+<!-- ===== مودال التقارير ===== -->
 <div id="reportModal" class="modal modal-full">
     <div class="modal-content report-container">
         <div class="report-toolbar">
