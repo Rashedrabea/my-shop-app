@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>النظام المحاسبي المتكامل</title>
+    <title>النظام المحاسبي المتكامل - مصر</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Font Awesome للأيقونات -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- الشريط الجانبي -->
     <div class="sidebar">
         <div class="logo">
             <i class="fas fa-calculator"></i>
@@ -17,35 +15,39 @@
         </div>
         <nav>
             <a href="#" class="active" data-page="dashboard">
-                <i class="fas fa-chart-pie"></i> الرئيسية
+                <i class="fas fa-chart-pie"></i> <span>الرئيسية</span>
             </a>
             <a href="#" data-page="company">
-                <i class="fas fa-building"></i> بيانات الشركة
+                <i class="fas fa-building"></i> <span>بيانات الشركة</span>
+            </a>
+            <a href="#" data-page="customers">
+                <i class="fas fa-users"></i> <span>العملاء والموردين</span>
             </a>
             <a href="#" data-page="sales">
-                <i class="fas fa-cart-plus"></i> المبيعات
+                <i class="fas fa-cart-plus"></i> <span>المبيعات</span>
             </a>
             <a href="#" data-page="purchases">
-                <i class="fas fa-truck"></i> المشتريات
+                <i class="fas fa-truck"></i> <span>المشتريات</span>
+            </a>
+            <a href="#" data-page="returns">
+                <i class="fas fa-undo"></i> <span>المرتجعات</span>
             </a>
             <a href="#" data-page="items">
-                <i class="fas fa-boxes"></i> الأصناف
+                <i class="fas fa-boxes"></i> <span>الأصناف</span>
             </a>
             <a href="#" data-page="warehouses">
-                <i class="fas fa-warehouse"></i> المخازن
+                <i class="fas fa-warehouse"></i> <span>المخازن</span>
             </a>
             <a href="#" data-page="treasury">
-                <i class="fas fa-money-bill-wave"></i> الخزينة
+                <i class="fas fa-money-bill-wave"></i> <span>الخزينة</span>
             </a>
             <a href="#" data-page="reports">
-                <i class="fas fa-file-alt"></i> التقارير
+                <i class="fas fa-file-alt"></i> <span>التقارير</span>
             </a>
         </nav>
     </div>
 
-    <!-- المحتوى الرئيسي -->
     <div class="main-content">
-        <!-- شريط العلوي -->
         <header>
             <div class="header-left">
                 <i class="fas fa-bars menu-toggle"></i>
@@ -60,54 +62,44 @@
             </div>
         </header>
 
-        <!-- محتوى الصفحات -->
         <div class="content">
             <!-- الصفحة الرئيسية -->
             <div id="page-dashboard" class="page active">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <div class="stat-icon blue">
-                            <i class="fas fa-chart-line"></i>
-                        </div>
+                        <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
                         <div class="stat-info">
                             <h3>إجمالي المبيعات</h3>
                             <p class="stat-number" id="totalSales">125,000</p>
-                            <span class="stat-label">ريال</span>
+                            <span class="stat-label">جنيه</span>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon green">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
+                        <div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div>
                         <div class="stat-info">
                             <h3>إجمالي المشتريات</h3>
                             <p class="stat-number" id="totalPurchases">78,000</p>
-                            <span class="stat-label">ريال</span>
+                            <span class="stat-label">جنيه</span>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon orange">
-                            <i class="fas fa-cubes"></i>
-                        </div>
+                        <div class="stat-icon orange"><i class="fas fa-cubes"></i></div>
                         <div class="stat-info">
                             <h3>قيمة المخزون</h3>
                             <p class="stat-number" id="totalStock">210,000</p>
-                            <span class="stat-label">ريال</span>
+                            <span class="stat-label">جنيه</span>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon purple">
-                            <i class="fas fa-wallet"></i>
-                        </div>
+                        <div class="stat-icon purple"><i class="fas fa-wallet"></i></div>
                         <div class="stat-info">
                             <h3>رصيد الخزينة</h3>
                             <p class="stat-number" id="treasuryBalance">45,500</p>
-                            <span class="stat-label">ريال</span>
+                            <span class="stat-label">جنيه</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- الرسوم البيانية -->
                 <div class="charts-row">
                     <div class="chart-box">
                         <h3><i class="fas fa-chart-bar"></i> المبيعات الشهرية</h3>
@@ -119,7 +111,6 @@
                     </div>
                 </div>
 
-                <!-- آخر الفواتير -->
                 <div class="recent-invoices">
                     <h3><i class="fas fa-file-invoice"></i> آخر الفواتير</h3>
                     <table>
@@ -144,26 +135,33 @@
                                 <td>3,200</td>
                                 <td><span class="status pending">قيد الانتظار</span></td>
                             </tr>
-                            <tr>
-                                <td>#103</td>
-                                <td>خالد حسن</td>
-                                <td>7,500</td>
-                                <td><span class="status paid">مدفوعة</span></td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- صفحة بيانات الشركة -->
+            <!-- صفحة بيانات الشركة مع لوجو -->
             <div id="page-company" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-building"></i> بيانات الشركة</h2>
                 </div>
                 <form id="companyForm" class="form-container">
-                    <div class="form-group">
-                        <label>اسم الشركة</label>
-                        <input type="text" id="companyName" value="شركة التقنية المتقدمة" placeholder="اسم الشركة">
+                    <div class="form-row">
+                        <div class="form-group logo-upload">
+                            <label>شعار الشركة</label>
+                            <div class="logo-preview" id="logoPreview">
+                                <i class="fas fa-image"></i>
+                                <span>اضغط لرفع الشعار</span>
+                            </div>
+                            <input type="file" id="logoUpload" accept="image/*" style="display:none">
+                            <button type="button" class="btn-secondary" onclick="document.getElementById('logoUpload').click()">
+                                <i class="fas fa-upload"></i> رفع شعار
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label>اسم الشركة</label>
+                            <input type="text" id="companyName" value="شركة النيل للتجارة" placeholder="اسم الشركة">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>السجل التجاري</label>
@@ -175,28 +173,28 @@
                     </div>
                     <div class="form-group">
                         <label>العنوان</label>
-                        <input type="text" id="companyAddress" value="الرياض - المملكة العربية السعودية" placeholder="العنوان">
+                        <input type="text" id="companyAddress" value="القاهرة - مصر" placeholder="العنوان">
                     </div>
                     <div class="form-group">
                         <label>الهاتف</label>
-                        <input type="tel" id="companyPhone" value="+966 50 123 4567" placeholder="الهاتف">
+                        <input type="tel" id="companyPhone" value="+20 100 123 4567" placeholder="الهاتف">
                     </div>
                     <div class="form-group">
                         <label>البريد الإلكتروني</label>
-                        <input type="email" id="companyEmail" value="info@techcompany.com" placeholder="البريد الإلكتروني">
+                        <input type="email" id="companyEmail" value="info@nilecompany.com" placeholder="البريد الإلكتروني">
                     </div>
                     <div class="form-group">
                         <label>العملة الأساسية</label>
                         <select id="companyCurrency">
-                            <option value="SAR">ريال سعودي (SAR)</option>
+                            <option value="EGP" selected>جنيه مصري (EGP)</option>
                             <option value="USD">دولار أمريكي (USD)</option>
                             <option value="EUR">يورو (EUR)</option>
-                            <option value="EGP">جنيه مصري (EGP)</option>
+                            <option value="SAR">ريال سعودي (SAR)</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>نسبة الضريبة الافتراضية</label>
-                        <input type="number" id="companyTaxRate" value="15" step="0.5">
+                        <input type="number" id="companyTaxRate" value="14" step="0.5">
                         <span class="input-suffix">%</span>
                     </div>
                     <button type="submit" class="btn-primary">
@@ -205,58 +203,98 @@
                 </form>
             </div>
 
-            <!-- صفحة الأصناف -->
-            <div id="page-items" class="page">
+            <!-- صفحة العملاء والموردين -->
+            <div id="page-customers" class="page">
                 <div class="page-header">
-                    <h2><i class="fas fa-boxes"></i> الأصناف</h2>
-                    <button class="btn-primary" onclick="showAddItemModal()">
-                        <i class="fas fa-plus"></i> إضافة صنف جديد
-                    </button>
+                    <h2><i class="fas fa-users"></i> العملاء والموردين</h2>
+                    <div>
+                        <button class="btn-primary" onclick="showAddCustomerModal()">
+                            <i class="fas fa-user-plus"></i> إضافة عميل
+                        </button>
+                        <button class="btn-secondary" onclick="showAddSupplierModal()" style="margin-right:10px;">
+                            <i class="fas fa-truck"></i> إضافة مورد
+                        </button>
+                    </div>
                 </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>الكود</th>
-                                <th>اسم الصنف</th>
-                                <th>التصنيف</th>
-                                <th>الوحدة</th>
-                                <th>سعر الشراء</th>
-                                <th>سعر البيع</th>
-                                <th>الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="itemsList">
-                            <tr>
-                                <td>001</td>
-                                <td>لاب توب</td>
-                                <td>إلكترونيات</td>
-                                <td>قطعة</td>
-                                <td>3,500</td>
-                                <td>4,200</td>
-                                <td>
-                                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                                    <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>002</td>
-                                <td>طابعة</td>
-                                <td>إلكترونيات</td>
-                                <td>قطعة</td>
-                                <td>800</td>
-                                <td>1,200</td>
-                                <td>
-                                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                                    <button class="btn-delete"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                
+                <div class="customers-tabs">
+                    <button class="tab-btn active" onclick="switchTab('customers')">العملاء</button>
+                    <button class="tab-btn" onclick="switchTab('suppliers')">الموردين</button>
+                </div>
+                
+                <div id="customersTab" class="tab-content active">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>الكود</th>
+                                    <th>الاسم</th>
+                                    <th>الهاتف</th>
+                                    <th>الرقم الضريبي</th>
+                                    <th>الرصيد</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersList">
+                                <tr>
+                                    <td>C001</td>
+                                    <td>أحمد محمد</td>
+                                    <td>01001234567</td>
+                                    <td>123456789</td>
+                                    <td>5,000</td>
+                                    <td>
+                                        <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>C002</td>
+                                    <td>سارة علي</td>
+                                    <td>01008765432</td>
+                                    <td>987654321</td>
+                                    <td>3,200</td>
+                                    <td>
+                                        <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="suppliersTab" class="tab-content">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>الكود</th>
+                                    <th>الاسم</th>
+                                    <th>الهاتف</th>
+                                    <th>الرقم الضريبي</th>
+                                    <th>الرصيد</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suppliersList">
+                                <tr>
+                                    <td>S001</td>
+                                    <td>مورد الإلكترونيات</td>
+                                    <td>01005556677</td>
+                                    <td>112233445</td>
+                                    <td>6,900</td>
+                                    <td>
+                                        <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <!-- صفحة المبيعات -->
+            <!-- صفحة المبيعات (فواتير احترافية) -->
             <div id="page-sales" class="page">
                 <div class="page-header">
                     <h2><i class="fas fa-cart-plus"></i> المبيعات</h2>
@@ -275,6 +313,7 @@
                                 <th>الضريبة</th>
                                 <th>الإجمالي الكلي</th>
                                 <th>الحالة</th>
+                                <th>الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody id="salesList">
@@ -283,18 +322,13 @@
                                 <td>2026-08-11</td>
                                 <td>أحمد محمد</td>
                                 <td>4,500</td>
-                                <td>675</td>
-                                <td>5,175</td>
+                                <td>630</td>
+                                <td>5,130</td>
                                 <td><span class="status paid">مدفوعة</span></td>
-                            </tr>
-                            <tr>
-                                <td>#102</td>
-                                <td>2026-08-10</td>
-                                <td>سارة علي</td>
-                                <td>3,000</td>
-                                <td>450</td>
-                                <td>3,450</td>
-                                <td><span class="status pending">قيد الانتظار</span></td>
+                                <td>
+                                    <button class="btn-edit"><i class="fas fa-print"></i></button>
+                                    <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -320,6 +354,7 @@
                                 <th>الضريبة</th>
                                 <th>الإجمالي الكلي</th>
                                 <th>الحالة</th>
+                                <th>الإجراءات</th>
                             </tr>
                         </thead>
                         <tbody id="purchasesList">
@@ -328,18 +363,135 @@
                                 <td>2026-08-11</td>
                                 <td>مورد الإلكترونيات</td>
                                 <td>6,000</td>
-                                <td>900</td>
-                                <td>6,900</td>
+                                <td>840</td>
+                                <td>6,840</td>
                                 <td><span class="status paid">مدفوعة</span></td>
+                                <td>
+                                    <button class="btn-edit"><i class="fas fa-print"></i></button>
+                                    <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- صفحة المرتجعات -->
+            <div id="page-returns" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-undo"></i> المرتجعات</h2>
+                    <div>
+                        <button class="btn-primary" onclick="showReturnModal('sales')">
+                            <i class="fas fa-undo"></i> مرتجع مبيعات
+                        </button>
+                        <button class="btn-secondary" onclick="showReturnModal('purchases')" style="margin-right:10px;">
+                            <i class="fas fa-undo-alt"></i> مرتجع مشتريات
+                        </button>
+                    </div>
+                </div>
+                <div class="returns-tabs">
+                    <button class="tab-btn active" onclick="switchReturnTab('sales-returns')">مرتجعات المبيعات</button>
+                    <button class="tab-btn" onclick="switchReturnTab('purchases-returns')">مرتجعات المشتريات</button>
+                </div>
+                <div id="sales-returns" class="tab-content active">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>رقم المرتجع</th>
+                                    <th>تاريخ</th>
+                                    <th>الفاتورة الأصلية</th>
+                                    <th>العميل</th>
+                                    <th>المبلغ</th>
+                                    <th>السبب</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>R001</td>
+                                    <td>2026-08-11</td>
+                                    <td>#101</td>
+                                    <td>أحمد محمد</td>
+                                    <td>1,000</td>
+                                    <td>منتج تالف</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="purchases-returns" class="tab-content">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>رقم المرتجع</th>
+                                    <th>تاريخ</th>
+                                    <th>الفاتورة الأصلية</th>
+                                    <th>المورد</th>
+                                    <th>المبلغ</th>
+                                    <th>السبب</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>RP001</td>
+                                    <td>2026-08-10</td>
+                                    <td>#P101</td>
+                                    <td>مورد الإلكترونيات</td>
+                                    <td>500</td>
+                                    <td>خطأ في الصنف</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- باقي الصفحات (الأصناف، المخازن، الخزينة، التقارير) -->
+            <div id="page-items" class="page">
+                <div class="page-header">
+                    <h2><i class="fas fa-boxes"></i> الأصناف</h2>
+                    <button class="btn-primary" onclick="showAddItemModal()">
+                        <i class="fas fa-plus"></i> إضافة صنف جديد
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>الكود</th>
+                                <th>اسم الصنف</th>
+                                <th>التصنيف</th>
+                                <th>الوحدة</th>
+                                <th>سعر الشراء</th>
+                                <th>سعر البيع</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsList">
+                            <tr>
+                                <td>001</td>
+                                <td>منتج عام 1</td>
+                                <td>عام</td>
+                                <td>قطعة</td>
+                                <td>100</td>
+                                <td>150</td>
+                                <td>
+                                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                </td>
                             </tr>
                             <tr>
-                                <td>#P102</td>
-                                <td>2026-08-09</td>
-                                <td>مورد الأجهزة</td>
-                                <td>4,500</td>
-                                <td>675</td>
-                                <td>5,175</td>
-                                <td><span class="status pending">غير مدفوعة</span></td>
+                                <td>002</td>
+                                <td>منتج عام 2</td>
+                                <td>عام</td>
+                                <td>كجم</td>
+                                <td>200</td>
+                                <td>280</td>
+                                <td>
+                                    <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                                    <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -357,19 +509,19 @@
                 <div class="warehouses-grid">
                     <div class="warehouse-card">
                         <h3><i class="fas fa-warehouse"></i> المخزن الرئيسي</h3>
-                        <p>الموقع: الرياض</p>
+                        <p>الموقع: القاهرة</p>
                         <div class="warehouse-stats">
                             <span>عدد الأصناف: 45</span>
-                            <span>القيمة: 210,000 ريال</span>
+                            <span>القيمة: 210,000 جنيه</span>
                         </div>
                         <button class="btn-secondary">عرض الحركات</button>
                     </div>
                     <div class="warehouse-card">
-                        <h3><i class="fas fa-warehouse"></i> مخزن جدة</h3>
-                        <p>الموقع: جدة</p>
+                        <h3><i class="fas fa-warehouse"></i> مخزن الإسكندرية</h3>
+                        <p>الموقع: الإسكندرية</p>
                         <div class="warehouse-stats">
                             <span>عدد الأصناف: 23</span>
-                            <span>القيمة: 95,000 ريال</span>
+                            <span>القيمة: 95,000 جنيه</span>
                         </div>
                         <button class="btn-secondary">عرض الحركات</button>
                     </div>
@@ -389,21 +541,21 @@
                         <i class="fas fa-coins"></i>
                         <div>
                             <h4>الرصيد الحالي</h4>
-                            <p class="amount">45,500 ريال</p>
+                            <p class="amount">45,500 جنيه</p>
                         </div>
                     </div>
                     <div class="treasury-card">
                         <i class="fas fa-arrow-up"></i>
                         <div>
                             <h4>إجمالي المقبوضات</h4>
-                            <p class="amount income">152,000 ريال</p>
+                            <p class="amount income">152,000 جنيه</p>
                         </div>
                     </div>
                     <div class="treasury-card">
                         <i class="fas fa-arrow-down"></i>
                         <div>
                             <h4>إجمالي المدفوعات</h4>
-                            <p class="amount expense">106,500 ريال</p>
+                            <p class="amount expense">106,500 جنيه</p>
                         </div>
                     </div>
                 </div>
@@ -418,7 +570,7 @@
                                 <th>الرصيد</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="treasuryTransactions">
                             <tr>
                                 <td>2026-08-11</td>
                                 <td>مبيعات نقدية</td>
@@ -430,7 +582,7 @@
                                 <td>2026-08-11</td>
                                 <td>شراء أجهزة</td>
                                 <td>-</td>
-                                <td>6,900</td>
+                                <td>6,840</td>
                                 <td>40,500</td>
                             </tr>
                         </tbody>
@@ -479,23 +631,79 @@
         </div>
     </div>
 
-    <!-- المودالات -->
+    <!-- مودالات -->
+    <!-- مودال إضافة عميل -->
+    <div id="customerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('customerModal')">&times;</span>
+            <h2><i class="fas fa-user-plus"></i> إضافة عميل جديد</h2>
+            <form id="customerForm">
+                <div class="form-group">
+                    <label>اسم العميل</label>
+                    <input type="text" id="customerName" placeholder="اسم العميل" required>
+                </div>
+                <div class="form-group">
+                    <label>الهاتف</label>
+                    <input type="tel" id="customerPhone" placeholder="رقم الهاتف">
+                </div>
+                <div class="form-group">
+                    <label>الرقم الضريبي</label>
+                    <input type="text" id="customerTax" placeholder="الرقم الضريبي">
+                </div>
+                <div class="form-group">
+                    <label>العنوان</label>
+                    <input type="text" id="customerAddress" placeholder="العنوان">
+                </div>
+                <button type="submit" class="btn-primary">حفظ العميل</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال إضافة مورد -->
+    <div id="supplierModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('supplierModal')">&times;</span>
+            <h2><i class="fas fa-truck"></i> إضافة مورد جديد</h2>
+            <form id="supplierForm">
+                <div class="form-group">
+                    <label>اسم المورد</label>
+                    <input type="text" id="supplierName" placeholder="اسم المورد" required>
+                </div>
+                <div class="form-group">
+                    <label>الهاتف</label>
+                    <input type="tel" id="supplierPhone" placeholder="رقم الهاتف">
+                </div>
+                <div class="form-group">
+                    <label>الرقم الضريبي</label>
+                    <input type="text" id="supplierTax" placeholder="الرقم الضريبي">
+                </div>
+                <div class="form-group">
+                    <label>العنوان</label>
+                    <input type="text" id="supplierAddress" placeholder="العنوان">
+                </div>
+                <button type="submit" class="btn-primary">حفظ المورد</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- باقي المودالات (أصناف، مبيعات، مشتريات، مرتجعات، خزينة) -->
+    <!-- مودال إضافة صنف -->
     <div id="itemModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('itemModal')">&times;</span>
-            <h2>إضافة صنف جديد</h2>
+            <h2><i class="fas fa-box"></i> إضافة صنف جديد</h2>
             <form id="itemForm">
                 <div class="form-group">
                     <label>كود الصنف</label>
-                    <input type="text" id="itemCode" placeholder="مثل: 001">
+                    <input type="text" id="itemCode" placeholder="مثل: 001" required>
                 </div>
                 <div class="form-group">
                     <label>اسم الصنف</label>
-                    <input type="text" id="itemName" placeholder="اسم الصنف">
+                    <input type="text" id="itemName" placeholder="اسم الصنف" required>
                 </div>
                 <div class="form-group">
                     <label>التصنيف</label>
-                    <input type="text" id="itemCategory" placeholder="مثل: إلكترونيات">
+                    <input type="text" id="itemCategory" placeholder="مثل: عام، إلكترونيات، مواد غذائية">
                 </div>
                 <div class="form-group">
                     <label>وحدة القياس</label>
@@ -504,14 +712,16 @@
                         <option value="كجم">كجم</option>
                         <option value="علبة">علبة</option>
                         <option value="حزمة">حزمة</option>
+                        <option value="متر">متر</option>
+                        <option value="لتر">لتر</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>سعر الشراء</label>
+                    <label>سعر الشراء (جنيه)</label>
                     <input type="number" id="itemPurchasePrice" placeholder="سعر الشراء">
                 </div>
                 <div class="form-group">
-                    <label>سعر البيع</label>
+                    <label>سعر البيع (جنيه)</label>
                     <input type="number" id="itemSalePrice" placeholder="سعر البيع">
                 </div>
                 <button type="submit" class="btn-primary">حفظ الصنف</button>
@@ -519,31 +729,60 @@
         </div>
     </div>
 
-    <!-- مودال فاتورة مبيعات -->
-    <div id="saleModal" class="modal">
+    <!-- مودال فاتورة مبيعات (احترافي) -->
+    <div id="saleModal" class="modal modal-large">
         <div class="modal-content">
             <span class="close" onclick="closeModal('saleModal')">&times;</span>
-            <h2>فاتورة مبيعات جديدة</h2>
+            <h2><i class="fas fa-file-invoice"></i> فاتورة مبيعات</h2>
             <form id="saleForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>رقم الفاتورة</label>
+                        <input type="text" id="saleInvoiceNo" value="INV-2026-001" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>التاريخ</label>
+                        <input type="date" id="saleDate">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>العميل</label>
-                    <input type="text" id="saleCustomer" placeholder="اسم العميل">
-                </div>
-                <div class="form-group">
-                    <label>الصنف</label>
-                    <select id="saleItem">
-                        <option value="لاب توب">لاب توب</option>
-                        <option value="طابعة">طابعة</option>
-                        <option value="شاشة">شاشة</option>
+                    <select id="saleCustomer">
+                        <option value="أحمد محمد">أحمد محمد</option>
+                        <option value="سارة علي">سارة علي</option>
+                        <option value="عميل جديد">عميل جديد</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>الكمية</label>
-                    <input type="number" id="saleQuantity" value="1">
+                <div class="invoice-items">
+                    <h4>المنتجات</h4>
+                    <div id="saleItemsContainer">
+                        <div class="item-row">
+                            <input type="text" placeholder="الصنف" class="item-name">
+                            <input type="number" placeholder="الكمية" class="item-qty" value="1">
+                            <input type="number" placeholder="السعر" class="item-price">
+                            <input type="number" placeholder="الإجمالي" class="item-total" readonly>
+                            <button type="button" class="btn-delete" onclick="this.parentElement.remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-secondary" onclick="addSaleItem()">
+                        <i class="fas fa-plus"></i> إضافة صنف
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label>سعر الوحدة</label>
-                    <input type="number" id="salePrice" placeholder="سعر البيع">
+                <div class="invoice-summary">
+                    <div class="form-group">
+                        <label>الإجمالي</label>
+                        <input type="text" id="saleSubtotal" value="0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>الضريبة (14%)</label>
+                        <input type="text" id="saleTax" value="0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>الإجمالي الكلي</label>
+                        <input type="text" id="saleGrandTotal" value="0" readonly>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>طريقة الدفع</label>
@@ -551,38 +790,70 @@
                         <option value="نقدي">نقدي</option>
                         <option value="آجل">آجل</option>
                         <option value="بطاقة">بطاقة</option>
+                        <option value="تحويل">تحويل بنكي</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-primary">إصدار الفاتورة</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-check"></i> إصدار الفاتورة
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- مودال فاتورة مشتريات -->
-    <div id="purchaseModal" class="modal">
+    <!-- مودال فاتورة مشتريات (احترافي) -->
+    <div id="purchaseModal" class="modal modal-large">
         <div class="modal-content">
             <span class="close" onclick="closeModal('purchaseModal')">&times;</span>
-            <h2>فاتورة شراء جديدة</h2>
+            <h2><i class="fas fa-file-invoice"></i> فاتورة مشتريات</h2>
             <form id="purchaseForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>رقم الفاتورة</label>
+                        <input type="text" id="purchaseInvoiceNo" value="PUR-2026-001" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>التاريخ</label>
+                        <input type="date" id="purchaseDate">
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>المورد</label>
-                    <input type="text" id="purchaseSupplier" placeholder="اسم المورد">
-                </div>
-                <div class="form-group">
-                    <label>الصنف</label>
-                    <select id="purchaseItem">
-                        <option value="لاب توب">لاب توب</option>
-                        <option value="طابعة">طابعة</option>
-                        <option value="شاشة">شاشة</option>
+                    <select id="purchaseSupplier">
+                        <option value="مورد الإلكترونيات">مورد الإلكترونيات</option>
+                        <option value="مورد الأجهزة">مورد الأجهزة</option>
+                        <option value="مورد جديد">مورد جديد</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>الكمية</label>
-                    <input type="number" id="purchaseQuantity" value="1">
+                <div class="invoice-items">
+                    <h4>المنتجات</h4>
+                    <div id="purchaseItemsContainer">
+                        <div class="item-row">
+                            <input type="text" placeholder="الصنف" class="item-name">
+                            <input type="number" placeholder="الكمية" class="item-qty" value="1">
+                            <input type="number" placeholder="سعر الشراء" class="item-price">
+                            <input type="number" placeholder="الإجمالي" class="item-total" readonly>
+                            <button type="button" class="btn-delete" onclick="this.parentElement.remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-secondary" onclick="addPurchaseItem()">
+                        <i class="fas fa-plus"></i> إضافة صنف
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label>سعر الشراء</label>
-                    <input type="number" id="purchaseCost" placeholder="سعر الشراء">
+                <div class="invoice-summary">
+                    <div class="form-group">
+                        <label>الإجمالي</label>
+                        <input type="text" id="purchaseSubtotal" value="0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>الضريبة (14%)</label>
+                        <input type="text" id="purchaseTax" value="0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>الإجمالي الكلي</label>
+                        <input type="text" id="purchaseGrandTotal" value="0" readonly>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>طريقة الدفع</label>
@@ -590,9 +861,59 @@
                         <option value="نقدي">نقدي</option>
                         <option value="آجل">آجل</option>
                         <option value="شيك">شيك</option>
+                        <option value="تحويل">تحويل بنكي</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-primary">إصدار الفاتورة</button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-check"></i> إصدار الفاتورة
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- مودال مرتجع -->
+    <div id="returnModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('returnModal')">&times;</span>
+            <h2><i class="fas fa-undo"></i> تسجيل مرتجع</h2>
+            <form id="returnForm">
+                <div class="form-group">
+                    <label>نوع المرتجع</label>
+                    <select id="returnType">
+                        <option value="sales">مرتجع مبيعات</option>
+                        <option value="purchases">مرتجع مشتريات</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>رقم الفاتورة الأصلية</label>
+                    <input type="text" id="returnInvoiceNo" placeholder="رقم الفاتورة">
+                </div>
+                <div class="form-group">
+                    <label>العميل/المورد</label>
+                    <input type="text" id="returnParty" placeholder="الاسم">
+                </div>
+                <div class="form-group">
+                    <label>المنتج المرتجع</label>
+                    <input type="text" id="returnItem" placeholder="اسم المنتج">
+                </div>
+                <div class="form-group">
+                    <label>الكمية</label>
+                    <input type="number" id="returnQty" value="1">
+                </div>
+                <div class="form-group">
+                    <label>المبلغ المسترد</label>
+                    <input type="number" id="returnAmount" placeholder="المبلغ">
+                </div>
+                <div class="form-group">
+                    <label>سبب المرتجع</label>
+                    <select id="returnReason">
+                        <option value="منتج تالف">منتج تالف</option>
+                        <option value="خطأ في الصنف">خطأ في الصنف</option>
+                        <option value="عدم تطابق المواصفات">عدم تطابق المواصفات</option>
+                        <option value="أسباب أخرى">أسباب أخرى</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">تسجيل المرتجع</button>
             </form>
         </div>
     </div>
@@ -601,7 +922,7 @@
     <div id="transactionModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('transactionModal')">&times;</span>
-            <h2>إضافة حركة خزينة</h2>
+            <h2><i class="fas fa-exchange-alt"></i> إضافة حركة خزينة</h2>
             <form id="transactionForm">
                 <div class="form-group">
                     <label>نوع الحركة</label>
@@ -612,11 +933,11 @@
                 </div>
                 <div class="form-group">
                     <label>البيان</label>
-                    <input type="text" id="transactionDesc" placeholder="وصف الحركة">
+                    <input type="text" id="transactionDesc" placeholder="وصف الحركة" required>
                 </div>
                 <div class="form-group">
-                    <label>المبلغ</label>
-                    <input type="number" id="transactionAmount" placeholder="المبلغ">
+                    <label>المبلغ (جنيه)</label>
+                    <input type="number" id="transactionAmount" placeholder="المبلغ" required>
                 </div>
                 <div class="form-group">
                     <label>طريقة الدفع</label>
