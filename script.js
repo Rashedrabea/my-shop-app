@@ -1,5 +1,5 @@
 // ============================================================
-// نظام راشد V31 - نسخة مبسطة شغالة 100%
+// نظام راشد V31 - النسخة النهائية المستقرة
 // ============================================================
 
 // ============================================================
@@ -32,29 +32,37 @@ function initFirebase() {
             firebaseAuth = firebase.auth(firebaseApp);
             firebaseDb = firebase.database(firebaseApp);
             console.log('✅ Firebase initialized');
+            return true;
         }
+        return true;
     } catch(e) {
-        console.error('Firebase error:', e);
+        console.error('❌ Firebase init error:', e);
+        return false;
     }
-    return { app: firebaseApp, auth: firebaseAuth, db: firebaseDb };
 }
 
 // ============================================================
-// 4. البيانات
+// 4. إدارة البيانات
 // ============================================================
 function loadLocal() {
     try {
         const raw = localStorage.getItem('RashedV31');
         if (raw) {
             appData = JSON.parse(raw);
+            console.log('✅ Data loaded from localStorage');
         }
-    } catch(e) {}
+    } catch(e) {
+        console.error('❌ Load error:', e);
+    }
 }
 
 function saveLocal() {
     try {
         localStorage.setItem('RashedV31', JSON.stringify(appData));
-    } catch(e) {}
+        console.log('✅ Data saved to localStorage');
+    } catch(e) {
+        console.error('❌ Save error:', e);
+    }
 }
 
 function getData() {
@@ -70,7 +78,7 @@ function getData() {
 }
 
 // ============================================================
-// 5. الدخول
+// 5. الدخول والخروج
 // ============================================================
 function showLoginForm() {
     document.getElementById('loginForm').style.display = 'block';
@@ -110,40 +118,42 @@ function handleLogin() {
     
     showToast('⏳ جاري الدخول...');
     
-    try {
-        const { auth } = initFirebase();
-        auth.signInWithEmailAndPassword(email, pass)
-            .then(result => {
-                const user = result.user;
-                appData.currentUser = user.uid;
-                if (!appData.users[user.uid]) {
-                    appData.users[user.uid] = {
-                        displayName: username,
-                        data: {
-                            sales: [], purchases: [], products: [], clients: [],
-                            treasury: 0, treasuryLog: [], expenses: [],
-                            collections: [], supplierPayments: [],
-                            saleCounter: 0, purchaseCounter: 0
-                        }
-                    };
-                }
-                saveLocal();
-                enterApp();
-                showToast('✅ مرحباً ' + username);
-            })
-            .catch(error => {
-                console.error('Login error:', error);
-                if (error.code === 'auth/user-not-found') {
-                    showToast('❌ اسم المستخدم غير موجود');
-                } else if (error.code === 'auth/wrong-password') {
-                    showToast('❌ كلمة المرور خطأ');
-                } else {
-                    showToast('❌ ' + error.message);
-                }
-            });
-    } catch(e) {
-        showToast('❌ خطأ في الاتصال');
+    if (!initFirebase()) {
+        showToast('❌ خطأ في الاتصال بالسحابة');
+        return;
     }
+    
+    firebaseAuth.signInWithEmailAndPassword(email, pass)
+        .then(result => {
+            const user = result.user;
+            appData.currentUser = user.uid;
+            if (!appData.users[user.uid]) {
+                appData.users[user.uid] = {
+                    displayName: username,
+                    data: {
+                        sales: [], purchases: [], products: [], clients: [],
+                        treasury: 0, treasuryLog: [], expenses: [],
+                        collections: [], supplierPayments: [],
+                        saleCounter: 0, purchaseCounter: 0
+                    }
+                };
+            }
+            saveLocal();
+            enterApp();
+            showToast('✅ مرحباً ' + username);
+        })
+        .catch(error => {
+            console.error('❌ Login error:', error);
+            if (error.code === 'auth/user-not-found') {
+                showToast('❌ اسم المستخدم غير موجود');
+            } else if (error.code === 'auth/wrong-password') {
+                showToast('❌ كلمة المرور خطأ');
+            } else if (error.code === 'auth/too-many-requests') {
+                showToast('❌ محاولات كثيرة جداً، حاول لاحقاً');
+            } else {
+                showToast('❌ ' + error.message);
+            }
+        });
 }
 
 function handleRegister() {
@@ -156,11 +166,11 @@ function handleRegister() {
     const email = username + '@rashed.com';
     
     if (!username || username.length < 3) {
-        showToast('⚠️ 3 أحرف على الأقل');
+        showToast('⚠️ اسم المستخدم 3 أحرف على الأقل');
         return;
     }
     if (pass.length < 6) {
-        showToast('⚠️ 6 أحرف على الأقل');
+        showToast('⚠️ كلمة المرور 6 أحرف على الأقل');
         return;
     }
     if (pass !== confirm) {
@@ -174,47 +184,47 @@ function handleRegister() {
     
     showToast('⏳ جاري إنشاء الحساب...');
     
-    try {
-        const { auth, db } = initFirebase();
-        auth.createUserWithEmailAndPassword(email, pass)
-            .then(result => {
-                const user = result.user;
-                return db.ref('users/' + user.uid + '/data').set({
+    if (!initFirebase()) {
+        showToast('❌ خطأ في الاتصال بالسحابة');
+        return;
+    }
+    
+    firebaseAuth.createUserWithEmailAndPassword(email, pass)
+        .then(result => {
+            const user = result.user;
+            return firebaseDb.ref('users/' + user.uid + '/data').set({
+                sales: [], purchases: [], products: [], clients: [],
+                treasury: 0, treasuryLog: [], expenses: [],
+                collections: [], supplierPayments: [],
+                saleCounter: 0, purchaseCounter: 0
+            }).then(() => user);
+        })
+        .then(user => {
+            appData.currentUser = user.uid;
+            appData.users[user.uid] = {
+                displayName: username,
+                fullName: fullName,
+                phone: phone,
+                address: address,
+                data: {
                     sales: [], purchases: [], products: [], clients: [],
                     treasury: 0, treasuryLog: [], expenses: [],
                     collections: [], supplierPayments: [],
                     saleCounter: 0, purchaseCounter: 0
-                }).then(() => user);
-            })
-            .then(user => {
-                appData.currentUser = user.uid;
-                appData.users[user.uid] = {
-                    displayName: username,
-                    fullName: fullName,
-                    phone: phone,
-                    address: address,
-                    data: {
-                        sales: [], purchases: [], products: [], clients: [],
-                        treasury: 0, treasuryLog: [], expenses: [],
-                        collections: [], supplierPayments: [],
-                        saleCounter: 0, purchaseCounter: 0
-                    }
-                };
-                saveLocal();
-                enterApp();
-                showToast('✅ تم إنشاء الحساب بنجاح');
-            })
-            .catch(error => {
-                console.error('Register error:', error);
-                if (error.code === 'auth/email-already-in-use') {
-                    showToast('⚠️ هذا الاسم مستخدم بالفعل');
-                } else {
-                    showToast('❌ ' + error.message);
                 }
-            });
-    } catch(e) {
-        showToast('❌ خطأ في الاتصال');
-    }
+            };
+            saveLocal();
+            enterApp();
+            showToast('✅ تم إنشاء الحساب بنجاح');
+        })
+        .catch(error => {
+            console.error('❌ Register error:', error);
+            if (error.code === 'auth/email-already-in-use') {
+                showToast('⚠️ هذا الاسم مستخدم بالفعل');
+            } else {
+                showToast('❌ ' + error.message);
+            }
+        });
 }
 
 function sendResetPassword() {
@@ -224,26 +234,34 @@ function sendResetPassword() {
         showToast('⚠️ أدخل اسم المستخدم');
         return;
     }
+    
     showToast('⏳ جاري الإرسال...');
-    try {
-        const { auth } = initFirebase();
-        auth.sendPasswordResetEmail(email)
-            .then(() => {
-                showToast('✅ تم إرسال رابط إعادة التعيين');
-                showLoginForm();
-            })
-            .catch(error => {
-                showToast('❌ ' + error.message);
-            });
-    } catch(e) {
-        showToast('❌ خطأ في الاتصال');
+    
+    if (!initFirebase()) {
+        showToast('❌ خطأ في الاتصال بالسحابة');
+        return;
     }
+    
+    firebaseAuth.sendPasswordResetEmail(email)
+        .then(() => {
+            showToast('✅ تم إرسال رابط إعادة التعيين إلى بريدك');
+            showLoginForm();
+        })
+        .catch(error => {
+            console.error('❌ Reset error:', error);
+            showToast('❌ ' + error.message);
+        });
 }
 
 function logout() {
     if (confirm('تسجيل الخروج؟')) {
-        const { auth } = initFirebase();
-        auth.signOut().then(() => {
+        if (!initFirebase()) {
+            appData.currentUser = null;
+            saveLocal();
+            location.reload();
+            return;
+        }
+        firebaseAuth.signOut().then(() => {
             appData.currentUser = null;
             saveLocal();
             location.reload();
@@ -263,13 +281,13 @@ function enterApp() {
 
 function autoLogin() {
     if (appData.currentUser && appData.users[appData.currentUser]) {
-        // التحقق من Firebase Auth
-        const { auth } = initFirebase();
-        if (auth.currentUser) {
+        if (!initFirebase()) {
+            return false;
+        }
+        if (firebaseAuth.currentUser) {
             enterApp();
             return true;
         } else {
-            // لو المستخدم مش موجود في Firebase، نسحب الجلسة
             appData.currentUser = null;
             saveLocal();
             return false;
@@ -284,7 +302,10 @@ function autoLogin() {
 function switchPage(page) {
     document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
     const target = document.getElementById('page-' + page);
-    if (target) target.classList.add('active');
+    if (target) {
+        target.classList.add('active');
+        console.log('✅ Switched to:', page);
+    }
     if (page === 'dashboard') drawCharts();
 }
 
@@ -293,7 +314,11 @@ function switchPage(page) {
 // ============================================================
 function updateUI() {
     const data = getData();
-    document.getElementById('treasuryDisplay').textContent = data.treasury || 0;
+    const treasuryDisplay = document.getElementById('treasuryDisplay');
+    if (treasuryDisplay) {
+        treasuryDisplay.textContent = data.treasury || 0;
+    }
+    console.log('✅ UI updated');
 }
 
 // ============================================================
@@ -309,29 +334,51 @@ function drawCharts() {
     const collectionsTotal = collections.reduce((s, i) => s + (i.amount || 0), 0);
     const treasury = data.treasury || 0;
     
-    const salesChart = document.getElementById('salesChart');
-    if (salesChart) {
-        if (chartInstances.sales) chartInstances.sales.destroy();
-        chartInstances.sales = new Chart(salesChart, {
-            type: 'bar',
-            data: {
-                labels: ['مبيعات', 'مصروفات', 'تحصيل'],
-                datasets: [{ label: 'الحركة المالية', data: [salesTotal, expensesTotal, collectionsTotal], backgroundColor: ['#2E4057', '#E17055', '#FDCB6E'] }]
-            },
-            options: { plugins: { legend: { display: false } } }
-        });
-    }
-    
-    const treasuryChart = document.getElementById('treasuryChart');
-    if (treasuryChart) {
-        if (chartInstances.treasury) chartInstances.treasury.destroy();
-        chartInstances.treasury = new Chart(treasuryChart, {
-            type: 'doughnut',
-            data: {
-                labels: ['الخزنة', 'مصروفات'],
-                datasets: [{ data: [treasury, expensesTotal], backgroundColor: ['#2E4057', '#E17055'] }]
-            }
-        });
+    try {
+        // رسم بياني المبيعات
+        const salesChart = document.getElementById('salesChart');
+        if (salesChart) {
+            if (chartInstances.sales) chartInstances.sales.destroy();
+            chartInstances.sales = new Chart(salesChart, {
+                type: 'bar',
+                data: {
+                    labels: ['مبيعات', 'مصروفات', 'تحصيل'],
+                    datasets: [{
+                        label: 'الحركة المالية',
+                        data: [salesTotal, expensesTotal, collectionsTotal],
+                        backgroundColor: ['#2E4057', '#E17055', '#FDCB6E']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+        
+        // رسم بياني الخزنة
+        const treasuryChart = document.getElementById('treasuryChart');
+        if (treasuryChart) {
+            if (chartInstances.treasury) chartInstances.treasury.destroy();
+            chartInstances.treasury = new Chart(treasuryChart, {
+                type: 'doughnut',
+                data: {
+                    labels: ['الخزنة', 'مصروفات'],
+                    datasets: [{
+                        data: [treasury, expensesTotal],
+                        backgroundColor: ['#2E4057', '#E17055']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+        console.log('✅ Charts drawn');
+    } catch(e) {
+        console.error('❌ Chart error:', e);
     }
 }
 
@@ -347,13 +394,32 @@ function showAIReport() {
     const totalPurchases = purchases.reduce((s, i) => s + (i.total || 0), 0);
     const totalExpenses = expenses.reduce((s, i) => s + (i.amount || 0), 0);
     const profit = totalSales - totalPurchases - totalExpenses;
-    let report = '🤖 تحليل الذكاء الاصطناعي\n\n';
-    report += '📊 إجمالي المبيعات: ' + totalSales + ' ج.م\n';
-    report += '📉 إجمالي المشتريات: ' + totalPurchases + ' ج.م\n';
-    report += '💸 إجمالي المصروفات: ' + totalExpenses + ' ج.م\n';
-    report += '💰 صافي الربح: ' + profit + ' ج.م\n\n';
-    if (profit > 0) report += '✅ عملك يحقق أرباحاً.\n';
-    else report += '⚠️ عملك يحقق خسائر.\n';
+    const totalProducts = data.products ? data.products.length : 0;
+    const totalClients = data.clients ? data.clients.length : 0;
+    
+    let report = '🤖 تحليل الذكاء الاصطناعي\n';
+    report += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+    report += '📊 **إجمالي المبيعات:** ' + totalSales + ' ج.م\n';
+    report += '📉 **إجمالي المشتريات:** ' + totalPurchases + ' ج.م\n';
+    report += '💸 **إجمالي المصروفات:** ' + totalExpenses + ' ج.م\n';
+    report += '💰 **صافي الربح:** ' + profit + ' ج.م\n\n';
+    report += '📦 **عدد المنتجات:** ' + totalProducts + '\n';
+    report += '👤 **عدد العملاء:** ' + totalClients + '\n\n';
+    
+    if (profit > 0) {
+        report += '✅ ✅ ✅ عملك يحقق أرباحاً.\n';
+        if (totalExpenses > (totalSales * 0.3)) {
+            report += '⚠️ نصيحة: المصروفات تمثل ' + ((totalExpenses/totalSales)*100).toFixed(1) + '% من المبيعات. حاول تقليلها.\n';
+        }
+    } else {
+        report += '⚠️ ⚠️ ⚠️ عملك يحقق خسائر.\n';
+        report += '💡 نصيحة: راجع المصروفات واستراتيجية التسعير.\n';
+    }
+    
+    if (totalProducts === 0) {
+        report += '\n📦 تنبيه: لم تضف أي منتجات بعد. ابدأ بإضافة منتجات.\n';
+    }
+    
     alert(report);
 }
 
@@ -362,6 +428,7 @@ function showAIReport() {
 // ============================================================
 function showToast(msg) {
     const t = document.getElementById('toast');
+    if (!t) return;
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(t._timer);
@@ -369,129 +436,122 @@ function showToast(msg) {
 }
 
 // ============================================================
-// 11. ربط الأزرار - الطريقة الصحيحة
+// 11. ربط الأزرار - الطريقة النهائية
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM loaded - ربط الأزرار');
+    console.log('✅ DOM ready - ربط الأزرار...');
     
     // ===== أزرار الدخول =====
     const loginBtn = document.getElementById('loginBtn');
     if (loginBtn) {
         loginBtn.addEventListener('click', handleLogin);
-        console.log('✅ Login button linked');
+        console.log('✅ Login button');
     }
     
     const registerBtn = document.getElementById('registerBtn');
     if (registerBtn) {
         registerBtn.addEventListener('click', handleRegister);
-        console.log('✅ Register button linked');
+        console.log('✅ Register button');
     }
     
     const showRegisterBtn = document.getElementById('showRegisterBtn');
     if (showRegisterBtn) {
         showRegisterBtn.addEventListener('click', toggleAuthMode);
-        console.log('✅ Show register button linked');
+        console.log('✅ Show register button');
     }
     
     const backToLoginBtn = document.getElementById('backToLoginBtn');
     if (backToLoginBtn) {
         backToLoginBtn.addEventListener('click', showLoginForm);
-        console.log('✅ Back to login button linked');
+        console.log('✅ Back to login button');
     }
     
     const forgotLink = document.getElementById('forgotLink');
     if (forgotLink) {
         forgotLink.addEventListener('click', showForgotPassword);
-        console.log('✅ Forgot password link linked');
+        console.log('✅ Forgot password link');
     }
     
     const backFromForgotBtn = document.getElementById('backFromForgotBtn');
     if (backFromForgotBtn) {
         backFromForgotBtn.addEventListener('click', showLoginForm);
-        console.log('✅ Back from forgot button linked');
+        console.log('✅ Back from forgot button');
     }
     
     const resetBtn = document.getElementById('resetBtn');
     if (resetBtn) {
         resetBtn.addEventListener('click', sendResetPassword);
-        console.log('✅ Reset button linked');
+        console.log('✅ Reset button');
     }
     
     // ===== أزرار الخروج =====
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', logout);
-        console.log('✅ Logout button linked');
+        console.log('✅ Logout button');
     }
     
     const logoutBtnBottom = document.getElementById('logoutBtnBottom');
     if (logoutBtnBottom) {
         logoutBtnBottom.addEventListener('click', logout);
-        console.log('✅ Logout bottom button linked');
+        console.log('✅ Logout bottom button');
     }
     
     // ===== أزرار التنقل =====
     document.querySelectorAll('[data-page]').forEach(el => {
-        el.addEventListener('click', function() {
+        el.addEventListener('click', function(e) {
             const page = this.getAttribute('data-page');
             if (page) {
+                e.preventDefault();
                 switchPage(page);
-                console.log('✅ Switched to:', page);
             }
         });
     });
+    console.log('✅ Navigation buttons');
     
     // ===== زر الذكاء الاصطناعي =====
     const aiReportBtn = document.getElementById('aiReportBtn');
     if (aiReportBtn) {
         aiReportBtn.addEventListener('click', showAIReport);
-        console.log('✅ AI Report button linked');
+        console.log('✅ AI Report button');
     }
     
-    // ===== الضغط على Enter في حقول الدخول =====
-    const loginUser = document.getElementById('loginUser');
-    const loginPass = document.getElementById('loginPass');
-    if (loginUser) {
-        loginUser.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleLogin();
+    // ===== الضغط على Enter =====
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const form = this.closest('div');
+                if (form) {
+                    const loginBtn = form.querySelector('#loginBtn');
+                    const registerBtn = form.querySelector('#registerBtn');
+                    const resetBtn = form.querySelector('#resetBtn');
+                    if (loginBtn) loginBtn.click();
+                    else if (registerBtn) registerBtn.click();
+                    else if (resetBtn) resetBtn.click();
+                }
+            }
         });
-    }
-    if (loginPass) {
-        loginPass.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleLogin();
-        });
-    }
+    });
     
-    // ===== الضغط على Enter في حقول التسجيل =====
-    const regUser = document.getElementById('regUser');
-    const regPass = document.getElementById('regPass');
-    const regConfirm = document.getElementById('regPassConfirm');
-    if (regUser) {
-        regUser.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleRegister();
-        });
-    }
-    if (regPass) {
-        regPass.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleRegister();
-        });
-    }
-    if (regConfirm) {
-        regConfirm.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') handleRegister();
-        });
-    }
+    console.log('✅ All buttons linked successfully');
 });
 
 // ============================================================
 // 12. بدء التشغيل
 // ============================================================
-initFirebase();
-loadLocal();
-
-if (!autoLogin()) {
-    document.getElementById('authContainer').style.display = 'flex';
-    document.getElementById('appContainer').style.display = 'none';
+function startApp() {
+    console.log('🚀 Starting application...');
+    initFirebase();
+    loadLocal();
+    
+    if (!autoLogin()) {
+        document.getElementById('authContainer').style.display = 'flex';
+        document.getElementById('appContainer').style.display = 'none';
+        console.log('📱 Showing login screen');
+    }
+    
+    console.log('✅ نظام راشد V31 جاهز للعمل');
 }
 
-console.log('✅ نظام راشد V31 يعمل');
+// تشغيل التطبيق
+startApp();
