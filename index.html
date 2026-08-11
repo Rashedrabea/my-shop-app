@@ -52,8 +52,10 @@
             <button class="nav-btn" onclick="switchPage('purchases')"><i class="fas fa-truck"></i> المشتريات</button>
             <button class="nav-btn" onclick="switchPage('warehouse')"><i class="fas fa-warehouse"></i> المخازن</button>
             <button class="nav-btn" onclick="switchPage('products')"><i class="fas fa-boxes"></i> الأصناف</button>
-            <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> العملاء والموردين</button>
+            <button class="nav-btn" onclick="switchPage('clients')"><i class="fas fa-address-book"></i> العملاء</button>
+            <button class="nav-btn" onclick="switchPage('suppliers')"><i class="fas fa-truck"></i> الموردين</button>
             <button class="nav-btn" onclick="switchPage('treasury')"><i class="fas fa-coins"></i> الخزنة</button>
+            <button class="nav-btn" onclick="switchPage('banks')"><i class="fas fa-university"></i> البنوك</button>
             <button class="nav-btn" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i> التقارير</button>
             <button class="nav-btn" onclick="switchPage('company')"><i class="fas fa-building"></i> بيانات الشركة</button>
             <button class="nav-btn" onclick="switchPage('settings')"><i class="fas fa-cog"></i> الإعدادات</button>
@@ -75,8 +77,10 @@
                     <div class="dash-card card-purchases" onclick="switchPage('purchases')"><i class="fas fa-truck"></i><span>مشتريات</span></div>
                     <div class="dash-card card-warehouse" onclick="switchPage('warehouse')"><i class="fas fa-warehouse"></i><span>المخازن</span></div>
                     <div class="dash-card card-products" onclick="switchPage('products')"><i class="fas fa-boxes"></i><span>الأصناف</span></div>
-                    <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>العملاء والموردين</span></div>
+                    <div class="dash-card card-clients" onclick="switchPage('clients')"><i class="fas fa-user"></i><span>العملاء</span></div>
+                    <div class="dash-card card-suppliers" onclick="switchPage('suppliers')"><i class="fas fa-truck"></i><span>الموردين</span></div>
                     <div class="dash-card card-treasury" onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>الخزنة</span></div>
+                    <div class="dash-card card-banks" onclick="switchPage('banks')" style="background:#0984e3;color:white;"><i class="fas fa-university"></i><span>البنوك</span></div>
                     <div class="dash-card card-reports" onclick="switchPage('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></div>
                     <div class="dash-card card-company" onclick="switchPage('company')" style="background:#2E4057;color:white;"><i class="fas fa-building"></i><span>بيانات الشركة</span></div>
                     <div class="dash-card card-settings" onclick="switchPage('settings')" style="background:#6C5CE7;color:white;"><i class="fas fa-cog"></i><span>الإعدادات</span></div>
@@ -311,41 +315,42 @@
                 </div>
             </div>
 
-            <!-- ======== العملاء والموردين - مع التصفية ======== -->
+            <!-- ======== العملاء ======== -->
             <div id="page-clients" class="page">
                 <div class="modal-box">
-                    <div class="modal-header">
-                        <h2>👤 العملاء والموردين</h2>
-                        <button class="modal-close" onclick="switchPage('dashboard')">&times;</button>
-                    </div>
-                    
-                    <!-- أزرار التصفية -->
-                    <div style="display:flex;gap:10px;margin-bottom:15px;">
-                        <button onclick="filterClients('all')" id="filterAll" class="btn-toggle active" style="flex:1;">📋 الكل</button>
-                        <button onclick="filterClients('عميل')" id="filterClient" class="btn-toggle" style="flex:1;">👤 عملاء</button>
-                        <button onclick="filterClients('مورد')" id="filterSupplier" class="btn-toggle" style="flex:1;">🏭 موردين</button>
-                    </div>
-                    
+                    <div class="modal-header"><h2>👤 العملاء</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
                     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
-                        <div class="form-group"><label>الاسم</label><input type="text" id="contactName"></div>
-                        <div class="form-group"><label>النوع</label>
-                            <select id="contactType">
-                                <option value="عميل">عميل</option>
-                                <option value="مورد">مورد</option>
-                                <option value="كلاهما">كلاهما</option>
-                            </select>
-                        </div>
-                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="contactPhone"></div>
-                        <div class="form-group"><label>العنوان</label><input type="text" id="contactAddress"></div>
-                        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="contactEmail"></div>
-                        <div class="form-group"><label>الرقم الضريبي</label><input type="text" id="contactTaxNumber"></div>
-                        <div class="form-group"><label>الرصيد الافتتاحي</label><input type="number" id="contactBalance" value="0"></div>
-                        <div class="form-group"><label>الحد الائتماني</label><input type="number" id="contactCreditLimit" value="0"></div>
-                        <div class="form-group"><label>فترة السداد (يوم)</label><input type="number" id="contactPaymentPeriod" value="30"></div>
-                        <div class="form-group"><label>ملاحظات</label><input type="text" id="contactNotes"></div>
+                        <div class="form-group"><label>اسم العميل</label><input type="text" id="clientName"></div>
+                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="clientPhone"></div>
+                        <div class="form-group"><label>العنوان</label><input type="text" id="clientAddress"></div>
+                        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="clientEmail"></div>
+                        <div class="form-group"><label>الرقم الضريبي</label><input type="text" id="clientTaxNumber"></div>
+                        <div class="form-group"><label>الرصيد الافتتاحي</label><input type="number" id="clientBalance" value="0"></div>
+                        <div class="form-group"><label>الحد الائتماني</label><input type="number" id="clientCreditLimit" value="0"></div>
+                        <div class="form-group"><label>فترة السداد (يوم)</label><input type="number" id="clientPaymentPeriod" value="30"></div>
+                        <div class="form-group"><label>ملاحظات</label><input type="text" id="clientNotes"></div>
                     </div>
-                    <button class="btn-main" onclick="addContact()">إضافة</button>
+                    <button class="btn-main" onclick="addClient()">إضافة عميل</button>
                     <div id="clientList" class="list-view"></div>
+                </div>
+            </div>
+
+            <!-- ======== الموردين ======== -->
+            <div id="page-suppliers" class="page">
+                <div class="modal-box">
+                    <div class="modal-header"><h2>🏭 الموردين</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                        <div class="form-group"><label>اسم المورد</label><input type="text" id="supplierName"></div>
+                        <div class="form-group"><label>رقم الهاتف</label><input type="text" id="supplierPhone"></div>
+                        <div class="form-group"><label>العنوان</label><input type="text" id="supplierAddress"></div>
+                        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="supplierEmail"></div>
+                        <div class="form-group"><label>الرقم الضريبي</label><input type="text" id="supplierTaxNumber"></div>
+                        <div class="form-group"><label>الرصيد الافتتاحي</label><input type="number" id="supplierBalance" value="0"></div>
+                        <div class="form-group"><label>فترة السداد (يوم)</label><input type="number" id="supplierPaymentPeriod" value="30"></div>
+                        <div class="form-group"><label>ملاحظات</label><input type="text" id="supplierNotes"></div>
+                    </div>
+                    <button class="btn-main" onclick="addSupplier()">إضافة مورد</button>
+                    <div id="supplierList" class="list-view"></div>
                 </div>
             </div>
 
@@ -397,6 +402,21 @@
                         <div style="display:flex;gap:10px;"><div style="flex:1;"><label>المبلغ</label><input type="number" id="expenseAmount"></div><button onclick="addExpense()" class="btn-red">تسجيل</button></div>
                     </div>
                     <div id="treasuryLog" class="list-view"></div>
+                </div>
+            </div>
+
+            <!-- ======== البنوك ======== -->
+            <div id="page-banks" class="page">
+                <div class="modal-box">
+                    <div class="modal-header"><h2>🏦 البنوك</h2><button class="modal-close" onclick="switchPage('dashboard')">&times;</button></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;">
+                        <div class="form-group"><label>اسم البنك</label><input type="text" id="bankName" placeholder="اسم البنك"></div>
+                        <div class="form-group"><label>رقم الحساب</label><input type="text" id="bankAccountNumber" placeholder="رقم الحساب"></div>
+                        <div class="form-group"><label>IBAN</label><input type="text" id="bankIBAN" placeholder="IBAN"></div>
+                        <div class="form-group"><label>الرصيد الافتتاحي</label><input type="number" id="bankBalance" value="0"></div>
+                    </div>
+                    <button onclick="addBankAccount()" class="btn-main" style="background:#0984e3;">💾 إضافة حساب بنكي</button>
+                    <div id="bankList" class="list-view"></div>
                 </div>
             </div>
 
@@ -459,9 +479,9 @@
                             </div>
                             <div style="background:#f8f9fa;padding:15px;border-radius:10px;border:2px solid #0984e3;">
                                 <h4 style="color:#0984e3;margin-top:0;">🏦 البنوك</h4>
-                                <div class="form-group"><label>اسم البنك</label><input type="text" id="bankName" placeholder="اسم البنك"></div>
-                                <div class="form-group"><label>رقم الحساب</label><input type="text" id="bankAccount" placeholder="رقم الحساب"></div>
-                                <div class="form-group"><label>IBAN</label><input type="text" id="bankIBAN" placeholder="IBAN"></div>
+                                <div class="form-group"><label>اسم البنك</label><input type="text" id="settingsBankName" placeholder="اسم البنك"></div>
+                                <div class="form-group"><label>رقم الحساب</label><input type="text" id="settingsBankAccount" placeholder="رقم الحساب"></div>
+                                <div class="form-group"><label>IBAN</label><input type="text" id="settingsBankIBAN" placeholder="IBAN"></div>
                             </div>
                         </div>
                         <button onclick="savePaymentMethods()" class="btn-main" style="background:#6C5CE7;margin-top:10px;">💾 حفظ وسائل الدفع</button>
@@ -524,7 +544,8 @@
                             <p><strong>☁️ السحابة:</strong> <span id="cloudStatus" style="color:#00B894;">🟢 متصل</span></p>
                             <p><strong>👤 المستخدم:</strong> <span id="settingsUser">admin</span></p>
                             <p><strong>📦 الأصناف:</strong> <span id="settingsProducts">0</span></p>
-                            <p><strong>📋 العملاء:</strong> <span id="settingsClients">0</span></p>
+                            <p><strong>👤 العملاء:</strong> <span id="settingsClients">0</span></p>
+                            <p><strong>🏭 الموردين:</strong> <span id="settingsSuppliers">0</span></p>
                         </div>
                         <button onclick="resetAppSettings()" class="btn-red" style="width:100%;margin-top:10px;">🔄 إعادة ضبط</button>
                     </div>
@@ -560,7 +581,8 @@
         <button onclick="switchPage('purchases')"><i class="fas fa-truck"></i><span>مشتريات</span></button>
         <button onclick="switchPage('warehouse')"><i class="fas fa-warehouse"></i><span>مخازن</span></button>
         <button onclick="switchPage('products')"><i class="fas fa-boxes"></i><span>أصناف</span></button>
-        <button onclick="switchPage('clients')"><i class="fas fa-address-book"></i><span>جهات</span></button>
+        <button onclick="switchPage('clients')"><i class="fas fa-user"></i><span>عملاء</span></button>
+        <button onclick="switchPage('suppliers')"><i class="fas fa-truck"></i><span>موردين</span></button>
         <button onclick="switchPage('treasury')"><i class="fas fa-coins"></i><span>خزنة</span></button>
         <button onclick="switchPage('settings')"><i class="fas fa-cog"></i><span>إعدادات</span></button>
         <button onclick="switchPage('admin')" style="color:#E17055;"><i class="fas fa-user-shield"></i><span>التحكم</span></button>
