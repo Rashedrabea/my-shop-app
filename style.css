@@ -93,8 +93,11 @@ body { background: var(--bg-color); margin: 0; padding: 0; min-height: 100vh; co
 .card-warehouse i { color: #FDCB6E; }
 .card-products i { color: #0984e3; }
 .card-clients i { color: #00B894; }
+.card-suppliers i { color: #E17055; }
 .card-treasury { background: #00B894; color: white; border: none; }
+.card-banks { background: #0984e3; color: white; border: none; }
 .card-reports { background: #2E4057; color: white; border: none; }
+.card-company { background: #2E4057; color: white; border: none; }
 .card-settings { background: #6C5CE7; color: white; border: none; }
 .card-admin { background: #E17055; color: white; border: none; }
 .card-admin i { color: white; }
@@ -118,9 +121,9 @@ body { background: var(--bg-color); margin: 0; padding: 0; min-height: 100vh; co
 .btn-theme { padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; border: 2px solid transparent; }
 .btn-theme:hover { transform: scale(1.05); }
 
-.form-group { margin-bottom: 12px; }
-.form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 4px; color: #777; }
-.form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #eee; border-radius: 8px; font-size: 14px; outline: none; }
+.form-group { margin-bottom: 12px; position: relative; }
+.form-group label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 4px; color: #444; }
+.form-group input, .form-group select { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; background: white; color: #333; }
 .form-group input:focus { border-color: var(--primary); }
 
 .list-view { margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 13px; border-top: 1px solid #eee; padding-top: 10px; }
@@ -153,7 +156,37 @@ input:checked + .slider:before { transform: translateX(22px); }
 .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 12px; opacity: 0; transition: 0.3s; z-index: 99999; text-align: center; width: 90%; pointer-events: none; }
 .toast.show { opacity: 1; }
 
-body.theme-dark { --bg-color: #1a1a2e; --card-bg: #16213e; --text-color: #eee; --border: #333; }
+#productSuggestions, #purchaseProductSuggestions {
+    position: absolute;
+    background: white;
+    border: 2px solid #2E4057;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.suggestion-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+.suggestion-item:hover { background: #e8f8f5; }
+.suggestion-item .name { font-weight: bold; color: #2E4057; }
+.suggestion-item .qty { color: #666; font-size: 12px; }
+.suggestion-item .price { color: #00B894; font-weight: bold; font-size: 13px; }
+
+body.theme-dark #productSuggestions,
+body.theme-dark #purchaseProductSuggestions { background: #16213e; border-color: #444; }
+body.theme-dark .suggestion-item { border-color: #333; color: #eee; }
+body.theme-dark .suggestion-item:hover { background: #1a2a3a; }
+
 body.theme-dark .modal-box { background: #16213e; border-color: #333; }
 body.theme-dark .list-item { border-color: #333; color: #eee; }
 body.theme-dark .form-group input, body.theme-dark .form-group select { background: #1a1a2e; color: white; border-color: #444; }
@@ -200,87 +233,3 @@ body.theme-purple .settings-section { background: #2c1a4d; border-color: #333; }
     .print-area, .print-area * { visibility: visible; }
     .print-area { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 20px; }
 }
-/* ===== إضافات جديدة ===== */
-
-/* تنسيق وسائل الدفع */
-#salePaymentMethod, #purchasePaymentMethod {
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-    border: 2px solid #00B894;
-}
-
-#purchasePaymentMethod {
-    border-color: #E17055;
-}
-
-/* تنسيق بيانات الشركة */
-#companyDataDisplay {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 10px;
-    border: 2px solid #2E4057;
-}
-
-#companyDataDisplay p {
-    margin: 5px 0;
-    color: #333;
-}
-
-#companyDataDisplay strong {
-    color: #2E4057;
-}
-
-/* تنسيق بطاقات الخزنة */
-#cashTreasuryDisplay { color: #00B894; }
-#walletTreasuryDisplay { color: #6C5CE7; }
-#bankTreasuryDisplay { color: #0984e3; }
-
-/* تنسيق الأزرار في الوضع الداكن */
-body.theme-dark #companyDataDisplay {
-    background: #1a1a2e;
-    border-color: #444;
-}
-
-body.theme-dark #companyDataDisplay p {
-    color: #eee;
-}
-
-body.theme-dark #salePaymentMethod,
-body.theme-dark #purchasePaymentMethod {
-    background: #1a1a2e;
-    border-color: #444;
-}
-
-/* تنسيق الحقول الإضافية */
-input[type="email"] {
-    direction: ltr;
-    text-align: right;
-}
-
-/* تنسيق شاشة وسائل الدفع */
-#page-paymentMethods .form-group input {
-    direction: ltr;
-    text-align: right;
-}
-
-/* تحسين عرض الجدول في الموبايل */
-@media (max-width: 768px) {
-    .dashboard-grid {
-        grid-template-columns: 1fr 1fr 1fr !important;
-    }
-    .dash-card {
-        padding: 15px !important;
-    }
-    .dash-card i {
-        font-size: 20px !important;
-    }
-    .dash-card span {
-        font-size: 11px !important;
-    }
-    #salePaymentMethod, #purchasePaymentMethod {
-        grid-template-columns: 1fr !important;
-    }
-}
-
