@@ -1,6 +1,3 @@
-/* ============================================================ */
-/* المتغيرات */
-/* ============================================================ */
 :root {
     --primary: #4fc3f7;
     --primary-dark: #0288d1;
@@ -25,15 +22,7 @@ body.dark-mode {
     --shadow: 0 2px 12px rgba(0,0,0,0.4);
 }
 
-/* ============================================================ */
-/* إعدادات عامة */
-/* ============================================================ */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
+* { margin: 0; padding: 0; box-sizing: border-box; }
 html, body {
     width: 100% !important;
     height: 100% !important;
@@ -45,7 +34,6 @@ html, body {
     color: var(--text);
     direction: rtl;
 }
-
 #app {
     display: flex !important;
     width: 100vw !important;
@@ -53,9 +41,7 @@ html, body {
     overflow: hidden !important;
 }
 
-/* ============================================================ */
-/* شاشة التحميل */
-/* ============================================================ */
+/* ===== شاشة التحميل ===== */
 #loader {
     position: fixed;
     inset: 0;
@@ -77,9 +63,7 @@ html, body {
 @keyframes spin { to { transform: rotate(360deg); } }
 #loader p { margin-top: 12px; color: var(--text-light); font-size: 14px; }
 
-/* ============================================================ */
-/* تسجيل الدخول */
-/* ============================================================ */
+/* ===== تسجيل الدخول ===== */
 #loginScreen {
     position: fixed;
     inset: 0;
@@ -142,9 +126,7 @@ html, body {
 .btn-google:hover { background: #f1f3f5; }
 .login-hint { text-align: center; margin-top: 10px; color: var(--text-light); font-size: 12px; }
 
-/* ============================================================ */
-/* الشريط الجانبي */
-/* ============================================================ */
+/* ===== الشريط الجانبي ===== */
 .sidebar {
     width: var(--sidebar-width);
     height: 100vh !important;
@@ -203,9 +185,7 @@ nav a i { width: 18px; text-align: center; }
 .sidebar-footer button { background: none; border: none; color: rgba(255,255,255,0.35); cursor: pointer; font-size: 15px; transition: var(--transition); }
 .sidebar-footer button:hover { color: white; }
 
-/* ============================================================ */
-/* المحتوى الرئيسي */
-/* ============================================================ */
+/* ===== المحتوى الرئيسي ===== */
 .main-content {
     flex: 1 !important;
     width: 100% !important;
@@ -215,9 +195,7 @@ nav a i { width: 18px; text-align: center; }
     overflow: hidden !important;
 }
 
-/* ============================================================ */
-/* الهيدر */
-/* ============================================================ */
+/* ===== الهيدر ===== */
 header {
     background: var(--card-bg);
     padding: 0 18px;
@@ -261,9 +239,7 @@ header {
 .user-info { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 600; font-size: 13px; }
 .user-info i { font-size: 26px; color: var(--primary); }
 
-/* ============================================================ */
-/* المحتوى القابل للتمرير */
-/* ============================================================ */
+/* ===== المحتوى ===== */
 .content {
     flex: 1 !important;
     width: 100% !important;
@@ -273,11 +249,7 @@ header {
     background: var(--bg);
     transition: var(--transition);
 }
-
-.page {
-    display: none;
-    animation: fadeIn 0.25s ease;
-}
+.page { display: none; animation: fadeIn 0.25s ease; }
 .page.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -293,9 +265,7 @@ header {
 .page-header h2 i { color: var(--primary); margin-left: 8px; }
 .page-subtitle { font-size: 12px; color: var(--text-light); }
 
-/* ============================================================ */
-/* البطاقات */
-/* ============================================================ */
+/* ===== البطاقات ===== */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .stat-card {
     background: var(--card-bg);
@@ -327,9 +297,7 @@ header {
 .stat-number { font-size: 20px; font-weight: 800; color: var(--text); }
 .stat-label { font-size: 10px; color: var(--text-light); }
 
-/* ============================================================ */
-/* الرسوم البيانية */
-/* ============================================================ */
+/* ===== الرسوم البيانية ===== */
 .charts-row { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 16px; }
 .chart-box {
     background: var(--card-bg);
@@ -348,9 +316,7 @@ header {
 .recent-invoices h3 { font-size: 14px; color: var(--text); margin-bottom: 10px; }
 .recent-invoices h3 i { color: var(--primary); margin-left: 6px; }
 
-/* ============================================================ */
-/* الجداول */
-/* ============================================================ */
+/* ===== الجداول ===== */
 .table-container {
     background: var(--card-bg);
     border-radius: var(--radius);
@@ -389,9 +355,7 @@ table tr:hover { background: var(--bg); }
 .status.pending { background: #fff3cd; color: #856404; }
 .status.unpaid { background: #f8d7da; color: #721c24; }
 
-/* ============================================================ */
-/* الأزرار */
-/* ============================================================ */
+/* ===== الأزرار ===== */
 .btn-primary {
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
@@ -437,6 +401,36 @@ table tr:hover { background: var(--bg); }
     gap: 6px;
 }
 .btn-danger:hover { background: #dc2626; }
+.btn-success {
+    background: #22c55e;
+    color: white;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-success:hover { background: #16a34a; }
+.btn-warning {
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-warning:hover { background: #d97706; }
 .btn-delete {
     background: #fce4ec;
     color: #c62828;
@@ -482,9 +476,40 @@ table tr:hover { background: var(--bg); }
 }
 .tool-btn:hover { background: rgba(255,255,255,0.2); }
 
-/* ============================================================ */
-/* النماذج */
-/* ============================================================ */
+/* ===== أزرار الخزينة ===== */
+.treasury-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.treasury-buttons .btn-primary,
+.treasury-buttons .btn-danger,
+.treasury-buttons .btn-success,
+.treasury-buttons .btn-warning,
+.treasury-buttons .btn-secondary {
+    padding: 8px 8px !important;
+    font-size: 11px !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+}
+
+/* ===== زر الحفظ ===== */
+.btn-save {
+    padding: 14px 30px !important;
+    font-size: 18px !important;
+    width: 100% !important;
+    border-radius: 12px !important;
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4) !important;
+}
+.btn-save:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 24px rgba(34, 197, 94, 0.5) !important;
+}
+.btn-save i { font-size: 20px !important; }
+
+/* ===== النماذج ===== */
 .form-container {
     background: var(--card-bg);
     padding: 20px;
@@ -544,9 +569,7 @@ table tr:hover { background: var(--bg); }
     margin-top: 6px !important;
 }
 
-/* ============================================================ */
-/* التبويبات */
-/* ============================================================ */
+/* ===== التبويبات ===== */
 .tabs-container {
     background: var(--card-bg);
     border-radius: var(--radius);
@@ -577,9 +600,7 @@ table tr:hover { background: var(--bg); }
 .tab-panel { display: none; animation: fadeIn 0.25s ease; }
 .tab-panel.active { display: block; }
 
-/* ============================================================ */
-/* شريط الأدوات */
-/* ============================================================ */
+/* ===== شريط الأدوات ===== */
 .toolbar {
     display: flex;
     justify-content: space-between;
@@ -602,9 +623,7 @@ table tr:hover { background: var(--bg); }
 .search-input:focus { outline: none; border-color: var(--primary); }
 .toolbar-right { font-size: 12px; color: var(--text-light); }
 
-/* ============================================================ */
-/* المخازن */
-/* ============================================================ */
+/* ===== المخازن ===== */
 .warehouses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .warehouse-card {
     background: var(--card-bg);
@@ -628,9 +647,7 @@ table tr:hover { background: var(--bg); }
     color: var(--text);
 }
 
-/* ============================================================ */
-/* الخزينة */
-/* ============================================================ */
+/* ===== الخزينة ===== */
 .treasury-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -646,15 +663,13 @@ table tr:hover { background: var(--bg); }
     gap: 12px;
     box-shadow: var(--shadow);
 }
-.treasury-card i { font-size: 24px; color: var(--primary); }
-.treasury-card h4 { color: var(--text-light); font-size: 11px; font-weight: 500; }
-.treasury-card .amount { font-size: 18px; font-weight: 700; color: var(--text); }
-.treasury-card .amount.income { color: #388e3c; }
-.treasury-card .amount.expense { color: #c62828; }
+.treasury-card i { font-size: 28px; color: var(--primary); }
+.treasury-card h4 { color: var(--text-light); font-size: 12px; font-weight: 500; }
+.treasury-card .amount { font-size: 20px; font-weight: 700; color: var(--text); }
+.treasury-card .amount.income { color: #22c55e; }
+.treasury-card .amount.expense { color: #ef4444; }
 
-/* ============================================================ */
-/* التقارير */
-/* ============================================================ */
+/* ===== التقارير ===== */
 .reports-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -678,9 +693,7 @@ table tr:hover { background: var(--bg); }
 .report-card h3 { font-size: 13px; color: var(--text); }
 .report-card p { font-size: 11px; color: var(--text-light); }
 
-/* ============================================================ */
-/* الفواتير والتقارير المنبثقة */
-/* ============================================================ */
+/* ===== الفواتير والتقارير المنبثقة ===== */
 .modal-full .modal-content { max-width: 95%; width: 1100px; padding: 0; border-radius: var(--radius); overflow: hidden; }
 .invoice-container, .report-container { background: var(--card-bg); }
 
@@ -857,9 +870,7 @@ table tr:hover { background: var(--bg); }
     font-size: 11px;
 }
 
-/* ============================================================ */
-/* المودالات */
-/* ============================================================ */
+/* ===== المودالات ===== */
 .modal {
     display: none;
     position: fixed;
@@ -896,9 +907,7 @@ table tr:hover { background: var(--bg); }
 .modal-content h2 { color: var(--text); margin-bottom: 16px; font-size: 18px; }
 .modal-content h2 i { color: var(--primary); margin-left: 8px; }
 
-/* ============================================================ */
-/* الإشعارات */
-/* ============================================================ */
+/* ===== الإشعارات ===== */
 #notifList { max-height: 350px; overflow-y: auto; }
 .notif-item {
     padding: 10px 14px;
@@ -914,9 +923,7 @@ table tr:hover { background: var(--bg); }
 .notif-item.warning { border-right: 3px solid #f59e0b; }
 .notif-item.danger { border-right: 3px solid #ef4444; }
 
-/* ============================================================ */
-/* الطباعة */
-/* ============================================================ */
+/* ===== الطباعة ===== */
 @media print {
     .sidebar, header, .invoice-toolbar, .report-toolbar,
     .invoice-footer .btn-primary, .btn-delete-sm, .btn-add-row,
@@ -928,7 +935,7 @@ table tr:hover { background: var(--bg); }
 }
 
 /* ============================================================ */
-/* تحسينات الموبايل */
+/* الموبايل */
 /* ============================================================ */
 @media (max-width: 768px) {
     .sidebar {
@@ -977,10 +984,21 @@ table tr:hover { background: var(--bg); }
     .form-container { padding: 14px !important; max-width: 100% !important; }
     .form-row { grid-template-columns: 1fr !important; gap: 10px !important; }
     .form-group input, .form-group select { padding: 6px 10px !important; font-size: 13px !important; }
+    .form-actions { flex-direction: column !important; }
+    .form-actions .btn-save { width: 100% !important; padding: 16px !important; font-size: 18px !important; }
     
     .treasury-summary { grid-template-columns: 1fr !important; gap: 8px !important; }
     .treasury-card { padding: 10px 12px !important; }
     .treasury-card .amount { font-size: 16px !important; }
+    .treasury-buttons { grid-template-columns: 1fr 1fr !important; }
+    .treasury-buttons .btn-primary,
+    .treasury-buttons .btn-danger,
+    .treasury-buttons .btn-success,
+    .treasury-buttons .btn-warning,
+    .treasury-buttons .btn-secondary {
+        padding: 10px !important;
+        font-size: 13px !important;
+    }
     
     .warehouses-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
     .warehouse-card { padding: 12px !important; }
@@ -996,8 +1014,13 @@ table tr:hover { background: var(--bg); }
     .page-header h2 { font-size: 16px !important; }
     .page-subtitle { font-size: 10px !important; }
     
-    .btn-primary, .btn-secondary, .btn-danger { padding: 5px 12px !important; font-size: 11px !important; }
-    .btn-primary i, .btn-secondary i, .btn-danger i { font-size: 11px !important; }
+    .btn-primary, .btn-secondary, .btn-danger, .btn-success, .btn-warning {
+        padding: 5px 12px !important;
+        font-size: 11px !important;
+    }
+    .btn-primary i, .btn-secondary i, .btn-danger i, .btn-success i, .btn-warning i {
+        font-size: 11px !important;
+    }
     
     .search-input { min-width: 100% !important; font-size: 12px !important; padding: 4px 10px !important; }
     .toolbar { flex-direction: column !important; align-items: stretch !important; }
