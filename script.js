@@ -1,15 +1,15 @@
 // ================================================================
-// 💾 النظام المحاسبي المتكامل - باستخدام LocalStorage
+// 💾 النظام المحاسبي - باستخدام LocalStorage
 // ================================================================
 
-let customers = [], suppliers = [], items = [], warehouses = [], sales = [], purchases = [];
-let salesReturns = [], purchasesReturns = [], treasuryTransactions = [];
-let leads = [], quotations = [], auditLog = [];
-let customerId = 1, supplierId = 1, itemId = 1, warehouseId = 1;
+let customers = [], suppliers = [], items = [], sales = [], purchases = [];
+let employees = [], loans = [], expenses = [], treasuryTransactions = [];
+let customerId = 1, supplierId = 1, itemId = 1, employeeId = 1, loanId = 1, expenseId = 1;
 let treasuryBalance = 0, treasuryIncome = 0, treasuryExpense = 0;
 let currentUser = null;
 let notifications = [];
 let darkMode = false;
+let auditLog = [];
 
 // ================================================================
 // التهيئة
@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     loadData();
+    updateDashboard();
 });
 
 // ================================================================
@@ -57,52 +58,51 @@ document.addEventListener('DOMContentLoaded', function() {
 function saveData() {
     try {
         const data = {
-            customers, suppliers, items, warehouses, sales, purchases,
-            salesReturns, purchasesReturns, treasuryTransactions,
+            customers, suppliers, items, sales, purchases,
+            employees, loans, expenses, treasuryTransactions,
             treasuryBalance, treasuryIncome, treasuryExpense,
-            leads, quotations, auditLog,
-            customerId, supplierId, itemId, warehouseId
+            customerId, supplierId, itemId, employeeId, loanId, expenseId,
+            auditLog
         };
-        localStorage.setItem('accounting_data', JSON.stringify(data));
-        localStorage.setItem('accounting_data_updated', new Date().toISOString());
-        console.log('✅ تم حفظ البيانات محلياً');
+        localStorage.setItem('rashed_accounting_data', JSON.stringify(data));
+        localStorage.setItem('rashed_accounting_updated', new Date().toISOString());
+        console.log('✅ تم حفظ البيانات');
     } catch (e) {
-        console.error('❌ خطأ في الحفظ المحلي:', e);
+        console.error('❌ خطأ في الحفظ:', e);
     }
 }
 
 function loadData() {
     try {
-        const data = JSON.parse(localStorage.getItem('accounting_data'));
+        const data = JSON.parse(localStorage.getItem('rashed_accounting_data'));
         if (data) {
             customers = data.customers || [];
             suppliers = data.suppliers || [];
             items = data.items || [];
-            warehouses = data.warehouses || [];
             sales = data.sales || [];
             purchases = data.purchases || [];
-            salesReturns = data.salesReturns || [];
-            purchasesReturns = data.purchasesReturns || [];
+            employees = data.employees || [];
+            loans = data.loans || [];
+            expenses = data.expenses || [];
             treasuryTransactions = data.treasuryTransactions || [];
             treasuryBalance = data.treasuryBalance || 0;
             treasuryIncome = data.treasuryIncome || 0;
             treasuryExpense = data.treasuryExpense || 0;
-            leads = data.leads || [];
-            quotations = data.quotations || [];
-            auditLog = data.auditLog || [];
             customerId = data.customerId || 1;
             supplierId = data.supplierId || 1;
             itemId = data.itemId || 1;
-            warehouseId = data.warehouseId || 1;
-            console.log('✅ تم تحميل البيانات محلياً');
+            employeeId = data.employeeId || 1;
+            loanId = data.loanId || 1;
+            expenseId = data.expenseId || 1;
+            auditLog = data.auditLog || [];
+            console.log('✅ تم تحميل البيانات');
             updateAllUI();
-            drawChart();
-            updateTopItems();
+            updateDashboard();
             return true;
         }
         return false;
     } catch (e) {
-        console.error('❌ خطأ في التحميل المحلي:', e);
+        console.error('❌ خطأ في التحميل:', e);
         return false;
     }
 }
@@ -115,17 +115,15 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     const email = document.getElementById('loginEmail').value;
     const pass = document.getElementById('loginPass').value;
     if (email && pass) {
-        // التحقق من وجود المستخدم
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const users = JSON.parse(localStorage.getItem('rashed_users') || '[]');
         const user = users.find(u => u.email === email && u.password === pass);
         if (user) {
             afterLogin(user.name);
         } else {
-            // إذا لم يوجد، نضيفه كأول مستخدم
-            const newUser = { name: 'admin', email: email, password: pass };
+            const newUser = { name: 'راشد', email: email, password: pass };
             users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
-            afterLogin('admin');
+            localStorage.setItem('rashed_users', JSON.stringify(users));
+            afterLogin('راشد');
         }
     }
 });
@@ -143,13 +141,13 @@ document.getElementById('signupForm').addEventListener('submit', function(e) {
         alert('❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل');
         return;
     }
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const users = JSON.parse(localStorage.getItem('rashed_users') || '[]');
     if (users.find(u => u.email === email)) {
         alert('❌ هذا البريد الإلكتروني مستخدم بالفعل');
         return;
     }
     users.push({ name, email, password: pass });
-    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('rashed_users', JSON.stringify(users));
     alert('✅ تم إنشاء الحساب بنجاح!');
     afterLogin(name);
 });
@@ -161,6 +159,7 @@ function afterLogin(name) {
     document.getElementById('userNameDisplay').textContent = name;
     document.getElementById('headerUserName').textContent = name;
     loadData();
+    updateDashboard();
     logAction('تسجيل دخول', { user: name });
 }
 
@@ -173,9 +172,6 @@ function showLogin() {
     document.getElementById('signupForm').style.display = 'none';
 }
 
-// ================================================================
-// تسجيل الخروج
-// ================================================================
 document.getElementById('logoutBtn').addEventListener('click', function(e) {
     e.preventDefault();
     if (confirm('تسجيل الخروج؟')) {
@@ -198,43 +194,60 @@ function logAction(action, details) {
         details: JSON.stringify(details)
     };
     auditLog.push(logEntry);
-    updateAuditLog();
     saveData();
 }
 
-function updateAuditLog() {
-    const tbody = document.getElementById('auditLogList');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    const filtered = auditLog.slice().reverse();
-    filtered.forEach(log => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${new Date(log.timestamp).toLocaleString('ar-EG')}</td>
-            <td>${log.userId}</td>
-            <td>${log.action}</td>
-            <td>${log.details}</td>
-        `;
-        tbody.appendChild(row);
-    });
+// ================================================================
+// تحديث لوحة التحكم
+// ================================================================
+function updateDashboard() {
+    const totalSales = sales.reduce((s, x) => s + (x.total || 0), 0);
+    const totalPurchases = purchases.reduce((s, x) => s + (x.total || 0), 0);
+    const totalItems = items.reduce((s, i) => s + (i.stock || 0), 0);
+    const totalLoans = loans.reduce((s, l) => s + (l.amount || 0), 0);
+    const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const totalEmployees = employees.length;
+    
+    document.getElementById('statTasks').textContent = items.length;
+    document.getElementById('statDone').textContent = sales.length;
+    document.getElementById('statExpenses').textContent = totalExpenses.toFixed(2);
+    document.getElementById('statLoans').textContent = totalLoans.toFixed(2);
+    document.getElementById('statSales').textContent = sales.length;
+    document.getElementById('statPurchases').textContent = purchases.length;
+    
+    document.getElementById('totalSales').textContent = totalSales.toLocaleString();
+    document.getElementById('totalPurchases').textContent = totalPurchases.toLocaleString();
+    document.getElementById('totalStock').textContent = items.reduce((s, i) => s + ((i.stock || 0) * (i.salePrice || 0)), 0).toLocaleString();
+    document.getElementById('treasuryBalance').textContent = treasuryBalance.toLocaleString();
+    
+    document.getElementById('treasuryCurrentBalance').textContent = treasuryBalance.toFixed(2) + ' جنيه';
+    document.getElementById('treasuryIncome').textContent = treasuryIncome.toFixed(2) + ' جنيه';
+    document.getElementById('treasuryExpense').textContent = treasuryExpense.toFixed(2) + ' جنيه';
+    
+    // آخر النشاطات
+    const activities = document.getElementById('recentActivities');
+    if (activities) {
+        activities.innerHTML = '';
+        const recent = [...auditLog].slice(-5).reverse();
+        recent.forEach(log => {
+            const div = document.createElement('div');
+            div.className = 'activity-item';
+            div.innerHTML = `
+                <span>${log.action}</span>
+                <span style="font-size:11px;color:var(--text-light);">${new Date(log.timestamp).toLocaleString('ar-EG')}</span>
+            `;
+            activities.appendChild(div);
+        });
+        if (recent.length === 0) {
+            activities.innerHTML = '<div class="activity-item">لا توجد نشاطات حتى الآن</div>';
+        }
+    }
 }
 
 // ================================================================
 // تحديث الواجهة
 // ================================================================
 function updateAllUI() {
-    const totalSales = sales.reduce((s, x) => s + (x.total || 0), 0);
-    const totalPurchases = purchases.reduce((s, x) => s + (x.total || 0), 0);
-    const totalStock = items.reduce((s, i) => s + ((i.stock || 0) * (i.salePrice || 0)), 0);
-    
-    document.getElementById('totalSales').textContent = totalSales.toLocaleString();
-    document.getElementById('totalPurchases').textContent = totalPurchases.toLocaleString();
-    document.getElementById('totalStock').textContent = totalStock.toLocaleString();
-    document.getElementById('treasuryBalance').textContent = treasuryBalance.toLocaleString();
-    document.getElementById('treasuryCurrentBalance').textContent = treasuryBalance.toFixed(2) + ' جنيه';
-    document.getElementById('treasuryIncome').textContent = treasuryIncome.toFixed(2) + ' جنيه';
-    document.getElementById('treasuryExpense').textContent = treasuryExpense.toFixed(2) + ' جنيه';
-    
     // العملاء
     const ct = document.getElementById('customersList');
     if (ct) {
@@ -243,7 +256,6 @@ function updateAllUI() {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${c.name}</td>
-                <td>${c.type || 'عميل'}</td>
                 <td>${c.phone || '-'}</td>
                 <td>${(c.balance || 0).toFixed(2)}</td>
                 <td><button class="btn-delete" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button></td>
@@ -260,7 +272,6 @@ function updateAllUI() {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${s.name}</td>
-                <td>${s.type || 'مورد'}</td>
                 <td>${s.phone || '-'}</td>
                 <td>${(s.balance || 0).toFixed(2)}</td>
                 <td><button class="btn-delete" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button></td>
@@ -323,6 +334,57 @@ function updateAllUI() {
         });
     }
     
+    // الموظفين
+    const el = document.getElementById('employeesList');
+    if (el) {
+        el.innerHTML = '';
+        employees.forEach(e => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${e.name}</td>
+                <td>${e.position || '-'}</td>
+                <td>${e.phone || '-'}</td>
+                <td>${(e.salary || 0).toFixed(2)}</td>
+                <td><button class="btn-delete" onclick="deleteEmployee(${e.id})"><i class="fas fa-trash"></i></button></td>
+            `;
+            el.appendChild(row);
+        });
+    }
+    
+    // السلف
+    const ll = document.getElementById('loansList');
+    if (ll) {
+        ll.innerHTML = '';
+        loans.forEach(l => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${l.employee}</td>
+                <td>${(l.amount || 0).toFixed(2)}</td>
+                <td>${l.date}</td>
+                <td><span class="status ${l.status === 'مسددة' ? 'paid' : 'pending'}">${l.status || 'مستحقة'}</span></td>
+                <td><button class="btn-delete" onclick="deleteLoan(${l.id})"><i class="fas fa-trash"></i></button></td>
+            `;
+            ll.appendChild(row);
+        });
+    }
+    
+    // المصروفات
+    const ex = document.getElementById('expensesList');
+    if (ex) {
+        ex.innerHTML = '';
+        expenses.forEach(e => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${e.desc}</td>
+                <td>${(e.amount || 0).toFixed(2)}</td>
+                <td>${e.date}</td>
+                <td>${e.category || 'أخرى'}</td>
+                <td><button class="btn-delete" onclick="deleteExpense(${e.id})"><i class="fas fa-trash"></i></button></td>
+            `;
+            ex.appendChild(row);
+        });
+    }
+    
     // الخزينة
     const tt = document.getElementById('treasuryTransactions');
     if (tt) {
@@ -341,94 +403,15 @@ function updateAllUI() {
         });
     }
     
-    // مرتجعات المبيعات
-    const srt = document.getElementById('salesReturnsList');
-    if (srt) {
-        srt.innerHTML = '';
-        salesReturns.forEach(r => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${r.returnNo}</td>
-                <td>${r.date}</td>
-                <td>${r.invoiceNo}</td>
-                <td>${r.party}</td>
-                <td>${(r.amount || 0).toFixed(2)}</td>
-                <td>${r.reason || 'مرتجع'}</td>
-            `;
-            srt.appendChild(row);
-        });
-    }
-    
-    // مرتجعات المشتريات
-    const prt = document.getElementById('purchasesReturnsList');
-    if (prt) {
-        prt.innerHTML = '';
-        purchasesReturns.forEach(r => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${r.returnNo}</td>
-                <td>${r.date}</td>
-                <td>${r.invoiceNo}</td>
-                <td>${r.party}</td>
-                <td>${(r.amount || 0).toFixed(2)}</td>
-                <td>${r.reason || 'مرتجع'}</td>
-            `;
-            prt.appendChild(row);
-        });
-    }
-    
-    // العملاء المحتملين
-    updateLeadsList();
-    
-    // المخازن
-    const wg = document.getElementById('warehousesGrid');
-    if (wg) {
-        wg.innerHTML = '';
-        warehouses.forEach(w => {
-            const card = document.createElement('div');
-            card.className = 'warehouse-card';
-            card.innerHTML = `
-                <h3><i class="fas fa-warehouse"></i> ${w.name}</h3>
-                <p>${w.location || ''}</p>
-                <div class="warehouse-stats">
-                    <span>الأصناف: ${items.length}</span>
-                </div>
-            `;
-            wg.appendChild(card);
-        });
-    }
-    
-    // آخر الفواتير
-    const rt = document.getElementById('recentInvoicesList');
-    if (rt) {
-        rt.innerHTML = '';
-        const recent = [...sales].slice(-5).reverse();
-        recent.forEach(s => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${s.invoiceNo}</td>
-                <td>${s.customer}</td>
-                <td>${(s.total || 0).toFixed(2)}</td>
-                <td><span class="status ${s.status === 'مدفوعة' ? 'paid' : 'pending'}">${s.status || 'مدفوعة'}</span></td>
-            `;
-            rt.appendChild(row);
-        });
-    }
-    
     updateCustomerSelects();
     updateSupplierSelects();
-    updateReturnCustomerSelects();
-    updateReturnSupplierSelects();
-    updateCollectionSelects();
-    updatePaymentSelects();
-    updateAuditLog();
-    
-    document.getElementById('lastUpdate').textContent = new Date().toLocaleString('ar-EG');
+    updateEmployeeSelects();
+    updateDashboard();
     saveData();
 }
 
 // ================================================================
-// العملاء والموردين
+// تحديث القوائم المنسدلة
 // ================================================================
 function updateCustomerSelects() {
     const sel = document.getElementById('saleCustomerSelect');
@@ -454,116 +437,16 @@ function updateSupplierSelects() {
     });
 }
 
-function updateReturnCustomerSelects() {
-    const sel = document.getElementById('saleReturnCustomer');
+function updateEmployeeSelects() {
+    const sel = document.getElementById('loanEmployee');
     if (!sel) return;
     sel.innerHTML = '<option value="">-- اختر --</option>';
-    customers.forEach(c => {
+    employees.forEach(e => {
         const opt = document.createElement('option');
-        opt.value = c.name;
-        opt.textContent = c.name;
+        opt.value = e.name;
+        opt.textContent = e.name;
         sel.appendChild(opt);
     });
-    const invSel = document.getElementById('saleReturnOriginalInvoice');
-    if (invSel) {
-        invSel.innerHTML = '<option value="">-- اختر فاتورة --</option>';
-        sales.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.invoiceNo;
-            opt.textContent = s.invoiceNo + ' - ' + s.customer;
-            invSel.appendChild(opt);
-        });
-    }
-}
-
-function updateReturnSupplierSelects() {
-    const sel = document.getElementById('purchaseReturnSupplier');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">-- اختر --</option>';
-    suppliers.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.name;
-        opt.textContent = s.name;
-        sel.appendChild(opt);
-    });
-    const invSel = document.getElementById('purchaseReturnOriginalInvoice');
-    if (invSel) {
-        invSel.innerHTML = '<option value="">-- اختر فاتورة --</option>';
-        purchases.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.invoiceNo;
-            opt.textContent = p.invoiceNo + ' - ' + p.supplier;
-            invSel.appendChild(opt);
-        });
-    }
-}
-
-function updateCollectionSelects() {
-    const custSel = document.getElementById('collectionCustomer');
-    if (custSel) {
-        custSel.innerHTML = '<option value="">-- اختر --</option>';
-        customers.forEach(c => {
-            custSel.innerHTML += `<option value="${c.name}">${c.name} (الرصيد: ${(c.balance || 0).toFixed(2)})</option>`;
-        });
-    }
-}
-
-function updatePaymentSelects() {
-    const suppSel = document.getElementById('paymentSupplier');
-    if (suppSel) {
-        suppSel.innerHTML = '<option value="">-- اختر --</option>';
-        suppliers.forEach(s => {
-            suppSel.innerHTML += `<option value="${s.name}">${s.name} (الرصيد: ${(s.balance || 0).toFixed(2)})</option>`;
-        });
-    }
-}
-
-// ===== العملاء المحتملين =====
-function updateLeadsList() {
-    const tbody = document.getElementById('leadsList');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    leads.forEach(l => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${l.name}</td>
-            <td>${l.phone || '-'}</td>
-            <td>${l.source || 'مباشر'}</td>
-            <td><span class="status pending">${l.status || 'جديد'}</span></td>
-            <td>
-                <button class="btn-success" onclick="convertLeadToCustomer(${l.id})"><i class="fas fa-user-check"></i> تحويل</button>
-                <button class="btn-delete" onclick="deleteLead(${l.id})"><i class="fas fa-trash"></i></button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-function convertLeadToCustomer(leadId) {
-    const lead = leads.find(l => l.id === leadId);
-    if (!lead) return;
-    customers.push({
-        id: customerId++,
-        name: lead.name,
-        phone: lead.phone,
-        type: 'عميل',
-        balance: 0,
-        creditLimit: 0
-    });
-    leads = leads.filter(l => l.id !== leadId);
-    updateLeadsList();
-    updateAllUI();
-    logAction('تحويل عميل محتمل لعميل', { name: lead.name });
-    addNotification('success', `✅ تم تحويل ${lead.name} إلى عميل`);
-}
-
-function deleteLead(id) {
-    if (confirm('حذف العميل المحتمل؟')) {
-        leads = leads.filter(l => l.id !== id);
-        updateLeadsList();
-        logAction('حذف عميل محتمل', { id });
-        addNotification('warning', 'تم الحذف');
-    }
 }
 
 // ================================================================
@@ -603,23 +486,18 @@ function showNotifications() {
 }
 
 // ================================================================
-// دوال الإضافة والحذف
+// العملاء
 // ================================================================
-
-// ===== العملاء =====
 document.getElementById('customerForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const name = document.getElementById('custName').value.trim();
     if (!name) { alert('أدخل الاسم'); return; }
-    const customer = {
+    customers.push({
         id: customerId++,
         name,
-        type: document.getElementById('custType').value,
         phone: document.getElementById('custPhone').value || '',
-        creditLimit: parseFloat(document.getElementById('custCreditLimit').value) || 0,
-        balance: 0
-    };
-    customers.push(customer);
+        balance: parseFloat(document.getElementById('custBalance').value) || 0
+    });
     logAction('إضافة عميل', { name });
     updateAllUI();
     closeModal('customerModal');
@@ -636,20 +514,19 @@ function deleteCustomer(id) {
     }
 }
 
-// ===== الموردين =====
+// ================================================================
+// الموردين
+// ================================================================
 document.getElementById('supplierForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const name = document.getElementById('suppName').value.trim();
     if (!name) { alert('أدخل الاسم'); return; }
-    const supplier = {
+    suppliers.push({
         id: supplierId++,
         name,
-        type: document.getElementById('suppType').value,
         phone: document.getElementById('suppPhone').value || '',
-        creditLimit: parseFloat(document.getElementById('suppCreditLimit').value) || 0,
-        balance: 0
-    };
-    suppliers.push(supplier);
+        balance: parseFloat(document.getElementById('suppBalance').value) || 0
+    });
     logAction('إضافة مورد', { name });
     updateAllUI();
     closeModal('supplierModal');
@@ -666,21 +543,22 @@ function deleteSupplier(id) {
     }
 }
 
-// ===== الأصناف =====
+// ================================================================
+// الأصناف
+// ================================================================
 document.getElementById('itemForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const code = document.getElementById('itemCode').value.trim();
     const name = document.getElementById('itemName').value.trim();
     if (!code || !name) { alert('أدخل الكود والاسم'); return; }
-    const item = {
+    items.push({
         id: itemId++,
         code,
         name,
         unit: document.getElementById('itemUnit').value,
         salePrice: parseFloat(document.getElementById('itemSalePrice').value) || 0,
         stock: parseInt(document.getElementById('itemStock').value) || 0
-    };
-    items.push(item);
+    });
     logAction('إضافة صنف', { code, name });
     updateAllUI();
     closeModal('itemModal');
@@ -697,42 +575,101 @@ function deleteItem(id) {
     }
 }
 
-// ===== العملاء المحتملين =====
-document.getElementById('leadForm').addEventListener('submit', function(e) {
+// ================================================================
+// الموظفين
+// ================================================================
+document.getElementById('employeeForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const name = document.getElementById('leadName').value.trim();
+    const name = document.getElementById('empName').value.trim();
     if (!name) { alert('أدخل الاسم'); return; }
-    const lead = {
-        id: leads.length + 1,
+    employees.push({
+        id: employeeId++,
         name,
-        phone: document.getElementById('leadPhone').value || '',
-        source: document.getElementById('leadSource').value,
-        status: 'جديد',
-        createdAt: new Date().toISOString()
-    };
-    leads.push(lead);
-    updateLeadsList();
-    logAction('إضافة عميل محتمل', { name });
-    addNotification('success', `✅ تم إضافة العميل المحتمل ${name}`);
-    closeModal('leadModal');
-    this.reset();
-});
-
-// ================================================================
-// المخازن
-// ================================================================
-document.getElementById('warehouseForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const name = document.getElementById('warehouseName').value.trim();
-    if (!name) { alert('أدخل الاسم'); return; }
-    const warehouse = { id: warehouseId++, name, location: document.getElementById('warehouseLocation').value || '' };
-    warehouses.push(warehouse);
-    logAction('إضافة مخزن', { name });
+        position: document.getElementById('empPosition').value || '',
+        phone: document.getElementById('empPhone').value || '',
+        salary: parseFloat(document.getElementById('empSalary').value) || 0
+    });
+    logAction('إضافة موظف', { name });
     updateAllUI();
-    closeModal('warehouseModal');
+    closeModal('employeeModal');
     this.reset();
     addNotification('success', `✅ تم إضافة ${name}`);
 });
+
+function deleteEmployee(id) {
+    if (confirm('حذف الموظف؟')) {
+        employees = employees.filter(e => e.id !== id);
+        logAction('حذف موظف', { id });
+        updateAllUI();
+        addNotification('warning', 'تم الحذف');
+    }
+}
+
+// ================================================================
+// السلف
+// ================================================================
+document.getElementById('loanForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const employee = document.getElementById('loanEmployee').value;
+    const amount = parseFloat(document.getElementById('loanAmount').value);
+    const desc = document.getElementById('loanDesc').value || '';
+    if (!employee) { alert('اختر الموظف'); return; }
+    if (!amount) { alert('أدخل المبلغ'); return; }
+    loans.push({
+        id: loanId++,
+        employee,
+        amount,
+        desc,
+        date: new Date().toISOString().split('T')[0],
+        status: 'مستحقة'
+    });
+    logAction('إضافة سلفة', { employee, amount });
+    updateAllUI();
+    closeModal('loanModal');
+    this.reset();
+    addNotification('success', `✅ تم إضافة سلفة بقيمة ${amount}`);
+});
+
+function deleteLoan(id) {
+    if (confirm('حذف السلفة؟')) {
+        loans = loans.filter(l => l.id !== id);
+        logAction('حذف سلفة', { id });
+        updateAllUI();
+        addNotification('warning', 'تم الحذف');
+    }
+}
+
+// ================================================================
+// المصروفات
+// ================================================================
+document.getElementById('expenseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const desc = document.getElementById('expenseDesc').value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    if (!desc) { alert('أدخل البيان'); return; }
+    if (!amount) { alert('أدخل المبلغ'); return; }
+    expenses.push({
+        id: expenseId++,
+        desc,
+        amount,
+        date: new Date().toISOString().split('T')[0],
+        category: document.getElementById('expenseCategory').value
+    });
+    logAction('إضافة مصروف', { desc, amount });
+    updateAllUI();
+    closeModal('expenseModal');
+    this.reset();
+    addNotification('warning', `✅ تم إضافة مصروف بقيمة ${amount}`);
+});
+
+function deleteExpense(id) {
+    if (confirm('حذف المصروف؟')) {
+        expenses = expenses.filter(e => e.id !== id);
+        logAction('حذف مصروف', { id });
+        updateAllUI();
+        addNotification('warning', 'تم الحذف');
+    }
+}
 
 // ================================================================
 // الخزينة
@@ -745,7 +682,7 @@ document.getElementById('treasuryDepositForm').addEventListener('submit', functi
     const date = new Date().toISOString().split('T')[0];
     treasuryBalance += amount;
     treasuryIncome += amount;
-    const trans = {
+    treasuryTransactions.push({
         id: Date.now(),
         date,
         type: 'إيداع',
@@ -753,8 +690,7 @@ document.getElementById('treasuryDepositForm').addEventListener('submit', functi
         debit: amount,
         credit: 0,
         balance: treasuryBalance
-    };
-    treasuryTransactions.push(trans);
+    });
     logAction('إيداع', { desc, amount });
     updateAllUI();
     closeModal('treasuryDepositModal');
@@ -771,7 +707,7 @@ document.getElementById('treasuryWithdrawForm').addEventListener('submit', funct
     const date = new Date().toISOString().split('T')[0];
     treasuryBalance -= amount;
     treasuryExpense += amount;
-    const trans = {
+    treasuryTransactions.push({
         id: Date.now(),
         date,
         type: 'سحب',
@@ -779,8 +715,7 @@ document.getElementById('treasuryWithdrawForm').addEventListener('submit', funct
         debit: 0,
         credit: amount,
         balance: treasuryBalance
-    };
-    treasuryTransactions.push(trans);
+    });
     logAction('سحب', { desc, amount });
     updateAllUI();
     closeModal('treasuryWithdrawModal');
@@ -788,97 +723,8 @@ document.getElementById('treasuryWithdrawForm').addEventListener('submit', funct
     addNotification('warning', `✅ تم تسجيل السحب بقيمة ${amount}`);
 });
 
-document.getElementById('treasuryTransferForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const from = document.getElementById('transferFrom').value;
-    const to = document.getElementById('transferTo').value;
-    const amount = parseFloat(document.getElementById('transferAmount').value);
-    const desc = document.getElementById('transferDesc').value.trim() || `تحويل من ${from} إلى ${to}`;
-    if (!amount) { alert('أدخل المبلغ'); return; }
-    if (from === to) { alert('⚠️ لا يمكن التحويل لنفس الخزينة'); return; }
-    const date = new Date().toISOString().split('T')[0];
-    treasuryBalance -= amount;
-    treasuryExpense += amount;
-    const trans1 = { id: Date.now(), date, type: 'تحويل (من)', desc: `${desc} - من ${from}`, debit: 0, credit: amount, balance: treasuryBalance };
-    treasuryTransactions.push(trans1);
-    treasuryBalance += amount;
-    treasuryIncome += amount;
-    const trans2 = { id: Date.now() + 1, date, type: 'تحويل (إلى)', desc: `${desc} - إلى ${to}`, debit: amount, credit: 0, balance: treasuryBalance };
-    treasuryTransactions.push(trans2);
-    logAction('تحويل بين الخزن', { from, to, amount });
-    updateAllUI();
-    closeModal('treasuryTransferModal');
-    this.reset();
-    addNotification('success', `✅ تم تحويل ${amount} من ${from} إلى ${to}`);
-});
-
-document.getElementById('treasuryCollectionForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const customer = document.getElementById('collectionCustomer').value;
-    const amount = parseFloat(document.getElementById('collectionAmount').value);
-    const desc = document.getElementById('collectionDesc').value.trim() || `تحصيل من ${customer}`;
-    if (!customer) { alert('اختر العميل'); return; }
-    if (!amount) { alert('أدخل المبلغ'); return; }
-    const date = new Date().toISOString().split('T')[0];
-    treasuryBalance += amount;
-    treasuryIncome += amount;
-    const trans = {
-        id: Date.now(),
-        date,
-        type: 'تحصيل',
-        desc: `${desc} (${document.getElementById('collectionMethod').value})`,
-        debit: amount,
-        credit: 0,
-        balance: treasuryBalance,
-        party: customer
-    };
-    treasuryTransactions.push(trans);
-    const cust = customers.find(c => c.name === customer);
-    if (cust) {
-        cust.balance = (cust.balance || 0) - amount;
-    }
-    logAction('تحصيل من عميل', { customer, amount });
-    updateAllUI();
-    closeModal('treasuryCollectionModal');
-    this.reset();
-    addNotification('success', `✅ تم تحصيل ${amount} من ${customer}`);
-});
-
-document.getElementById('treasuryPaymentForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const supplier = document.getElementById('paymentSupplier').value;
-    const amount = parseFloat(document.getElementById('paymentAmount').value);
-    const desc = document.getElementById('paymentDesc').value.trim() || `سداد لـ ${supplier}`;
-    if (!supplier) { alert('اختر المورد'); return; }
-    if (!amount) { alert('أدخل المبلغ'); return; }
-    if (amount > treasuryBalance) { alert('⚠️ الرصيد غير كافي'); return; }
-    const date = new Date().toISOString().split('T')[0];
-    treasuryBalance -= amount;
-    treasuryExpense += amount;
-    const trans = {
-        id: Date.now(),
-        date,
-        type: 'سداد',
-        desc: `${desc} (${document.getElementById('paymentMethod').value})`,
-        debit: 0,
-        credit: amount,
-        balance: treasuryBalance,
-        party: supplier
-    };
-    treasuryTransactions.push(trans);
-    const supp = suppliers.find(s => s.name === supplier);
-    if (supp) {
-        supp.balance = (supp.balance || 0) + amount;
-    }
-    logAction('سداد لمورد', { supplier, amount });
-    updateAllUI();
-    closeModal('treasuryPaymentModal');
-    this.reset();
-    addNotification('warning', `✅ تم سداد ${amount} لـ ${supplier}`);
-});
-
 // ================================================================
-// الفواتير
+// المبيعات
 // ================================================================
 function openSaleInvoice() {
     document.getElementById('saleInvoiceModal').style.display = 'block';
@@ -949,7 +795,7 @@ document.getElementById('saleInvoiceForm').addEventListener('submit', function(e
     if (grandTotal === 0) { alert('أضف منتجات'); return; }
     const tax = grandTotal * 0.14;
     const subtotal = grandTotal - tax;
-    const sale = {
+    sales.push({
         id: sales.length + 1,
         invoiceNo,
         date,
@@ -959,11 +805,10 @@ document.getElementById('saleInvoiceForm').addEventListener('submit', function(e
         total: grandTotal,
         status: 'مدفوعة',
         payment: document.getElementById('salePaymentMethod').value
-    };
-    sales.push(sale);
+    });
     treasuryBalance += grandTotal;
     treasuryIncome += grandTotal;
-    const trans = {
+    treasuryTransactions.push({
         id: Date.now(),
         date,
         type: 'مبيعات',
@@ -971,15 +816,25 @@ document.getElementById('saleInvoiceForm').addEventListener('submit', function(e
         debit: grandTotal,
         credit: 0,
         balance: treasuryBalance
-    };
-    treasuryTransactions.push(trans);
+    });
     logAction('إضافة فاتورة مبيعات', { invoiceNo, customer, grandTotal });
     updateAllUI();
     closeModal('saleInvoiceModal');
     addNotification('success', `✅ فاتورة ${invoiceNo} بقيمة ${grandTotal.toFixed(2)}`);
 });
 
-// ===== المشتريات =====
+function deleteSale(id) {
+    if (confirm('حذف الفاتورة؟')) {
+        sales = sales.filter(s => s.id !== id);
+        logAction('حذف فاتورة مبيعات', { id });
+        updateAllUI();
+        addNotification('warning', 'تم الحذف');
+    }
+}
+
+// ================================================================
+// المشتريات
+// ================================================================
 function openPurchaseInvoice() {
     document.getElementById('purchaseInvoiceModal').style.display = 'block';
     document.getElementById('purchaseInvoiceDate').value = new Date().toISOString().split('T')[0];
@@ -1049,7 +904,7 @@ document.getElementById('purchaseInvoiceForm').addEventListener('submit', functi
     if (grandTotal === 0) { alert('أضف منتجات'); return; }
     const tax = grandTotal * 0.14;
     const subtotal = grandTotal - tax;
-    const purchase = {
+    purchases.push({
         id: purchases.length + 1,
         invoiceNo,
         date,
@@ -1059,11 +914,10 @@ document.getElementById('purchaseInvoiceForm').addEventListener('submit', functi
         total: grandTotal,
         status: 'مدفوعة',
         payment: document.getElementById('purchasePaymentMethod').value
-    };
-    purchases.push(purchase);
+    });
     treasuryBalance -= grandTotal;
     treasuryExpense += grandTotal;
-    const trans = {
+    treasuryTransactions.push({
         id: Date.now(),
         date,
         type: 'مشتريات',
@@ -1071,195 +925,13 @@ document.getElementById('purchaseInvoiceForm').addEventListener('submit', functi
         debit: 0,
         credit: grandTotal,
         balance: treasuryBalance
-    };
-    treasuryTransactions.push(trans);
+    });
     logAction('إضافة فاتورة مشتريات', { invoiceNo, supplier, grandTotal });
     updateAllUI();
     closeModal('purchaseInvoiceModal');
     addNotification('success', `✅ فاتورة شراء ${invoiceNo} بقيمة ${grandTotal.toFixed(2)}`);
 });
 
-// ================================================================
-// مرتجعات المبيعات
-// ================================================================
-function openSaleReturnInvoice() {
-    document.getElementById('saleReturnModal').style.display = 'block';
-    document.getElementById('saleReturnDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('saleReturnNo').value = `SR-${String(salesReturns.length + 1).padStart(4, '0')}`;
-    updateReturnCustomerSelects();
-    document.getElementById('saleReturnItems').innerHTML = `
-        <tr class="item-row">
-            <td><input type="text" class="item-name" placeholder="اسم الصنف"></td>
-            <td><input type="number" class="item-qty" value="1" oninput="calcSaleReturnRowTotal(this)"></td>
-            <td><input type="number" class="item-price" value="0" oninput="calcSaleReturnRowTotal(this)"></td>
-            <td><input type="number" class="item-discount" value="0" oninput="calcSaleReturnRowTotal(this)"></td>
-            <td><input type="number" class="item-total" value="0" readonly></td>
-            <td><button type="button" class="btn-delete-sm" onclick="removeSaleReturnRow(this)"><i class="fas fa-times"></i></button></td>
-        </tr>
-    `;
-    calcSaleReturnSummary();
-}
-
-function calcSaleReturnRowTotal(el) {
-    const row = el.closest('tr');
-    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-    const price = parseFloat(row.querySelector('.item-price').value) || 0;
-    const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
-    row.querySelector('.item-total').value = ((qty * price) - discount).toFixed(2);
-    calcSaleReturnSummary();
-}
-
-function calcSaleReturnSummary() {
-    const rows = document.querySelectorAll('#saleReturnItems .item-row');
-    let grandTotal = 0;
-    rows.forEach(row => {
-        grandTotal += parseFloat(row.querySelector('.item-total').value) || 0;
-    });
-    document.getElementById('saleReturnGrandTotal').textContent = grandTotal.toFixed(2);
-}
-
-function addSaleReturnRow() {
-    const tbody = document.getElementById('saleReturnItems');
-    const row = document.createElement('tr');
-    row.className = 'item-row';
-    row.innerHTML = `
-        <td><input type="text" class="item-name" placeholder="اسم الصنف"></td>
-        <td><input type="number" class="item-qty" value="1" oninput="calcSaleReturnRowTotal(this)"></td>
-        <td><input type="number" class="item-price" value="0" oninput="calcSaleReturnRowTotal(this)"></td>
-        <td><input type="number" class="item-discount" value="0" oninput="calcSaleReturnRowTotal(this)"></td>
-        <td><input type="number" class="item-total" value="0" readonly></td>
-        <td><button type="button" class="btn-delete-sm" onclick="removeSaleReturnRow(this)"><i class="fas fa-times"></i></button></td>
-    `;
-    tbody.appendChild(row);
-    calcSaleReturnSummary();
-}
-
-function removeSaleReturnRow(btn) {
-    const tbody = document.getElementById('saleReturnItems');
-    if (tbody.querySelectorAll('.item-row').length <= 1) { alert('يجب أن يكون صف واحد على الأقل'); return; }
-    btn.closest('tr').remove();
-    calcSaleReturnSummary();
-}
-
-document.getElementById('saleReturnForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const customer = document.getElementById('saleReturnCustomer').value;
-    const invoiceNo = document.getElementById('saleReturnOriginalInvoice').value;
-    const grandTotal = parseFloat(document.getElementById('saleReturnGrandTotal').textContent) || 0;
-    const returnNo = document.getElementById('saleReturnNo').value;
-    const date = document.getElementById('saleReturnDate').value;
-    const reason = document.getElementById('saleReturnReason').value;
-    if (!customer) { alert('اختر العميل'); return; }
-    if (!invoiceNo) { alert('اختر الفاتورة الأصلية'); return; }
-    if (grandTotal === 0) { alert('أضف منتجات'); return; }
-    const ret = { id: salesReturns.length + 1, returnNo, date, invoiceNo, party: customer, amount: grandTotal, reason };
-    salesReturns.push(ret);
-    treasuryBalance -= grandTotal;
-    treasuryExpense += grandTotal;
-    const trans = { id: Date.now(), date, type: 'مرتجع مبيعات', desc: `مرتجع مبيعات - ${returnNo}`, debit: 0, credit: grandTotal, balance: treasuryBalance };
-    treasuryTransactions.push(trans);
-    logAction('تسجيل مرتجع مبيعات', { returnNo, customer, grandTotal });
-    updateAllUI();
-    closeModal('saleReturnModal');
-    addNotification('warning', `✅ تم تسجيل مرتجع ${returnNo} بقيمة ${grandTotal.toFixed(2)}`);
-});
-
-// ================================================================
-// مرتجعات المشتريات
-// ================================================================
-function openPurchaseReturnInvoice() {
-    document.getElementById('purchaseReturnModal').style.display = 'block';
-    document.getElementById('purchaseReturnDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('purchaseReturnNo').value = `PR-${String(purchasesReturns.length + 1).padStart(4, '0')}`;
-    updateReturnSupplierSelects();
-    document.getElementById('purchaseReturnItems').innerHTML = `
-        <tr class="item-row">
-            <td><input type="text" class="item-name" placeholder="اسم الصنف"></td>
-            <td><input type="number" class="item-qty" value="1" oninput="calcPurchaseReturnRowTotal(this)"></td>
-            <td><input type="number" class="item-price" value="0" oninput="calcPurchaseReturnRowTotal(this)"></td>
-            <td><input type="number" class="item-discount" value="0" oninput="calcPurchaseReturnRowTotal(this)"></td>
-            <td><input type="number" class="item-total" value="0" readonly></td>
-            <td><button type="button" class="btn-delete-sm" onclick="removePurchaseReturnRow(this)"><i class="fas fa-times"></i></button></td>
-        </tr>
-    `;
-    calcPurchaseReturnSummary();
-}
-
-function calcPurchaseReturnRowTotal(el) {
-    const row = el.closest('tr');
-    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-    const price = parseFloat(row.querySelector('.item-price').value) || 0;
-    const discount = parseFloat(row.querySelector('.item-discount').value) || 0;
-    row.querySelector('.item-total').value = ((qty * price) - discount).toFixed(2);
-    calcPurchaseReturnSummary();
-}
-
-function calcPurchaseReturnSummary() {
-    const rows = document.querySelectorAll('#purchaseReturnItems .item-row');
-    let grandTotal = 0;
-    rows.forEach(row => {
-        grandTotal += parseFloat(row.querySelector('.item-total').value) || 0;
-    });
-    document.getElementById('purchaseReturnGrandTotal').textContent = grandTotal.toFixed(2);
-}
-
-function addPurchaseReturnRow() {
-    const tbody = document.getElementById('purchaseReturnItems');
-    const row = document.createElement('tr');
-    row.className = 'item-row';
-    row.innerHTML = `
-        <td><input type="text" class="item-name" placeholder="اسم الصنف"></td>
-        <td><input type="number" class="item-qty" value="1" oninput="calcPurchaseReturnRowTotal(this)"></td>
-        <td><input type="number" class="item-price" value="0" oninput="calcPurchaseReturnRowTotal(this)"></td>
-        <td><input type="number" class="item-discount" value="0" oninput="calcPurchaseReturnRowTotal(this)"></td>
-        <td><input type="number" class="item-total" value="0" readonly></td>
-        <td><button type="button" class="btn-delete-sm" onclick="removePurchaseReturnRow(this)"><i class="fas fa-times"></i></button></td>
-    `;
-    tbody.appendChild(row);
-    calcPurchaseReturnSummary();
-}
-
-function removePurchaseReturnRow(btn) {
-    const tbody = document.getElementById('purchaseReturnItems');
-    if (tbody.querySelectorAll('.item-row').length <= 1) { alert('يجب أن يكون صف واحد على الأقل'); return; }
-    btn.closest('tr').remove();
-    calcPurchaseReturnSummary();
-}
-
-document.getElementById('purchaseReturnForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const supplier = document.getElementById('purchaseReturnSupplier').value;
-    const invoiceNo = document.getElementById('purchaseReturnOriginalInvoice').value;
-    const grandTotal = parseFloat(document.getElementById('purchaseReturnGrandTotal').textContent) || 0;
-    const returnNo = document.getElementById('purchaseReturnNo').value;
-    const date = document.getElementById('purchaseReturnDate').value;
-    const reason = document.getElementById('purchaseReturnReason').value;
-    if (!supplier) { alert('اختر المورد'); return; }
-    if (!invoiceNo) { alert('اختر الفاتورة الأصلية'); return; }
-    if (grandTotal === 0) { alert('أضف منتجات'); return; }
-    const ret = { id: purchasesReturns.length + 1, returnNo, date, invoiceNo, party: supplier, amount: grandTotal, reason };
-    purchasesReturns.push(ret);
-    treasuryBalance += grandTotal;
-    treasuryIncome += grandTotal;
-    const trans = { id: Date.now(), date, type: 'مرتجع مشتريات', desc: `مرتجع مشتريات - ${returnNo}`, debit: grandTotal, credit: 0, balance: treasuryBalance };
-    treasuryTransactions.push(trans);
-    logAction('تسجيل مرتجع مشتريات', { returnNo, supplier, grandTotal });
-    updateAllUI();
-    closeModal('purchaseReturnModal');
-    addNotification('success', `✅ تم تسجيل مرتجع ${returnNo} بقيمة ${grandTotal.toFixed(2)}`);
-});
-
-// ================================================================
-// حذف الفواتير
-// ================================================================
-function deleteSale(id) {
-    if (confirm('حذف الفاتورة؟')) {
-        sales = sales.filter(s => s.id !== id);
-        logAction('حذف فاتورة مبيعات', { id });
-        updateAllUI();
-        addNotification('warning', 'تم الحذف');
-    }
-}
 function deletePurchase(id) {
     if (confirm('حذف الفاتورة؟')) {
         purchases = purchases.filter(p => p.id !== id);
@@ -1284,16 +956,18 @@ function generateReport(type) {
     document.getElementById('reportMainTitle').textContent = names[type] || 'تقرير';
     document.getElementById('reportTitle').innerHTML = `<i class="fas fa-file-alt"></i> ${names[type] || 'تقرير'}`;
     document.getElementById('reportDate').textContent = new Date().toLocaleDateString('ar-EG');
-    const companyName = document.getElementById('companyName').value || 'شركة راشد للتجارة و التوزيع';
+    const companyName = document.getElementById('companyName').value || 'شركة راشد للتجارة';
     const companyPhone = document.getElementById('companyPhone').value || '01158767633';
     document.getElementById('reportCompanyName').textContent = companyName;
     document.getElementById('reportCompanyInfo').textContent = `ت: ${companyPhone}`;
+    
     const summary = document.getElementById('reportSummary');
     const thead = document.getElementById('reportThead');
     const tbody = document.getElementById('reportTbody');
     const totalSales = sales.reduce((s, x) => s + (x.total || 0), 0);
     const totalPurchases = purchases.reduce((s, x) => s + (x.total || 0), 0);
     const totalStock = items.reduce((s, i) => s + ((i.stock || 0) * (i.salePrice || 0)), 0);
+    
     summary.innerHTML = `
         <div class="summary-grid">
             <div class="summary-stat"><span>إجمالي المبيعات</span><strong>${totalSales.toFixed(2)} جنيه</strong></div>
@@ -1302,6 +976,7 @@ function generateReport(type) {
             <div class="summary-stat"><span>رصيد الخزينة</span><strong>${treasuryBalance.toFixed(2)} جنيه</strong></div>
         </div>
     `;
+    
     if (type === 'balance') {
         thead.innerHTML = `<tr><th>الحساب</th><th>مدين</th><th>دائن</th></tr>`;
         let totalDebit = 0, totalCredit = 0;
@@ -1336,13 +1011,13 @@ function generateReport(type) {
         `;
     } else if (type === 'sales') {
         thead.innerHTML = `<tr><th>رقم الفاتورة</th><th>التاريخ</th><th>العميل</th><th>الإجمالي</th><th>الحالة</th></tr>`;
-        tbody.innerHTML = sales.length ? sales.map(s => `<tr><td>${s.invoiceNo}</td><td>${s.date}</td><td>${s.customer}</td><td>${(s.total || 0).toFixed(2)}</td><td><span class="status ${s.status === 'مدفوعة' ? 'paid' : 'pending'}">${s.status || 'مدفوعة'}</span></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;">لا توجد مبيعات</td></tr>';
+        tbody.innerHTML = sales.length ? sales.map(s => `<tr><td>${s.invoiceNo}</td><td>${s.date}</td><td>${s.customer}</td><td>${(s.total || 0).toFixed(2)}</td><td><span class="status ${s.status === 'مدفوعة' ? 'paid' : 'pending'}">${s.status || 'مدفوعة'}</span></td></tr>`).join('') : '<tr><td colspan="5">لا توجد مبيعات</td></tr>';
     } else if (type === 'inventory') {
         thead.innerHTML = `<tr><th>الكود</th><th>اسم الصنف</th><th>الوحدة</th><th>سعر البيع</th><th>الكمية</th><th>القيمة</th></tr>`;
-        tbody.innerHTML = items.length ? items.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.unit || 'قطعة'}</td><td>${(i.salePrice || 0).toFixed(2)}</td><td>${i.stock || 0}</td><td>${((i.stock || 0) * (i.salePrice || 0)).toFixed(2)}</td></tr>`).join('') : '<tr><td colspan="6" style="text-align:center;">لا توجد أصناف</td></tr>';
+        tbody.innerHTML = items.length ? items.map(i => `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.unit || 'قطعة'}</td><td>${(i.salePrice || 0).toFixed(2)}</td><td>${i.stock || 0}</td><td>${((i.stock || 0) * (i.salePrice || 0)).toFixed(2)}</td></tr>`).join('') : '<tr><td colspan="6">لا توجد أصناف</td></tr>';
     } else if (type === 'customers') {
-        thead.innerHTML = `<tr><th>الاسم</th><th>النوع</th><th>الهاتف</th><th>الرصيد</th></tr>`;
-        tbody.innerHTML = customers.length ? customers.map(c => `<tr><td>${c.name}</td><td>${c.type || 'عميل'}</td><td>${c.phone || '-'}</td><td>${(c.balance || 0).toFixed(2)}</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;">لا يوجد عملاء</td></tr>';
+        thead.innerHTML = `<tr><th>الاسم</th><th>الهاتف</th><th>الرصيد</th></tr>`;
+        tbody.innerHTML = customers.length ? customers.map(c => `<tr><td>${c.name}</td><td>${c.phone || '-'}</td><td>${(c.balance || 0).toFixed(2)}</td></tr>`).join('') : '<tr><td colspan="3">لا يوجد عملاء</td></tr>';
     }
     document.getElementById('reportModal').style.display = 'block';
     logAction('فتح تقرير', { type: names[type] });
@@ -1406,18 +1081,39 @@ document.getElementById('logoUpload').addEventListener('change', function(e) {
     const reader = new FileReader();
     reader.onload = function(ev) {
         document.getElementById('logoPreview').innerHTML = `<img src="${ev.target.result}" alt="شعار">`;
-        localStorage.setItem('company_logo', ev.target.result);
+        localStorage.setItem('rashed_company_logo', ev.target.result);
         logAction('رفع شعار', {});
         addNotification('success', '✅ تم رفع الشعار');
     };
     reader.readAsDataURL(file);
 });
 
-// تحميل اللوجو المحفوظ
 document.addEventListener('DOMContentLoaded', function() {
-    const logo = localStorage.getItem('company_logo');
+    const logo = localStorage.getItem('rashed_company_logo');
     if (logo) {
         document.getElementById('logoPreview').innerHTML = `<img src="${logo}" alt="شعار">`;
+    }
+});
+
+// ================================================================
+// الإعدادات
+// ================================================================
+function saveSettings() {
+    const autoSync = document.getElementById('autoSync').checked;
+    const notifications = document.getElementById('notifications').checked;
+    const language = document.getElementById('language').value;
+    localStorage.setItem('rashed_settings', JSON.stringify({ autoSync, notifications, language }));
+    logAction('حفظ الإعدادات', { autoSync, notifications, language });
+    addNotification('success', '✅ تم حفظ الإعدادات');
+}
+
+// تحميل الإعدادات
+document.addEventListener('DOMContentLoaded', function() {
+    const settings = JSON.parse(localStorage.getItem('rashed_settings'));
+    if (settings) {
+        if (document.getElementById('autoSync')) document.getElementById('autoSync').checked = settings.autoSync;
+        if (document.getElementById('notifications')) document.getElementById('notifications').checked = settings.notifications;
+        if (document.getElementById('language')) document.getElementById('language').value = settings.language;
     }
 });
 
@@ -1437,59 +1133,103 @@ document.querySelectorAll('nav a').forEach(link => {
         document.querySelector('.page-title').textContent = this.textContent.trim();
         document.querySelector('.sidebar').classList.remove('open');
         if (this.dataset.page === 'dashboard') {
-            setTimeout(() => { drawChart(); updateTopItems(); }, 100);
+            setTimeout(() => { drawChart(); updateDashboard(); }, 100);
         }
     });
 });
 
 // ================================================================
-// الرسم البياني
+// الرسوم البيانية
 // ================================================================
 function drawChart() {
-    const canvas = document.getElementById('salesChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const rect = canvas.parentElement.getBoundingClientRect();
-    const width = rect.width - 30;
-    const height = 180;
-    canvas.width = width;
-    canvas.height = height;
-    const data = sales.length > 0 ? sales.map(s => s.total || 0) : [12000, 19000, 15000, 22000, 18000, 25000];
-    const max = Math.max(...data, 1);
-    const barWidth = Math.min((width - 50) / Math.max(data.length, 6) - 4, 30);
-    const startX = 25;
-    ctx.fillStyle = 'var(--bg)';
-    ctx.fillRect(0, 0, width, height);
-    data.forEach((value, index) => {
-        const x = startX + index * (barWidth + 4);
-        const barHeight = (value / max) * (height - 50);
-        const y = height - 18 - barHeight;
-        const gradient = ctx.createLinearGradient(x, y, x, height - 18);
-        gradient.addColorStop(0, '#4fc3f7');
-        gradient.addColorStop(1, '#0288d1');
-        ctx.fillStyle = gradient;
-        ctx.shadowColor = 'rgba(79,195,247,0.25)';
-        ctx.shadowBlur = 4;
-        ctx.beginPath();
-        ctx.roundRect(x, y, barWidth, barHeight, 3);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'var(--text)';
-        ctx.font = '9px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(value.toLocaleString(), x + barWidth / 2, y - 3);
-        const months = ['يناير','فبراير','مارس','ابريل','مايو','يونيو','يوليو','اغسطس','سبتمبر','اكتوبر','نوفمبر','ديسمبر'];
+    // المبيعات الشهرية
+    const canvas1 = document.getElementById('salesChart');
+    if (canvas1) {
+        const ctx = canvas1.getContext('2d');
+        const rect = canvas1.parentElement.getBoundingClientRect();
+        const width = rect.width - 30;
+        const height = 180;
+        canvas1.width = width;
+        canvas1.height = height;
+        const data = sales.length > 0 ? sales.map(s => s.total || 0) : [12000, 19000, 15000, 22000, 18000, 25000];
+        const max = Math.max(...data, 1);
+        const barWidth = Math.min((width - 50) / Math.max(data.length, 6) - 4, 30);
+        const startX = 25;
+        ctx.fillStyle = 'var(--bg)';
+        ctx.fillRect(0, 0, width, height);
+        data.forEach((value, index) => {
+            const x = startX + index * (barWidth + 4);
+            const barHeight = (value / max) * (height - 50);
+            const y = height - 18 - barHeight;
+            const gradient = ctx.createLinearGradient(x, y, x, height - 18);
+            gradient.addColorStop(0, '#4fc3f7');
+            gradient.addColorStop(1, '#0288d1');
+            ctx.fillStyle = gradient;
+            ctx.shadowColor = 'rgba(79,195,247,0.25)';
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth, barHeight, 3);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'var(--text)';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(value.toLocaleString(), x + barWidth / 2, y - 3);
+            const months = ['يناير','فبراير','مارس','ابريل','مايو','يونيو','يوليو','اغسطس','سبتمبر','اكتوبر','نوفمبر','ديسمبر'];
+            ctx.fillStyle = 'var(--text-light)';
+            ctx.font = '8px Arial';
+            ctx.fillText(months[index % 12], x + barWidth / 2, height - 3);
+        });
+    }
+    
+    // توزيع الأصول
+    const canvas2 = document.getElementById('assetsChart');
+    if (canvas2) {
+        const ctx = canvas2.getContext('2d');
+        const rect = canvas2.parentElement.getBoundingClientRect();
+        const width = rect.width - 30;
+        const height = 180;
+        canvas2.width = width;
+        canvas2.height = height;
+        const totalStock = items.reduce((s, i) => s + ((i.stock || 0) * (i.salePrice || 0)), 0);
+        const totalCustomers = customers.reduce((s, c) => s + ((c.balance || 0) > 0 ? c.balance : 0), 0);
+        const data = [
+            { label: 'خزينة', value: treasuryBalance > 0 ? treasuryBalance : 0 },
+            { label: 'مخزون', value: totalStock },
+            { label: 'عملاء', value: totalCustomers }
+        ];
+        const total = data.reduce((s, d) => s + d.value, 0) || 1;
+        let startAngle = -Math.PI / 2;
+        const colors = ['#4fc3f7', '#81c784', '#ffb74d'];
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(width, height) / 2 - 20;
+        ctx.clearRect(0, 0, width, height);
+        data.forEach((d, i) => {
+            const sliceAngle = (d.value / total) * 2 * Math.PI;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fillStyle = colors[i % colors.length];
+            ctx.fill();
+            ctx.strokeStyle = 'var(--bg)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            startAngle += sliceAngle;
+        });
+        // إضافة وسيلة إيضاح
         ctx.fillStyle = 'var(--text-light)';
-        ctx.font = '8px Arial';
-        ctx.fillText(months[index % 12], x + barWidth / 2, height - 3);
-    });
-}
-
-function updateTopItems() {
-    const container = document.getElementById('topItems');
-    if (!container) return;
-    const sorted = [...items].sort((a, b) => (b.stock || 0) - (a.stock || 0)).slice(0, 5);
-    container.innerHTML = sorted.length ? sorted.map(i => `<div class="top-item"><span class="item-name">${i.name}</span><span class="item-sales">${i.stock || 0} وحدة</span></div>`).join('') : '<div class="top-item">لا توجد أصناف</div>';
+        ctx.font = '10px Arial';
+        let legendY = 10;
+        data.forEach((d, i) => {
+            ctx.fillStyle = colors[i];
+            ctx.fillRect(10, legendY, 12, 12);
+            ctx.fillStyle = 'var(--text)';
+            ctx.fillText(`${d.label}: ${((d.value/total)*100).toFixed(1)}%`, 28, legendY + 10);
+            legendY += 20;
+        });
+    }
 }
 
 // ================================================================
@@ -1511,10 +1251,12 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 function syncData() {
     addNotification('info', '🔄 جاري المزامنة...');
     loadData();
+    updateDashboard();
+    drawChart();
     addNotification('success', '✅ تمت المزامنة');
 }
 
-console.log('🔥✅ النظام المحاسبي المتكامل جاهز (LocalStorage)');
+console.log('🏆 نظام راشد المحاسبي - النسخة النهائية');
 console.log('📧 admin@example.com | 🔑 123456');
 console.log('📱 شغال على الكمبيوتر والموبايل');
 console.log('💾 يعمل بدون إنترنت');
